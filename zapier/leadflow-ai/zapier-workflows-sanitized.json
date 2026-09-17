@@ -1,0 +1,1286 @@
+{
+  "metadata": {
+    "sanitized": true,
+    "source": "Zapier account export",
+    "purpose": "Public portfolio documentation; not intended as a direct re-import file",
+    "note": "Secrets, account identifiers, connection identifiers, external resource IDs, timestamps, and personal email addresses were removed or replaced."
+  },
+  "zaps": [
+    {
+      "id": "sanitized",
+      "title": "LeadFlow AI — Automated Lead Qualification & Routing System",
+      "status": "off",
+      "nodes": {
+        "01_leadflow_ai_automated_lead_qualification_routing_s": {
+          "id": 378614289,
+          "paused": true,
+          "type_of": "read",
+          "params": {
+            "formId": "<external_resource_id_removed>"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "formId": "LeadFlow AI"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "new_form_response",
+          "selected_api": "GoogleFormsCLIAPI@1.1.1",
+          "title": "LeadFlow AI — Automated Lead Qualification & Routing System"
+        },
+        "02_lookup_row": {
+          "id": 378642071,
+          "paused": true,
+          "type_of": "search",
+          "params": {
+            "row_count": "10",
+            "_zap_search_success_on_miss": "true",
+            "_zap_search_multiple_results": "first",
+            "drive": "",
+            "spreadsheet": "<external_resource_id_removed>",
+            "worksheet": "0",
+            "lookup_key": "COL$C",
+            "lookup_key_support": "COL$C",
+            "lookup_value": "{{01_leadflow_ai_automated_lead_qualification_routing_s__50d3c1ed}}"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false,
+              "$zap_guesser": {
+                "$ai_field_suggestions": {
+                  "choices": {
+                    "lookup_key": [
+                      "Business Email"
+                    ]
+                  },
+                  "fields": {
+                    "lookup_value": [
+                      "<external_resource_id_removed>",
+                      "378614289__37502224",
+                      "378614289__1bb9ec4e",
+                      "378614289__681c7353",
+                      "378614289__386b45fe"
+                    ]
+                  }
+                }
+              }
+            },
+            "parammap": {
+              "spreadsheet": "Project 2",
+              "worksheet": "Sheet1",
+              "lookup_key": "Business Email",
+              "lookup_key_support": "Business Email",
+              "_zap_search_success_on_miss": "True: step run status is \"success\".",
+              "_zap_search_multiple_results": "Return first search result. Step run status is \"success\". (Default)"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "lookup_row",
+          "selected_api": "GoogleSheetsV2CLIAPI@2.17.0",
+          "title": null
+        },
+        "03_4_ai_lead_scoring_professional_analysis": {
+          "id": 378633765,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "provider_id": "zapier",
+            "model_id": "standard/auto",
+            "instructions": "Analyze this lead inquiry and return ONLY valid JSON on a single line:\n{\"lead_score\": <1-100>, \"priority\": \"High\"|\"Medium\"|\"Low\", \"business_type\": \"<text>\", \"recommended_services\": \"<text>\", \"urgency_level\": \"<text>\", \"key_strengths\": \"<text>\", \"concerns\": \"<text>\", \"recommended_action\": \"<text>\", \"estimated_deal_value\": \"<text>\", \"decision_maker_status\": \"<text>\", \"pain_point_severity\": \"<text>\", \"competitive_threat_level\": \"<text>\"}\n\nProspect: {{01_leadflow_ai_automated_lead_qualification_routing_s__5e77f51d}} {{01_leadflow_ai_automated_lead_qualification_routing_s__1d00f78d}} from {{01_leadflow_ai_automated_lead_qualification_routing_s__7cb59376}}\nServices: {{01_leadflow_ai_automated_lead_qualification_routing_s__371164f7}}\nBudget: {{01_leadflow_ai_automated_lead_qualification_routing_s__3b25513a}}\nChallenges: {{01_leadflow_ai_automated_lead_qualification_routing_s__153ca3eb}}\nEmail: {{01_leadflow_ai_automated_lead_qualification_routing_s__50d3c1ed}}",
+            "outputFields": [
+              {
+                "name": "lead_score",
+                "type": "number"
+              },
+              {
+                "name": "priority",
+                "type": "text"
+              },
+              {
+                "name": "business_type",
+                "type": "text"
+              },
+              {
+                "name": "<external_resource_id_removed>",
+                "type": "text"
+              },
+              {
+                "name": "urgency_level",
+                "type": "text"
+              },
+              {
+                "name": "key_strengths",
+                "type": "text"
+              },
+              {
+                "name": "concerns",
+                "type": "text"
+              },
+              {
+                "name": "recommended_action",
+                "type": "text"
+              },
+              {
+                "name": "<external_resource_id_removed>",
+                "type": "text"
+              },
+              {
+                "name": "<external_resource_id_removed>",
+                "type": "text"
+              },
+              {
+                "name": "pain_point_severity",
+                "type": "text"
+              },
+              {
+                "name": "<external_resource_id_removed>",
+                "type": "text"
+              }
+            ],
+            "isOutputArray": false,
+            "content_moderation": false,
+            "outputSchema": {
+              "lead_score": "Lead score 1-100",
+              "priority": "High/Medium/Low",
+              "business_type": "Type of business",
+              "recommended_services": "Services",
+              "urgency_level": "Level",
+              "key_strengths": "Why good fit",
+              "concerns": "Red flags",
+              "recommended_action": "Next action",
+              "estimated_deal_value": "Value",
+              "decision_maker_status": "Status",
+              "pain_point_severity": "Severity",
+              "competitive_threat_level": "Threat level"
+            }
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "provider_id": "Zapier",
+              "model_id": "Standard Auto"
+            },
+            "stepTitle": "AI Lead Scoring - Enhanced Professional Analysis"
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "get_completion",
+          "selected_api": "AICLIAPI@4.0.28",
+          "title": "4. AI Lead Scoring - Professional Analysis"
+        },
+        "04_generate_personalized_email_for_prospect": {
+          "id": 378645707,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "api_branch_name": "",
+            "model_id": "standard/auto",
+            "isOutputArray": false,
+            "instructions": "You are a professional sales copywriter for a digital marketing agency specializing in social media marketing and lead generation.\n\nWrite a UNIQUE, personalized email response tailored specifically to this prospect's concerns and needs:\n\nPROSPECT DETAILS:\n- Name: {{01_leadflow_ai_automated_lead_qualification_routing_s__5e77f51d}} {{01_leadflow_ai_automated_lead_qualification_routing_s__1d00f78d}}\n- Company: {{01_leadflow_ai_automated_lead_qualification_routing_s__7cb59376}}\n- Email: {{01_leadflow_ai_automated_lead_qualification_routing_s__50d3c1ed}}\n- Phone: {{01_leadflow_ai_automated_lead_qualification_routing_s__0c58d182}}\n- Services Interested In: {{01_leadflow_ai_automated_lead_qualification_routing_s__371164f7}}\n- Main Challenges: {{01_leadflow_ai_automated_lead_qualification_routing_s__153ca3eb}}\n- Budget: {{01_leadflow_ai_automated_lead_qualification_routing_s__3b25513a}}\n\nLEAD ANALYSIS (AI-Generated Insights):\n- Lead Score: {{03_4_ai_lead_scoring_professional_analysis__lead_score}}/100\n- Priority Level: {{03_4_ai_lead_scoring_professional_analysis__priority}}\n- Business Type: {{03_4_ai_lead_scoring_professional_analysis__business_type}}\n- Key Strengths (Why they're a good fit): {{03_4_ai_lead_scoring_professional_analysis__key_strengths}}\n- Recommended Services: {{03_4_ai_lead_scoring_professional_analysis__recommended_services}}\n- Red Flags/Concerns: {{03_4_ai_lead_scoring_professional_analysis__concerns}}\n- Suggested Action: {{03_4_ai_lead_scoring_professional_analysis__recommended_action}}\n- Estimated Deal Value: {{03_4_ai_lead_scoring_professional_analysis__estimated_deal_value}}\n\nEMAIL REQUIREMENTS:\nWrite a professional, personalized email that:\n1. Opens with warm, personal greeting using their name\n2. Acknowledges their SPECIFIC challenges in their own words (don't just repeat - rephrase with empathy)\n3. Connects their pain points directly to the services they're interested in\n4. Provides 2-3 concrete examples or insights specific to their situation (business type, industry, budget level)\n5. Explains HOW our expertise addresses their unique concerns\n6. Includes a clear, compelling call to action (e.g., \"Let's discuss a customized strategy\" or \"Schedule your 15-min discovery call\")\n7. Professional, warm closing\n\nTONE:\n- Professional but conversational\n- Show genuine understanding of their challenges\n- Confident in our solutions\n- Action-oriented but not pushy\n\nFORMAT:\nReturn ONLY the email body (no subject line, no signature). Keep it 200-300 words.",
+            "outputFields": [
+              {
+                "name": "email_body",
+                "description": "The complete personalized email body tailored to prospect's unique concerns and needs",
+                "type": "text"
+              }
+            ],
+            "provider_id": "zapier",
+            "content_moderation": false
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "model_id": "Standard Auto",
+              "provider_id": "Zapier"
+            },
+            "stepTitle": "Generate Personalized Email for Prospect"
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "get_completion",
+          "selected_api": "AICLIAPI@4.0.28",
+          "title": "Generate Personalized Email for Prospect"
+        },
+        "05_add_row": {
+          "id": 378614290,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "timezone": false,
+            "drive": "",
+            "spreadsheet": "<external_resource_id_removed>",
+            "worksheet": "0",
+            "COL$A": "{{01_leadflow_ai_automated_lead_qualification_routing_s__5e77f51d}}",
+            "COL$B": "{{01_leadflow_ai_automated_lead_qualification_routing_s__1d00f78d}}",
+            "COL$C": "{{01_leadflow_ai_automated_lead_qualification_routing_s__50d3c1ed}}",
+            "COL$D": "{{01_leadflow_ai_automated_lead_qualification_routing_s__7cb59376}}",
+            "COL$E": "{{03_4_ai_lead_scoring_professional_analysis__lead_score}}",
+            "COL$F": "{{03_4_ai_lead_scoring_professional_analysis__priority}}",
+            "COL$G": "{{04_generate_personalized_email_for_prospect__email_body}}",
+            "COL$H": "Sent",
+            "COL$I": "{{01_leadflow_ai_automated_lead_qualification_routing_s__lastSubmittedTime}}",
+            "COL$J": "{{04_generate_personalized_email_for_prospect__email_body}}",
+            "COL$K": "Sent",
+            "COL$L": "{{01_leadflow_ai_automated_lead_qualification_routing_s__lastSubmittedTime}}"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "spreadsheet": "Project 2",
+              "worksheet": "Sheet1"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "add_row",
+          "selected_api": "GoogleSheetsV2CLIAPI@2.17.0",
+          "title": null
+        },
+        "06_branch": {
+          "id": 378633766,
+          "paused": true,
+          "type_of": "write",
+          "params": {},
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "branch",
+          "selected_api": "BranchingAPI",
+          "title": null
+        },
+        "07_path_a_high_value_lead_score_80": {
+          "id": 378633767,
+          "paused": true,
+          "type_of": "filter",
+          "params": {
+            "color": "Heroine Blue",
+            "emoji": "🔥",
+            "path_eval_index": 0,
+            "filter_criteria": [
+              {
+                "key": "<external_resource_id_removed>",
+                "value": "74",
+                "action": "continue",
+                "match": "igreater",
+                "group": 1,
+                "id": 1
+              }
+            ]
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "stepTitle": "PATH A: High-Value Lead (Score ≥ 75)"
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "filter",
+          "selected_api": "BranchingAPI",
+          "title": "PATH A: High-Value Lead (Score ≥ 80)"
+        },
+        "08_path_b_standard_lead_score_80": {
+          "id": 378633769,
+          "paused": true,
+          "type_of": "filter",
+          "params": {
+            "color": "Peru",
+            "emoji": "📋",
+            "path_eval_index": 1,
+            "filter_criteria": [
+              {
+                "key": "<external_resource_id_removed>",
+                "value": "75",
+                "action": "continue",
+                "match": "iless",
+                "group": 1,
+                "id": 1
+              }
+            ]
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "stepTitle": "PATH B: Standard Lead (Score < 75)"
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "filter",
+          "selected_api": "BranchingAPI",
+          "title": "PATH B: Standard Lead (Score < 80)"
+        },
+        "09_channel_message": {
+          "id": 378633770,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "channel": "C0BU0S5GEJX",
+            "text": "📋 **NEW LEAD** 📋\n\n*Score: {{03_4_ai_lead_scoring_professional_analysis__lead_score}}/100 | Priority: {{03_4_ai_lead_scoring_professional_analysis__priority}}*\n\n🎯 {{01_leadflow_ai_automated_lead_qualification_routing_s__5e77f51d}} {{01_leadflow_ai_automated_lead_qualification_routing_s__1d00f78d}}\n📝 {{01_leadflow_ai_automated_lead_qualification_routing_s__7cb59376}}\n\n➡️ {{03_4_ai_lead_scoring_professional_analysis__recommended_action}}",
+            "add_app_to_channel": true,
+            "as_bot": true,
+            "add_edit_link": false,
+            "unfurl": true,
+            "link_names": true,
+            "reply_broadcast": false,
+            "username": "📋 Lead Bot",
+            "icon": ":clipboard:"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "channel": "all-jordan"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "channel_message",
+          "selected_api": "SlackCLIAPI@1.43.0",
+          "title": null
+        },
+        "10_send_email_response_to_lead": {
+          "id": 378633771,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "body_type": "plain",
+            "render_signature_in_html": false,
+            "signature_delimiter": true,
+            "send_to_groups": false,
+            "subject": "We'd Love to Help You Grow",
+            "body": "Hi there,\n\nThank you for reaching out to us! We received your inquiry.\n\nWe're excited to learn more about your business and help you achieve your marketing goals. Based on your interest and needs, we believe we can deliver real results.\n\nHere's what we typically offer:\n• Social Media Strategy & Management\n• Lead Generation Campaigns\n• Content Creation & Community Engagement\n• Performance Analytics & Monthly Reporting\n\nNext Steps:\nWe'll review your information and follow up within 24 hours with a customized proposal tailored to your needs.\n\nFeel free to reply with any questions in the meantime!\n\nBest regards,\nThe Digital Marketing Team",
+            "to": [
+              "{{01_leadflow_ai_automated_lead_qualification_routing_s__50d3c1ed}}"
+            ],
+            "from": "<configured_email_removed>"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false,
+              "$zap_guesser": {
+                "$ai_field_suggestions": {
+                  "fields": {
+                    "to": [
+                      "<external_resource_id_removed>"
+                    ]
+                  }
+                }
+              }
+            },
+            "parammap": {},
+            "stepTitle": "Send Standard Email to Lead"
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "message",
+          "selected_api": "GoogleMailV2CLIAPI@2.14.0",
+          "title": "Send Email Response to Lead"
+        },
+        "11_channel_message": {
+          "id": 378633768,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "add_app_to_channel": true,
+            "as_bot": true,
+            "add_edit_link": false,
+            "unfurl": true,
+            "link_names": true,
+            "reply_broadcast": false,
+            "channel": "C0BU0S5GEJX",
+            "text": "🔥 **HOT LEAD ALERT** 🔥\n\n*Score: {{03_4_ai_lead_scoring_professional_analysis__lead_score}}/100 | Priority: {{03_4_ai_lead_scoring_professional_analysis__priority}}*\n\n👤 *Lead Inquiry*\n🎯 *Services:* {{01_leadflow_ai_automated_lead_qualification_routing_s__5e77f51d}}\n📝 *Additional Info:* {{01_leadflow_ai_automated_lead_qualification_routing_s__1d00f78d}}\n\n✅ *Fit:* {{03_4_ai_lead_scoring_professional_analysis__key_strengths}}\n⚠️ *Notes:* {{03_4_ai_lead_scoring_professional_analysis__concerns}}\n\n➡️ *Action:* {{03_4_ai_lead_scoring_professional_analysis__recommended_action}}",
+            "username": "🔥 Hot Lead Bot",
+            "icon": ":fire:"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "channel": "all-jordan"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "channel_message",
+          "selected_api": "SlackCLIAPI@1.43.0",
+          "title": null
+        },
+        "12_send_personalized_email_to_high_value_lead": {
+          "id": 379080798,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "body_type": "plain",
+            "render_signature_in_html": false,
+            "signature_delimiter": true,
+            "send_to_groups": false,
+            "to": [
+              "{{01_leadflow_ai_automated_lead_qualification_routing_s__50d3c1ed}}"
+            ],
+            "subject": "Exclusive Priority: {{03_4_ai_lead_scoring_professional_analysis__priority}} Lead - Premium Consultation Invitation",
+            "body": "Hi {{01_leadflow_ai_automated_lead_qualification_routing_s__5e77f51d}},\n\nThank you for reaching out to us. Your inquiry has been flagged as a priority opportunity for our team.\n\n🎯 **Why We're Reaching Out**\nBased on your interest in {{01_leadflow_ai_automated_lead_qualification_routing_s__371164f7}} and your business challenges with {{01_leadflow_ai_automated_lead_qualification_routing_s__153ca3eb}}, we believe we can make a significant impact.\n\n✅ **What We Specialize In**\n• Custom Social Media Strategy tailored to {{01_leadflow_ai_automated_lead_qualification_routing_s__7cb59376}}\n• High-performing Lead Generation Campaigns\n• Brand Growth & Community Engagement\n• Real-time Performance Tracking & ROI Reporting\n\n🚀 **Your Next Step**\nWe'd like to offer you a **complimentary 30-minute strategy session** with our team to discuss:\n- Your specific marketing challenges\n- Opportunities for {{03_4_ai_lead_scoring_professional_analysis__estimated_deal_value}} in value\n- A customized roadmap for {{01_leadflow_ai_automated_lead_qualification_routing_s__7cb59376}}\n\n📞 Ready to Get Started?\nReply directly to this email or call {{01_leadflow_ai_automated_lead_qualification_routing_s__0c58d182}} to schedule your session.\n\nLooking forward to partnering with you!\n\nBest regards,\nThe Digital Marketing Team",
+            "from": "<configured_email_removed>",
+            "from_name": "Digital Marketing Team"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {},
+            "stepTitle": "Send Personalized Email to High-Value Lead"
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "message",
+          "selected_api": "GoogleMailV2CLIAPI@2.14.0",
+          "title": "Send Personalized Email to High-Value Lead"
+        }
+      }
+    },
+    {
+      "id": "sanitized",
+      "title": "PropertyFix AI - Maintenance Request Management",
+      "status": "off",
+      "nodes": {
+        "01_propertyfix_ai_maintenance_request_management": {
+          "id": 378719373,
+          "paused": true,
+          "type_of": "read",
+          "params": {
+            "formId": "b5JGr1"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "formId": "Maintenance Request Form"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "response",
+          "selected_api": "TallyCLIAPI@2.0.6",
+          "title": "PropertyFix AI - Maintenance Request Management"
+        },
+        "02_01929fad_d3dd_62c2_52ed_7868d5fcc691": {
+          "id": 378814647,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "packages_enabled": false,
+            "input": {
+              "problem_description": "{{01_propertyfix_ai_maintenance_request_management__question_dDkB6r}}",
+              "category": "{{01_propertyfix_ai_maintenance_request_management__question_5GpWzN}}"
+            },
+            "code": "const description = (input.problem_description || '').toLowerCase();\nconst category = (input.category || '').toLowerCase();\n\n// Define keywords for each urgency level\nconst emergencyKeywords = [\n  'gas leak', 'gas smell', 'carbon monoxide', 'fire', 'smoke', 'flames',\n  'electrical hazard', 'sparks', 'exposed wires', 'electrical shock',\n  'major flood', 'water pouring', 'structural water damage',\n  'structural damage', 'collapse', 'major crack', 'foundation',\n  'no heat', 'dangerously cold'\n];\n\nconst highKeywords = [\n  'continuous leak', 'water leak', 'leaking', 'ceiling leak',\n  'toilet overflow', 'backed up', 'no power', 'no electricity',\n  'broken door', 'entry door', 'burst pipe', 'major plumbing',\n  'no hot water', 'broken window'\n];\n\nconst normalKeywords = [\n  'appliance', 'fridge', 'ac', 'oven', 'dishwasher', 'microwave',\n  'slow drain', 'running toilet', 'small leak', 'fixture',\n  'light', 'outlet', 'switch', 'heating', 'cooling', 'partial power'\n];\n\nconst lowKeywords = [\n  'loose', 'handle', 'cabinet', 'hinge', 'scratch', 'dent', 'scuff',\n  'squeaky', 'sticky', 'paint chip', 'worn', 'weatherstripping'\n];\n\n// Check for emergency conditions\nif (emergencyKeywords.some(keyword => description.includes(keyword))) {\n  return { urgency_level: 'EMERGENCY' };\n}\n\n// Check for high urgency conditions\nif (highKeywords.some(keyword => description.includes(keyword))) {\n  return { urgency_level: 'HIGH' };\n}\n\n// Check for normal urgency conditions\nif (normalKeywords.some(keyword => description.includes(keyword))) {\n  return { urgency_level: 'NORMAL' };\n}\n\n// Check for low urgency conditions\nif (lowKeywords.some(keyword => description.includes(keyword))) {\n  return { urgency_level: 'LOW' };\n}\n\n// Default classification based on category if no keywords matched\nif (category.includes('plumbing')) {\n  return { urgency_level: 'NORMAL' };\n} else if (category.includes('electrical')) {\n  return { urgency_level: 'NORMAL' };\n} else if (category.includes('appliance')) {\n  return { urgency_level: 'NORMAL' };\n}\n\n// Default to NORMAL if no specific match\nreturn { urgency_level: 'NORMAL' };"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {}
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "<internal_id_removed>",
+          "selected_api": "CodeCLIAPI@1.0.1",
+          "title": null
+        },
+        "03_createrecord": {
+          "id": 378719389,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "applicationId": "app6H9Uu7TjmZ4liJ",
+            "tableName": "tblEHzEhyuvkOTAPN",
+            "fields__fld6VhbVW27yW5ZXE": "{{01_propertyfix_ai_maintenance_request_management__question_8PR7Kl}}",
+            "fields__fld2gWOnJQxQ8mYwx": "{{01_propertyfix_ai_maintenance_request_management__question_0JDNx9}}",
+            "fields__fldNp2ZyMVzBDd8Lv": "{{01_propertyfix_ai_maintenance_request_management__question_zr1Pqk}}",
+            "fields__fldUj8UdQRkRtVkYN": "{{01_propertyfix_ai_maintenance_request_management__question_5GpWzN}}",
+            "fields__fldpuQfwbJ5vf47kU": "{{01_propertyfix_ai_maintenance_request_management__question_dDkB6r}}",
+            "fields__fld7XrCFdDskfUcso": "{{02_01929fad_d3dd_62c2_52ed_7868d5fcc691__urgency_level}}",
+            "fields__fldW41PZqoK1bHqVA": "See problem description",
+            "fields__fldBB4Sopw9CIsM1f": "Pending Review",
+            "fields__fldYnPsztc3xbCA0N": "Support Team",
+            "fields__fldSC9kk7n2fCSwdl": "{{01_propertyfix_ai_maintenance_request_management__formName}}",
+            "fields__fldfMS45gEm2SivE3": "General Maintenance",
+            "fields__fldnhdLXeiAC6OMlo": "{{01_propertyfix_ai_maintenance_request_management__question_5GpWzN}}",
+            "fields__fldtYFjNcKRfuEqtJ": "{{01_propertyfix_ai_maintenance_request_management__question_zr1Pqk}}",
+            "fields__fldlMORzpVzwxFGmV": "{{01_propertyfix_ai_maintenance_request_management__question_YMxNQN}}",
+            "fields__fldG2Yb6Pj2Xe8nBX": "{{01_propertyfix_ai_maintenance_request_management__question_DJZgNl}}",
+            "fields__fldONjLEVVo4xfFW4": "{{01_propertyfix_ai_maintenance_request_management__createdAt}}"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "applicationId": "Maintenance Request Tracker",
+              "tableName": "Maintenance Requests"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "createRecord",
+          "selected_api": "AirtableCLIAPI@3.15.0",
+          "title": null
+        },
+        "04_branch": {
+          "id": 378850692,
+          "paused": true,
+          "type_of": "write",
+          "params": {},
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "branch",
+          "selected_api": "BranchingAPI",
+          "title": null
+        },
+        "05_path_a_emergency_high": {
+          "id": 378850693,
+          "paused": true,
+          "type_of": "filter",
+          "params": {
+            "color": "Heroine Blue",
+            "emoji": "A",
+            "path_eval_index": 0,
+            "filter_criteria": [
+              {
+                "key": "<external_resource_id_removed>",
+                "value": "EMERGENCY",
+                "action": "continue",
+                "match": "iexact",
+                "group": 1,
+                "id": 1
+              },
+              {
+                "key": "<external_resource_id_removed>",
+                "value": "HIGH",
+                "action": "continue",
+                "match": "iexact",
+                "group": 2,
+                "id": 2
+              }
+            ]
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "stepTitle": "Path A (EMERGENCY/HIGH)"
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "filter",
+          "selected_api": "BranchingAPI",
+          "title": "Path A (EMERGENCY/HIGH)"
+        },
+        "06_path_b_normal_low": {
+          "id": 378850696,
+          "paused": true,
+          "type_of": "filter",
+          "params": {
+            "color": "Peru",
+            "emoji": "B",
+            "path_eval_index": 1,
+            "filter_criteria": [
+              {
+                "key": "<external_resource_id_removed>",
+                "value": "NORMAL",
+                "action": "continue",
+                "match": "iexact",
+                "group": 1,
+                "id": 1
+              },
+              {
+                "key": "<external_resource_id_removed>",
+                "value": "LOW",
+                "action": "continue",
+                "match": "iexact",
+                "group": 2,
+                "id": 2
+              }
+            ]
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "stepTitle": "Path B (NORMAL/LOW)"
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "filter",
+          "selected_api": "BranchingAPI",
+          "title": "Path B (NORMAL/LOW)"
+        },
+        "07_task": {
+          "id": 378850697,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "team_id": "1300410000000109",
+            "name": "{{01_propertyfix_ai_maintenance_request_management__question_5GpWzN}} - {{01_propertyfix_ai_maintenance_request_management__formName}}",
+            "priority": "3",
+            "content": "**Tenant:** {{01_propertyfix_ai_maintenance_request_management__question_8PR7Kl}}\n**Email:** {{01_propertyfix_ai_maintenance_request_management__question_0JDNx9}}\n**Property:** {{01_propertyfix_ai_maintenance_request_management__question_zr1Pqk}}\n**Category:** {{01_propertyfix_ai_maintenance_request_management__question_5GpWzN}}\n**Urgency:** {{02_01929fad_d3dd_62c2_52ed_7868d5fcc691__urgency_level}}\n**Submitted:** {{01_propertyfix_ai_maintenance_request_management__createdAt}}",
+            "markdown": true,
+            "make_private": false,
+            "space_id": "1300410000000560",
+            "project_id": "0",
+            "list_id": "1300410000000671"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "team_id": "jordan's Workspace",
+              "priority": "Normal",
+              "markdown": "True",
+              "space_id": "Space",
+              "project_id": "No Folder",
+              "list_id": "Development Project Starter"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "task",
+          "selected_api": "ClickUpCLIAPI@2.1.63",
+          "title": null
+        },
+        "08_message": {
+          "id": 378850698,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "body_type": "plain",
+            "render_signature_in_html": false,
+            "signature_delimiter": true,
+            "send_to_groups": false,
+            "to": [
+              "{{01_propertyfix_ai_maintenance_request_management__question_0JDNx9}}"
+            ],
+            "subject": "{{01_propertyfix_ai_maintenance_request_management__question_5GpWzN}} Maintenance Request - Priority: {{02_01929fad_d3dd_62c2_52ed_7868d5fcc691__urgency_level}}",
+            "body": "Hi {{01_propertyfix_ai_maintenance_request_management__question_8PR7Kl}},\n\nThank you for submitting your maintenance request. We will review it and contact you within 1-2 business days.\n\nThank you,\nPropertyFix Management"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "body_type": "Plain"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "message",
+          "selected_api": "GoogleMailV2CLIAPI@2.14.0",
+          "title": null
+        },
+        "09_task": {
+          "id": 378850694,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "markdown": true,
+            "make_private": false,
+            "team_id": "1300410000000109",
+            "name": "🚨 URGENT: {{01_propertyfix_ai_maintenance_request_management__question_5GpWzN}} - {{01_propertyfix_ai_maintenance_request_management__formName}}",
+            "priority": "1",
+            "content": "**Tenant:** {{01_propertyfix_ai_maintenance_request_management__question_8PR7Kl}}\n**Email:** {{01_propertyfix_ai_maintenance_request_management__question_0JDNx9}}\n**Property:** {{01_propertyfix_ai_maintenance_request_management__question_zr1Pqk}}\n**Category:** {{01_propertyfix_ai_maintenance_request_management__question_5GpWzN}}\n**Urgency:** {{02_01929fad_d3dd_62c2_52ed_7868d5fcc691__urgency_level}}\n**Submitted:** {{01_propertyfix_ai_maintenance_request_management__createdAt}}",
+            "space_id": "1300410000000560",
+            "project_id": "0",
+            "list_id": "1300410000000671"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "team_id": "jordan's Workspace",
+              "priority": "Urgent",
+              "markdown": "True",
+              "space_id": "Space",
+              "project_id": "No Folder",
+              "list_id": "Development Project Starter"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "task",
+          "selected_api": "ClickUpCLIAPI@2.1.63",
+          "title": null
+        },
+        "10_message": {
+          "id": 378850695,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "to": [
+              "{{01_propertyfix_ai_maintenance_request_management__question_0JDNx9}}"
+            ],
+            "subject": "🚨 URGENT: {{01_propertyfix_ai_maintenance_request_management__question_5GpWzN}} Maintenance Request",
+            "body": "Hi {{01_propertyfix_ai_maintenance_request_management__question_8PR7Kl}},\n\nWe have received your maintenance request and classified it as URGENT.\n\nOur maintenance team is prioritizing this request and will contact you immediately.\n\nThank you,\nPropertyFix Management",
+            "body_type": "plain",
+            "render_signature_in_html": false,
+            "signature_delimiter": true,
+            "send_to_groups": false
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "body_type": "Plain"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "message",
+          "selected_api": "GoogleMailV2CLIAPI@2.14.0",
+          "title": null
+        }
+      }
+    },
+    {
+      "id": "sanitized",
+      "title": "Webhooks to LeadFlow AI",
+      "status": "off",
+      "nodes": {
+        "01_webhooks_to_leadflow_ai": {
+          "id": 379150200,
+          "paused": true,
+          "type_of": "read",
+          "params": {},
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {}
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "hook_v2",
+          "selected_api": "WebHookCLIAPI@1.1.1",
+          "title": "Webhooks to LeadFlow AI"
+        },
+        "02_get_completion": {
+          "id": 379150201,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "api_branch_name": "",
+            "model_id": "standard/auto",
+            "isOutputArray": false,
+            "instructions": "You are an AI lead qualification specialist for AwtomateAI, a business that provides AI automation, lead management, website and online presence services, and business workflow automation.\r\n\r\nAnalyze the following potential client information:\r\n\r\nFull Name: {{=gives[\"379150200\"][\"name\"]}}\r\nBusiness Name: {{=gives[\"379150200\"][\"business_name\"]}}\r\nEmail: {{=gives[\"379150200\"][\"email\"]}}\r\nPhone: {{=gives[\"379150200\"][\"phone\"]}}\r\nService Interested In: {{=gives[\"379150200\"][\"services\"]}}\r\nMonthly Marketing Budget: {{=gives[\"379150200\"][\"budget\"]}}\r\nBiggest Business Challenge: {{=gives[\"379150200\"][\"challenge\"]}}\r\n\r\nEvaluate this lead based on their potential value and likelihood of becoming a paying client.\r\n\r\nProvide:\r\n1. Lead Score from 1 to 100\r\n2. Lead Category: High-Value, Medium-Value, or Standard\r\n3. Reason for the score\r\n4. Recommended next action\r\n5. A short summary of the lead\r\n\r\nBe realistic and prioritize leads with a larger budget, clear business needs, and a strong match for AwtomateAI's services.",
+            "outputFields": [
+              {
+                "name": "Lead Score",
+                "description": "A score from 1 to 100 indicating the potential value of the lead.",
+                "type": "number",
+                "isRequired": true
+              },
+              {
+                "name": "Lead Category",
+                "description": "The category of the lead based on its potential value.",
+                "type": "category_single",
+                "isRequired": true,
+                "options": [
+                  "High-Value",
+                  "Medium-Value",
+                  "Standard"
+                ]
+              },
+              {
+                "name": "Reason for the Score",
+                "description": "An explanation of why the lead received the specific score based on the analysis.",
+                "type": "text",
+                "isRequired": true
+              },
+              {
+                "name": "Recommended Next Action",
+                "description": "Suggestions for the next steps with this lead to maximize conversion potential.",
+                "type": "text",
+                "isRequired": true
+              },
+              {
+                "name": "Lead Summary",
+                "description": "A brief overview of the lead's background and needs, highlighting key points of interest.",
+                "type": "text",
+                "isRequired": true
+              }
+            ]
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false,
+              "$ai_step_title": {
+                "title": "Qualify potential client lead",
+                "prompt_hash": 344796625,
+                "prompt_length": 1022
+              }
+            },
+            "parammap": {
+              "model_id": "standard/auto"
+            },
+            "stepTitle": "Qualify potential client lead"
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "get_completion",
+          "selected_api": "AICLIAPI@4.0.28",
+          "title": null
+        },
+        "03_add_row": {
+          "id": 379152203,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "timezone": false,
+            "drive": "",
+            "spreadsheet": "<external_resource_id_removed>",
+            "worksheet": "0",
+            "COL$A": "{{=gives[\"379150200\"][\"name\"]}}",
+            "COL$C": "{{=gives[\"379150200\"][\"email\"]}}",
+            "COL$D": "{{=gives[\"379150200\"][\"business_name\"]}}",
+            "COL$E": "{{=gives[\"379150201\"][\"Lead Score\"]}}",
+            "COL$F": "{{=gives[\"379150201\"][\"Lead Category\"]}}",
+            "COL$G": "You are an email outreach specialist for AwtomateAI.\n\nWrite a short, friendly, and professional personalized email to this potential client.\n\nClient Name: [insert the Name field from Step 1]\nBusiness Name: [insert the Business Name field from Step 1]\nServices Interested In: [insert the Services field from Step 1]\nBiggest Business Challenge: [insert the Challenge field from Step 1]\n\nAI Lead Category: [insert Lead Category from Step 2]\nRecommended Next Action: [insert Recommended Next Action from Step 2]\n\nWrite a personalized email that acknowledges the client's business needs and explains how AwtomateAI may be able to help.\n\nKeep the email concise and natural.\n\nInclude:\n1. A subject line\n2. The email body"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false,
+              "$zap_guesser": {
+                "$ai_field_suggestions": {
+                  "fields": {
+                    "COL$A": [
+                      "379150200__name"
+                    ],
+                    "COL$C": [
+                      "379150200__email"
+                    ],
+                    "COL$D": [
+                      "<external_resource_id_removed>"
+                    ],
+                    "COL$E": [
+                      "379150201__Lead Score"
+                    ]
+                  }
+                }
+              }
+            },
+            "parammap": {
+              "drive": "My Google Drive",
+              "spreadsheet": "Project 2",
+              "worksheet": "Sheet1"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "add_row",
+          "selected_api": "GoogleSheetsV2CLIAPI@2.17.0",
+          "title": null
+        },
+        "04_get_completion": {
+          "id": 379152189,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "api_branch_name": "",
+            "model_id": "standard/auto",
+            "isOutputArray": false,
+            "instructions": "You are an email outreach specialist for AwtomateAI.\r\n\r\nWrite a short, friendly, and professional personalized email to this potential client.\r\n\r\nClient Name: {{=gives[\"379150200\"][\"name\"]}}\r\nBusiness Name:{{=gives[\"379150200\"][\"business_name\"]}}\r\nServices Interested In:{{=gives[\"379150200\"][\"services\"]}}\r\nBiggest Business Challenge:{{=gives[\"379150200\"][\"challenge\"]}}\r\n\r\nAI Lead Category:{{=gives[\"379150201\"][\"Lead Category\"]}}\r\nRecommended Next Action:{{=gives[\"379150201\"][\"Recommended Next Action\"]}}\r\n\r\nWrite a personalized email that acknowledges the client's business needs and explains how AwtomateAI may be able to help.\r\n\r\nKeep the email concise and natural.\r\n\r\nInclude:\r\n1. A subject line\r\n2. The email body",
+            "outputFields": [
+              {
+                "name": "Client Name",
+                "description": "The name of the potential client to whom the email will be addressed.",
+                "type": "text",
+                "isRequired": true
+              },
+              {
+                "name": "Business Name",
+                "description": "The name of the client's business.",
+                "type": "text",
+                "isRequired": true
+              },
+              {
+                "name": "Services Interested In",
+                "description": "A list of services that the client is interested in from AwtomateAI.",
+                "type": "text",
+                "isRequired": true
+              },
+              {
+                "name": "Biggest Business Challenge",
+                "description": "The primary business challenge the client is facing, which the email should address.",
+                "type": "text",
+                "isRequired": true
+              },
+              {
+                "name": "AI Lead Category",
+                "description": "The category of the AI lead, indicating the type of client and their needs.",
+                "type": "text",
+                "isRequired": true
+              },
+              {
+                "name": "Recommended Next Action",
+                "description": "The suggested next step for the client, which the outreach should include.",
+                "type": "text",
+                "isRequired": true
+              },
+              {
+                "name": "Subject Line",
+                "description": "The subject line to use for the email, summing up the main point of outreach.",
+                "type": "text",
+                "isRequired": true
+              },
+              {
+                "name": "Email Body",
+                "description": "The main content of the email that is friendly, professional, and addresses the client's needs.",
+                "type": "text",
+                "isRequired": true
+              }
+            ]
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false,
+              "$ai_step_title": {
+                "title": "Personalized outreach email draft",
+                "prompt_hash": 459355573,
+                "prompt_length": 722
+              }
+            },
+            "parammap": {
+              "model_id": "standard/auto"
+            },
+            "stepTitle": "Personalized outreach email draft"
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "get_completion",
+          "selected_api": "AICLIAPI@4.0.28",
+          "title": null
+        },
+        "05_branch": {
+          "id": 379152825,
+          "paused": true,
+          "type_of": "write",
+          "params": {},
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "branch",
+          "selected_api": "BranchingAPI",
+          "title": null
+        },
+        "06_path_a": {
+          "id": 379152827,
+          "paused": true,
+          "type_of": "filter",
+          "params": {
+            "color": "Heroine Blue",
+            "emoji": "A",
+            "path_eval_index": 0,
+            "filter_criteria": [
+              {
+                "id": 253603622524185,
+                "group": 6419190719196643,
+                "key": "{{=gives[\"379150201\"][\"Lead Score\"]}}",
+                "value": "80",
+                "match": "igreater",
+                "action": "continue"
+              }
+            ]
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {},
+            "stepTitle": "HIGH PRIORITY LEAD"
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "filter",
+          "selected_api": "BranchingAPI",
+          "title": "Path A"
+        },
+        "07_path_b": {
+          "id": 379152829,
+          "paused": true,
+          "type_of": "filter",
+          "params": {
+            "color": "Peru",
+            "emoji": "B",
+            "path_eval_index": 1,
+            "filter_criteria": [
+              {
+                "id": 4710162303657979,
+                "group": 2554054070435885,
+                "key": "{{=gives[\"379150201\"][\"Lead Score\"]}}",
+                "value": "80",
+                "match": "iless",
+                "action": "continue"
+              }
+            ]
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {},
+            "stepTitle": "STANDARD LEAD"
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "filter",
+          "selected_api": "BranchingAPI",
+          "title": "Path B"
+        },
+        "08_text_line_item": {
+          "id": 379154191,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "transform": "string.split",
+            "inputs": "{{=gives[\"379150200\"][\"name\"]}}",
+            "separator": " "
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "transform": "Split Text"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "text_line_item",
+          "selected_api": "ZapierFormatterCLIAPI@1.0.8",
+          "title": null
+        },
+        "09_message": {
+          "id": 379152830,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "body_type": "plain",
+            "render_signature_in_html": false,
+            "signature_delimiter": true,
+            "send_to_groups": false,
+            "to": [
+              "{{=gives[\"379150200\"][\"email\"]}}"
+            ],
+            "from": "<configured_email_removed>",
+            "from_name": "LeadFlow AI",
+            "reply_to": "<configured_email_removed>",
+            "subject": "Thanks for reaching out",
+            "body": "Hi {{=gives[\"379150200\"][\"name\"]}},\r\n\r\nThanks for reaching out. We received your information and would be happy to learn more about what you're looking for.\r\n\r\nWe'll review your request and get back to you shortly.\r\n\r\nBest,\r\nAlvin Jordan\nAwtomate AI\n\r",
+            "cc": [
+              "/"
+            ]
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "from": "<configured_email_removed>"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "message",
+          "selected_api": "GoogleMailV2CLIAPI@2.14.0",
+          "title": null
+        },
+        "10_channel_message": {
+          "id": 379152828,
+          "paused": true,
+          "type_of": "write",
+          "params": {
+            "add_app_to_channel": true,
+            "as_bot": true,
+            "add_edit_link": false,
+            "unfurl": true,
+            "link_names": true,
+            "reply_broadcast": false,
+            "channel": "C0BU0S5GEJX",
+            "text": "🚨 HIGH-VALUE LEAD\r\n\r\nLead Score: {{=gives[\"379150201\"][\"Lead Score\"]}}\r\nLead Category: {{=gives[\"379150201\"][\"Lead Category\"]}}\r\nName: {{=gives[\"379150200\"][\"name\"]}}\r\nEmail: {{=gives[\"379150200\"][\"email\"]}}\r\n\r\nThis lead scored 80+ and needs priority follow-up.",
+            "username": "LeadFlow AI"
+          },
+          "meta": {
+            "$editor": {
+              "has_automatic_issues": false
+            },
+            "parammap": {
+              "channel": "all-jordan"
+            }
+          },
+          "triple_stores": {
+            "polling_interval_override": 0,
+            "block_and_release_limit_override": 0,
+            "spread_tasks": 1
+          },
+          "folders": null,
+          "action": "channel_message",
+          "selected_api": "SlackCLIAPI@1.43.0",
+          "title": null
+        }
+      }
+    }
+  ]
+}
