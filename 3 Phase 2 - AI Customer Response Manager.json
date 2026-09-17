@@ -1,0 +1,1123 @@
+{
+  "name": "3 Phase 2 - AI Customer Response Manager",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "8ff7d5a9-e5c2-4555-8fbd-bb90b3c27488",
+              "name": "customer_name",
+              "value": "={{ $('Retrieve Customer Email').item.json.from.value[0].name }}",
+              "type": "string"
+            },
+            {
+              "id": "f5cc3907-f4ac-431d-9c39-4b97916223f4",
+              "name": "customer_email",
+              "value": "={{ $('Retrieve Customer Email').item.json.from.value[0].address }}",
+              "type": "string"
+            },
+            {
+              "id": "b413da61-3732-4129-9e6b-252d0c7195da",
+              "name": "subject",
+              "value": "={{ $('Retrieve Customer Email').item.json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "cd5d8b64-66c7-433a-8c43-b0461f30ac73",
+              "name": "customer_message",
+              "value": "={{ $('Retrieve Customer Email').item.json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "9b15fe36-2c48-491c-a7be-5e1583475747",
+              "name": "recommended_action",
+              "value": "={{ $json.recommended_action }}",
+              "type": "string"
+            },
+            {
+              "id": "2b61dcb6-16d3-4db6-9215-993b59ec4013",
+              "name": "urgency",
+              "value": "={{ $json.urgency }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1616,
+        -48
+      ],
+      "id": "22fe36d3-d051-47ba-8378-c95af36b2e5d",
+      "name": "Prepare Human Escalation"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "messageId": "={{ $json.id }}",
+        "simple": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        96,
+        -256
+      ],
+      "id": "0acc6884-2d3e-4944-81bd-7e39926af0b1",
+      "name": "Retrieve Customer Email"
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "filters": {
+          "sender": ""
+        }
+      },
+      "type": "n8n-nodes-base.gmailTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -96,
+        -48
+      ],
+      "id": "f57b07e8-d150-4e5c-ae68-ca08adbf57f0",
+      "name": "Receive Customer Email"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": "<YOUR_N8N_DATA_TABLE_ID>",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Email",
+              "keyValue": "={{ $('Retrieve Customer Email').item.json.from.value[0].address }}"
+            }
+          ]
+        },
+        "limit": 1,
+        "orderBy": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        384,
+        -256
+      ],
+      "id": "48a1002b-6243-4109-91df-32cb1689b1ce",
+      "name": "Get Customer History",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const parts = $json.content?.parts || [];\n\nconst textPart = parts.find(\n  part => typeof part.text === 'string' &&\n          part.text.trim().startsWith('{')\n);\n\nif (!textPart) {\n  throw new Error('No JSON response found from Gemini');\n}\n\nconst parsed = JSON.parse(textPart.text);\n\n// Normalize urgency for reliable routing\nif (parsed.urgency) {\n  parsed.urgency = parsed.urgency.toUpperCase();\n}\n\nreturn {\n  json: Array.isArray(parsed) ? parsed[0] : parsed\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1152,
+        -160
+      ],
+      "id": "02842fac-b2b8-4c6f-8287-98918c17196f",
+      "name": "Parse AI Response",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.urgency }}",
+                    "rightValue": "LOW",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "5a6a9d64-1a36-4666-a138-26c25fd88754"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "a8d74aca-66dc-4949-9b92-e83a3b441cc4",
+                    "leftValue": "={{ $json.urgency }}",
+                    "rightValue": "MEDIUM",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "1c5f9c52-3712-4222-b5f2-8f9d63e6bbf2",
+                    "leftValue": "={{ $json.urgency }}",
+                    "rightValue": "HIGH",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1328,
+        -464
+      ],
+      "id": "9a83e1a1-7249-459d-a0b3-d6ef75e391e7",
+      "name": "Response Router"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "578541e8-a95a-4cda-8c7c-7db0d157e07c",
+              "name": "response",
+              "value": "={{ $json.response }}",
+              "type": "string"
+            },
+            {
+              "id": "cd54d49e-029e-4867-a6e8-c8e0761122df",
+              "name": "customer_email",
+              "value": "={{ $('Retrieve Customer Email').item.json.from.value[0].address }}",
+              "type": "string"
+            },
+            {
+              "id": "f9ebc62e-b110-40b7-833a-72bd641f8477",
+              "name": "customer_name",
+              "value": "={{ $('Retrieve Customer Email').item.json.from.value[0].name }}",
+              "type": "string"
+            },
+            {
+              "id": "50582b1f-6f43-416c-94d3-bb27b9e6fd69",
+              "name": "original_subject",
+              "value": "={{ $('Retrieve Customer Email').item.json.subject }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1616,
+        -464
+      ],
+      "id": "ca76e064-8659-4044-b2ce-48e2a48a666a",
+      "name": "Prepare Low Priority Reply"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Retrieve Customer Email').item.json.id }}",
+        "message": "={{ $json.response }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1840,
+        -448
+      ],
+      "id": "a7743c67-948c-4677-acf6-860c2203c64a",
+      "name": "Send Low Priority Reply"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2d7b0acb-d4a3-48b4-8271-780ed84b56ff",
+              "name": "response",
+              "value": "={{ $json.response }}",
+              "type": "string"
+            },
+            {
+              "id": "988e6df5-fa6b-47c0-9f4c-ab7f724cc560",
+              "name": "customer_email",
+              "value": "={{ $('Retrieve Customer Email').first().json.from.value[0].address }}",
+              "type": "string"
+            },
+            {
+              "id": "069c8758-84f6-463a-977a-12069ac6d249",
+              "name": "customer_name",
+              "value": "={{ $('Retrieve Customer Email').first().json.from.value[0].name }}",
+              "type": "string"
+            },
+            {
+              "id": "ae112c0a-2c8a-44b4-85b1-98b3f73bc400",
+              "name": "original_subject",
+              "value": "={{ $('Retrieve Customer Email').first().json.subject }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1616,
+        -256
+      ],
+      "id": "124c87f0-d3cd-4279-9ffd-8fbb4a8fdb45",
+      "name": "Prepare Medium Priority Reply"
+    },
+    {
+      "parameters": {
+        "operation": "reply",
+        "messageId": "={{ $('Retrieve Customer Email').item.json.id }}",
+        "message": "={{ $json.response }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1840,
+        -240
+      ],
+      "id": "5f5c5dde-72c2-4799-97a6-56361add7865",
+      "name": "Send Medium Priority Reply"
+    },
+    {
+      "parameters": {
+        "sendTo": "<YOUR_EMAIL>",
+        "subject": "=🚨 High Priority Customer: {{ $json.customer_name }}",
+        "message": "=<h2>🚨 High Priority Customer Escalation</h2>  <p><strong>Customer:</strong> {{ $json.customer_name }}</p> <p><strong>Email:</strong> {{ $json.customer_email }}</p> <p><strong>Urgency:</strong> {{ $json.urgency }}</p>  <hr>  <p><strong>Subject:</strong> {{ $json.subject }}</p>  <p><strong>Customer Message:</strong><br> {{ $json.customer_message }}</p>  <p><strong>Recommended Action:</strong><br> {{ $json.recommended_action }}</p>  <hr>  <p><strong>Action Required:</strong> Please review this customer issue and decide how to proceed.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1840,
+        -48
+      ],
+      "id": "02c92551-94ce-4b2d-ae80-032a6fdcc717",
+      "name": "Send Human Escalation Alert"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "models/gemini-flash-lite-latest",
+          "mode": "list",
+          "cachedResultName": "models/gemini-flash-lite-latest"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an AI Customer Success Employee.\n\nYour job is to analyze the NEW CUSTOMER EMAIL using the customer's historical information as context.\n\nCUSTOMER HISTORY:\n\nName: {{ $json.Name }}\nEmail: {{ $json.Email }}\nLast active days: {{ $json.last_active_days }}\nSupport tickets: {{ $json.support_tickets }}\nSubscription plan: {{ $json.subscription_plan }}\nPrevious risk level: {{ $json.risk_level }}\nPrevious reason: {{ $json.reason }}\nPrevious recommended action: {{ $json.recommended_action }}\nEngagement trend: {{ $json.engagement_trend }}\n\nNEW CUSTOMER EMAIL:\n\nSubject: {{ $('Retrieve Customer Email').item.json.subject }}\n\nMessage:\n{{ $('Retrieve Customer Email').item.json.text }}\n\nAnalyze the NEW CUSTOMER EMAIL and determine:\n\n1. Customer intent\n2. Message category\n3. Sentiment\n4. Urgency\n5. Whether human intervention is required\n6. Recommended next action\n7. A concise personalized response to the customer\n\nIMPORTANT URGENCY RULE:\n\nDetermine urgency primarily from the NEW CUSTOMER EMAIL.\n\nDo NOT automatically classify a message as High urgency simply because the customer is AT_RISK, inactive, has worsening engagement, or has a high-value subscription.\n\nCustomer history is context only.\n\nUse these guidelines:\n\nLOW:\nGeneral questions, minor requests, informational questions, or issues that do not prevent the customer from using the platform.\n\nMEDIUM:\nThe customer is experiencing a problem that needs assistance but can still reasonably continue using the platform.\n\nHIGH:\nThe customer cannot access or use a critical part of the platform, reports a serious business-impacting problem, security issue, payment problem requiring immediate attention, or explicitly indicates an urgent situation.\n\nOnly use HIGH when the NEW CUSTOMER EMAIL provides evidence for high urgency.\n\nIMPORTANT:\n\nAnalyze the customer's actual email now.\nDo not merely acknowledge these instructions.\nDo not return explanations, reasoning, or commentary.\nReturn ONLY the requested JSON object.\n\nReturn valid JSON with exactly these fields:\n\n{\n  \"intent\": \"\",\n  \"category\": \"\",\n  \"sentiment\": \"\",\n  \"urgency\": \"\",\n  \"human_intervention\": false,\n  \"recommended_action\": \"\",\n  \"response\": \"\"\n}"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.googleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        848,
+        -272
+      ],
+      "id": "9d81a8fd-a5d2-4b96-a1f3-41a69213f654",
+      "name": "Analyze Customer Email"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "fb775388-6bc7-4ab1-b789-f8c3187f49e3",
+              "leftValue": "={{ $json.from.value[0].address }}",
+              "rightValue": "<YOUR_EMAIL>",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        256,
+        -80
+      ],
+      "id": "b589b56a-6777-4102-b284-6dce0a98538c",
+      "name": "Prevent Self-Reply Loop"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3d5137db-5005-4e44-91c6-556ab76d3f5e",
+              "leftValue": "={{ $json.Email }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        608,
+        -256
+      ],
+      "id": "a791117c-63b8-4a3b-9dc0-ba8b52732fa5",
+      "name": "Customer Found?"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "d812d8f6-de88-441e-beea-c405a2be2700",
+              "name": "customer_email",
+              "value": "={{ $('Retrieve Customer Email').item.json.from.value[0].address }}",
+              "type": "string"
+            },
+            {
+              "id": "16896af0-9526-472f-93bb-e686916fe895",
+              "name": "customer_name",
+              "value": "={{ $('Retrieve Customer Email').item.json.from.value[0].name }}",
+              "type": "string"
+            },
+            {
+              "id": "a4d73f0d-1552-48ac-9a32-6fdf83e8dc2b",
+              "name": "subject",
+              "value": "={{ $('Retrieve Customer Email').item.json.subject }}",
+              "type": "string"
+            },
+            {
+              "id": "a65e2cff-f429-494d-9972-d24134ff4afe",
+              "name": "customer_message",
+              "value": "={{ $('Retrieve Customer Email').item.json.text }}",
+              "type": "string"
+            },
+            {
+              "id": "dafcb447-e1b8-4e4f-a309-2faa020c5f5c",
+              "name": "alert_type",
+              "value": "UNKNOWN_CUSTOMER",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        800,
+        -80
+      ],
+      "id": "78faca7f-2a6b-4b78-9bad-2440c0363337",
+      "name": "Prepare Unknown Customer Alert"
+    },
+    {
+      "parameters": {
+        "sendTo": "<YOUR_EMAIL>",
+        "subject": "=⚠️ Unknown Customer: {{ $json.customer_name }}",
+        "message": "=<h2>⚠️ Unknown Customer Alert</h2>  <p><strong>Customer:</strong> {{ $json.customer_name }}</p> <p><strong>Email:</strong> {{ $json.customer_email }}</p>  <hr>  <p><strong>Subject:</strong> {{ $json.subject }}</p>  <p><strong>Customer Message:</strong><br> {{ $json.customer_message }}</p>  <hr>  <p><strong>Alert Type:</strong> {{ $json.alert_type }}</p>  <p><strong>Action Required:</strong> Please verify the customer and determine whether they should be added to the customer database.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1008,
+        48
+      ],
+      "id": "21f50db5-833b-43eb-ae18-b558bce87f9a",
+      "name": "Send Unknown Customer Alert"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "2d3b8189-2381-4440-82bb-6ea5f6be0fc8",
+              "name": "alert_type",
+              "value": "AI_PROCESSING_ERROR",
+              "type": "string"
+            },
+            {
+              "id": "02d281f2-360a-4898-94e3-70732af4bfda",
+              "name": "error_message",
+              "value": "={{ $json.error?.message || $json.error || 'AI processing failed' }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1344,
+        -32
+      ],
+      "id": "c5df68d5-ebe6-4256-aaef-737de8840d7a",
+      "name": "Prepare AI Error Alert"
+    },
+    {
+      "parameters": {
+        "sendTo": "<YOUR_EMAIL>",
+        "subject": "🚨 AI Processing Error",
+        "message": "=<h2>🚨 AI Processing Error</h2>  <p><strong>Error:</strong><br> {{ $json.error_message }}</p>  <p><strong>Alert Type:</strong> {{ $json.alert_type }}</p>  <p><strong>Action:</strong> Please check the AI analysis step in the workflow.</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1568,
+        192
+      ],
+      "id": "c12d66c0-daff-411c-a7b0-9d0c5aa797b6",
+      "name": "Send AI Error Alert"
+    },
+    {
+      "parameters": {
+        "dataTableId": "<YOUR_N8N_DATA_TABLE_ID>",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "human_intervention": "={{ $('Parse AI Response').item.json.human_intervention }}",
+            "customer_email": "={{ $('Retrieve Customer Email').first().json.from.value[0].address }}",
+            "customer_name": "={{ $('Retrieve Customer Email').first().json.from.value[0].name }}",
+            "subject": "={{ $('Retrieve Customer Email').first().json.subject }}",
+            "customer_message": "={{ $('Retrieve Customer Email').first().json.text }}",
+            "intent": "={{ $('Parse AI Response').item.json.intent }}",
+            "category": "={{ $('Parse AI Response').item.json.category }}",
+            "sentiment": "={{ $('Parse AI Response').item.json.sentiment }}",
+            "urgency": "={{ $('Parse AI Response').item.json.urgency }}",
+            "recommended_action": "={{ $('Parse AI Response').item.json.recommended_action }}",
+            "response": "={{ $('Parse AI Response').item.json.response }}",
+            "action_taken": "AUTO_REPLY",
+            "processing_status": "SUCCESS",
+            "message_id": "={{ $('Retrieve Customer Email').first().json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "customer_message",
+              "displayName": "customer_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "human_intervention",
+              "displayName": "human_intervention",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "recommended_action",
+              "displayName": "recommended_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "response",
+              "displayName": "response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "action_taken",
+              "displayName": "action_taken",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "processing_status",
+              "displayName": "processing_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2176,
+        -240
+      ],
+      "id": "8830d89c-8159-40ca-9d27-9c8ccfd7978f",
+      "name": "Log Customer Interaction"
+    },
+    {
+      "parameters": {
+        "dataTableId": "<YOUR_N8N_DATA_TABLE_ID>",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "human_intervention": "={{ $('Parse AI Response').first().json.human_intervention }}",
+            "customer_email": "={{ $('Retrieve Customer Email').first().json.from.value[0].address }}",
+            "customer_name": "={{ $('Retrieve Customer Email').first().json.from.value[0].name }}",
+            "subject": "={{ $('Retrieve Customer Email').first().json.subject }}",
+            "customer_message": "={{ $('Retrieve Customer Email').first().json.text }}",
+            "intent": "={{ $('Parse AI Response').first().json.intent }}",
+            "category": "={{ $('Parse AI Response').first().json.category }}",
+            "sentiment": "={{ $('Parse AI Response').first().json.sentiment }}",
+            "urgency": "={{ $('Parse AI Response').first().json.urgency }}",
+            "recommended_action": "={{ $('Parse AI Response').first().json.recommended_action }}",
+            "response": "={{ $('Parse AI Response').first().json.response }}",
+            "action_taken": "HUMAN_ESCALATION",
+            "processing_status": "SUCCESS",
+            "message_id": "={{ $('Retrieve Customer Email').first().json.id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "customer_email",
+              "displayName": "customer_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "customer_name",
+              "displayName": "customer_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "subject",
+              "displayName": "subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "customer_message",
+              "displayName": "customer_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "intent",
+              "displayName": "intent",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "category",
+              "displayName": "category",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "sentiment",
+              "displayName": "sentiment",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "human_intervention",
+              "displayName": "human_intervention",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "recommended_action",
+              "displayName": "recommended_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "response",
+              "displayName": "response",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "action_taken",
+              "displayName": "action_taken",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "processing_status",
+              "displayName": "processing_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "message_id",
+              "displayName": "message_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2064,
+        -48
+      ],
+      "id": "8c6916eb-b05d-40e5-995a-dfd3722f6ba2",
+      "name": "Log Human Escalation"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Prepare Human Escalation": {
+      "main": [
+        [
+          {
+            "node": "Send Human Escalation Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retrieve Customer Email": {
+      "main": [
+        [
+          {
+            "node": "Prevent Self-Reply Loop",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Customer Email": {
+      "main": [
+        [
+          {
+            "node": "Retrieve Customer Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Customer History": {
+      "main": [
+        [
+          {
+            "node": "Customer Found?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Response Router",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare AI Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response Router": {
+      "main": [
+        [
+          {
+            "node": "Prepare Low Priority Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Medium Priority Reply",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Human Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Low Priority Reply": {
+      "main": [
+        [
+          {
+            "node": "Send Low Priority Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Medium Priority Reply": {
+      "main": [
+        [
+          {
+            "node": "Send Medium Priority Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Customer Email": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prevent Self-Reply Loop": {
+      "main": [
+        [
+          {
+            "node": "Get Customer History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Customer Found?": {
+      "main": [
+        [
+          {
+            "node": "Analyze Customer Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Prepare Unknown Customer Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Unknown Customer Alert": {
+      "main": [
+        [
+          {
+            "node": "Send Unknown Customer Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare AI Error Alert": {
+      "main": [
+        [
+          {
+            "node": "Send AI Error Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Medium Priority Reply": {
+      "main": [
+        [
+          {
+            "node": "Log Customer Interaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Low Priority Reply": {
+      "main": [
+        [
+          {
+            "node": "Log Customer Interaction",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Human Escalation Alert": {
+      "main": [
+        [
+          {
+            "node": "Log Human Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}

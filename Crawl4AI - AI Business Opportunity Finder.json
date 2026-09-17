@@ -1,0 +1,630 @@
+{
+  "name": "Crawl4AI - AI Business Opportunity Finder",
+  "nodes": [
+    {
+      "parameters": {
+        "model": "google/gemma-4-26b-a4b-it",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        704,
+        -224
+      ],
+      "id": "1c2df56d-3316-4c3f-a0ff-e22bfd03d661",
+      "name": "OpenRouter Chat Model"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://google-maps-scraper:8080/api/v1/jobs",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"name\": \"Los Angeles Handyman Test\",\n  \"keywords\": [\n    \"septic tank pumping\"\n  ],\n  \"lang\": \"en\",\n  \"zoom\": 15,\n  \"lat\": \"34.0522\",\n  \"lon\": \"-118.2437\",\n  \"fast_mode\": false,\n  \"radius\": 5000,\n  \"depth\": 5,\n  \"email\": false,\n  \"extra_reviews\": false,\n  \"max_time\": 300000000000,\n  \"proxies\": []\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        640,
+        -720
+      ],
+      "id": "32c3329d-082f-4bb0-8869-e25a3746dd5a",
+      "name": "Create Google Maps Job"
+    },
+    {
+      "parameters": {
+        "url": "=http://google-maps-scraper:8080/api/v1/jobs/{{$json.id || $json.ID}}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        1648,
+        -720
+      ],
+      "id": "6d93ffb5-8f5a-4289-b487-c3aa2268f11b",
+      "name": "Check Scraper Job Status"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "85528c2e-73a0-4704-912c-15a7fb24cd34",
+              "leftValue": "={{ $json.Status }}",
+              "rightValue": "ok",
+              "operator": {
+                "type": "string",
+                "operation": "notEquals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1936,
+        -496
+      ],
+      "id": "642a39da-8f17-48f4-9a5d-8b7b2b3737dd",
+      "name": "Job Still Working?"
+    },
+    {
+      "parameters": {
+        "amount": 30
+      },
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        1472,
+        -592
+      ],
+      "id": "5e3e5ba0-832e-4671-b88e-8f9c567848a0",
+      "name": "Wait 30 Seconds"
+    },
+    {
+      "parameters": {
+        "url": "=http://google-maps-scraper:8080/api/v1/jobs/{{$json.ID}}/download",
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2112,
+        -288
+      ],
+      "id": "226034b5-38e3-4785-abde-153ce06b4686",
+      "name": "Download Scraper Results"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1.1,
+      "position": [
+        1424,
+        -288
+      ],
+      "id": "9abdb570-4937-4d32-ad8c-3fa74e270ddd",
+      "name": "Extract Business Records"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "eb46ac68-4958-4c18-a91c-50bc632c2f0c",
+              "leftValue": "={{ $json.website }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1696,
+        -64
+      ],
+      "id": "82ab5072-0331-42fa-a34b-90bfb100035c",
+      "name": "Has Website?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://crawl4ai:11235/crawl",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer <REDACTED_API_TOKEN>"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ urls: [$json.website] }) }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        2112,
+        -80
+      ],
+      "id": "8f3a9520-59f2-4aa8-b4bc-f5eebc903739",
+      "name": "Crawl4AI Website Audit"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => {\n  const result = item.json.results?.[0];\n\n  return {\n    json: {\n      url: result?.url || \"\",\n      success: result?.success || false,\n      status_code: result?.status_code || 0,\n      title: result?.metadata?.title || \"\",\n      description: result?.metadata?.description || \"\",\n     markdown: (result?.markdown?.raw_markdown || \"\").slice(0, 8000),\n      internal_links: result?.links?.internal || [],\n      external_links: result?.links?.external || []\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        192,
+        -64
+      ],
+      "id": "2fcea734-7a19-4c76-8418-a9d9e2127a38",
+      "name": "Clean Crawl4AI Data"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the website data below for a Business Finder system.\n\nYour job is to identify the business and evaluate its potential for AI and automation services.\n\nReturn ONLY valid JSON. Do not include markdown, explanations, or code fences.\n\nUse exactly this structure:\n\n{\n  \"business_name\": \"\",\n  \"industry\": \"\",\n  \"website\": \"\",\n  \"overall_score\": 0,\n  \"opportunity_1\": \"\",\n  \"opportunity_2\": \"\",\n  \"opportunity_3\": \"\",\n  \"opportunity_4\": \"\",\n  \"opportunity_5\": \"\"\n}\n\nRules:\n\n- business_name: identify the business or organization from the website.\n- industry: identify the most appropriate industry.\n- website: use the website URL provided in the data.\n- overall_score: score the business from 0 to 100 based on its potential need for AI, automation, lead generation, customer service automation, internal workflow automation, or similar business automation.\n- opportunity_1 through opportunity_5: provide five specific and realistic AI/automation opportunities for this business.\n- Rank the opportunities from highest potential value to lowest.\n- Avoid generic suggestions. Base the opportunities on the actual website content.\n- If an item cannot be determined reliably, use an empty string.\n\nWebsite data:\n\n{{ JSON.stringify($json) }}",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        576,
+        -432
+      ],
+      "id": "06dfd482-6b43-4376-8876-6dd7788037db",
+      "name": "AI Business Opportunity Analysis",
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "jsCode": "const aiText = $input.first().json.text;\n\nconst data = JSON.parse(aiText);\n\nreturn [\n  {\n    json: {\n      business_name: data.business_name,\n      industry: data.industry,\n      website: data.website,\n      overall_score: data.overall_score,\n      opportunity_1: data.opportunity_1,\n      opportunity_2: data.opportunity_2,\n      opportunity_3: data.opportunity_3,\n      opportunity_4: data.opportunity_4,\n      opportunity_5: data.opportunity_5,\n      audit_date: new Date().toISOString()\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1008,
+        -448
+      ],
+      "id": "24b618fd-c13c-4b64-aa71-6be2e499ecd9",
+      "name": "Parse AI Analysis"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Business Name": "={{ $json.business_name }}",
+            "Industry": "={{ $json.industry }}",
+            "Website": "={{ $json.website }}",
+            "Overall Score": "={{ $json.overall_score }}",
+            "Opportunity 1": "={{ $json.opportunity_1 }}",
+            "Opportunity 2": "={{ $json.opportunity_2 }}",
+            "Opportunity 3": "={{ $json.opportunity_3 }}",
+            "Opportunity 4": "={{ $json.opportunity_4 }}",
+            "Opportunity 5": "={{ $json.opportunity_5 }}",
+            "Audit Date": "={{ $json.audit_date }}"
+          },
+          "matchingColumns": [
+            "Website"
+          ],
+          "schema": [
+            {
+              "id": "Business Name",
+              "displayName": "Business Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Industry",
+              "displayName": "Industry",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Overall Score",
+              "displayName": "Overall Score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Opportunity 1",
+              "displayName": "Opportunity 1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Opportunity 2",
+              "displayName": "Opportunity 2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Opportunity 3",
+              "displayName": "Opportunity 3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Opportunity 4",
+              "displayName": "Opportunity 4",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Opportunity 5",
+              "displayName": "Opportunity 5",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Audit Date",
+              "displayName": "Audit Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1184,
+        -448
+      ],
+      "id": "16b8fefc-f238-4466-8a5b-1f6bc414570a",
+      "name": "Save Business Audit"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        176,
+        -768
+      ],
+      "id": "ef366e1b-c31f-4946-8c8d-59ee8d85c15b",
+      "name": "Start Business Finder"
+    },
+    {
+      "parameters": {
+        "maxItems": 37
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        -96
+      ],
+      "id": "ac9fc82f-342e-48b8-801d-53955c4be29c",
+      "name": "Limit"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().map(item => ({\n  json: {\n    ai_status: \"FAILED\",\n    error_message: item.json.error?.message || \"AI analysis failed\",\n    website: item.json.website || \"\",\n    audit_date: new Date().toISOString()\n  }\n}));"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        992,
+        -208
+      ],
+      "id": "7a6467ef-5b2b-4d42-8e8b-e7c7e503096c",
+      "name": "Handle AI Error"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        416,
+        -192
+      ],
+      "id": "92883a88-b6ed-48df-bcaa-635462b26b52",
+      "name": "Loop Over Items"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "OpenRouter Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Business Opportunity Analysis",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Google Maps Job": {
+      "main": [
+        [
+          {
+            "node": "Check Scraper Job Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Scraper Job Status": {
+      "main": [
+        [
+          {
+            "node": "Job Still Working?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Job Still Working?": {
+      "main": [
+        [
+          {
+            "node": "Wait 30 Seconds",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Download Scraper Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 30 Seconds": {
+      "main": [
+        [
+          {
+            "node": "Check Scraper Job Status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Scraper Results": {
+      "main": [
+        [
+          {
+            "node": "Extract Business Records",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Business Records": {
+      "main": [
+        [
+          {
+            "node": "Has Website?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Website?": {
+      "main": [
+        [
+          {
+            "node": "Limit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Crawl4AI Website Audit": {
+      "main": [
+        [
+          {
+            "node": "Clean Crawl4AI Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean Crawl4AI Data": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Business Opportunity Analysis": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Handle AI Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Analysis": {
+      "main": [
+        [
+          {
+            "node": "Save Business Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Business Audit": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Business Finder": {
+      "main": [
+        [
+          {
+            "node": "Create Google Maps Job",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Limit": {
+      "main": [
+        [
+          {
+            "node": "Crawl4AI Website Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "AI Business Opportunity Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Handle AI Error": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}

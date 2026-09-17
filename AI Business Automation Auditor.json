@@ -1,0 +1,227 @@
+{
+  "name": "AI Business Automation Auditor",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "Datasets",
+        "datasetId": "={{ $json.defaultDatasetId }}",
+        "offset": {},
+        "options": {}
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        -352,
+        -640
+      ],
+      "id": "34b1e4da-7941-4a06-8238-06fdb8bf6893",
+      "name": "Get Business Results"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "0e49a5d0-fdab-43c0-8931-4a5e8d0abe29",
+              "leftValue": "={{ $json.website }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -128,
+        -640
+      ],
+      "id": "a7710c6d-e96d-44c0-a1ac-7ca5c7c91b8b",
+      "name": "Has Website?"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "business-finder",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -800,
+        -640
+      ],
+      "id": "2f8320d3-eb01-4a90-bca9-c392c0fba6e8",
+      "name": "Business Finder Request",
+      "webhookId": "5edb1bef-5150-4932-8ad3-c310c70c601c"
+    },
+    {
+      "parameters": {
+        "actorSource": "store",
+        "actorId": {
+          "__rl": true,
+          "value": "nwua9Gu5YrADL7ZDj",
+          "mode": "list",
+          "cachedResultName": "Google Maps Scraper (compass/crawler-google-places)",
+          "cachedResultUrl": "https://console.apify.com/actors/nwua9Gu5YrADL7ZDj/input"
+        },
+        "customBody": "={{ JSON.stringify({\n  searchStringsArray: [$json.body.business_type],\n  locationQuery: $json.body.location,\n  maxCrawledPlacesPerSearch: $json.body.limit,\n  language: \"en\",\n  website: \"withWebsite\"\n}) }}",
+        "timeout": {},
+        "maxTotalChargeUsd": {}
+      },
+      "type": "@apify/n8n-nodes-apify.apify",
+      "typeVersion": 1,
+      "position": [
+        -576,
+        -640
+      ],
+      "id": "8783ff97-14e5-4fb1-ab62-3192e750be92",
+      "name": "Find Businesses — Google Maps"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        96,
+        -640
+      ],
+      "id": "7561d16d-57b3-46b7-b462-b97c0db8042c",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "workflowId": {
+          "__rl": true,
+          "value": "t3Y9UiiCI2lK4k81",
+          "mode": "list",
+          "cachedResultUrl": "/workflow/t3Y9UiiCI2lK4k81",
+          "cachedResultName": "Website Auditor Engine"
+        },
+        "workflowInputs": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "website": "={{$json.website}}"
+          },
+          "matchingColumns": [
+            "website"
+          ],
+          "schema": [
+            {
+              "id": "website",
+              "displayName": "website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "canBeUsedToMatch": true,
+              "type": "string",
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": true
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.3,
+      "position": [
+        320,
+        -640
+      ],
+      "id": "c1aec4b7-a79c-4962-a5d8-42fc999189d1",
+      "name": "Call 'Website Auditor Engine'"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get Business Results": {
+      "main": [
+        [
+          {
+            "node": "Has Website?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Website?": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Business Finder Request": {
+      "main": [
+        [
+          {
+            "node": "Find Businesses — Google Maps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Find Businesses — Google Maps": {
+      "main": [
+        [
+          {
+            "node": "Get Business Results",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Call 'Website Auditor Engine'",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Call 'Website Auditor Engine'": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}

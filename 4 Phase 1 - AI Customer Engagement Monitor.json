@@ -1,0 +1,827 @@
+{
+  "name": "4 Phase 1 - AI Customer Engagement Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bf325d8a-c278-4925-8b37-8f38f2c1a45c",
+              "name": "name",
+              "value": "={{ $json.body.name }}",
+              "type": "string"
+            },
+            {
+              "id": "e30ae20e-aeb4-434c-a84d-fc87f0bdc011",
+              "name": "email",
+              "value": "={{ $json.body.email }}",
+              "type": "string"
+            },
+            {
+              "id": "018d0219-64fa-4d75-9f81-ba50bf2e4daf",
+              "name": "last_active_days",
+              "value": "={{ $json.body.last_active_days }}",
+              "type": "number"
+            },
+            {
+              "id": "cdf7ef0e-b6bd-4b9f-9430-c6dc1bdda45d",
+              "name": "support_tickets",
+              "value": "={{ $json.body.support_tickets }}",
+              "type": "number"
+            },
+            {
+              "id": "48ae401d-5010-428b-bc44-d0df491eff71",
+              "name": "subscription_plan",
+              "value": "={{ $json.body.subscription_plan }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        832,
+        -304
+      ],
+      "id": "e6420510-def8-47b0-8523-d0e317614e95",
+      "name": "Prepare Customer Data"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.6-luna",
+          "mode": "list",
+          "cachedResultName": "GPT-5.6-LUNA"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=`You are an AI Customer Engagement Analyst.\n\nAnalyze the following customer and determine their engagement risk level.\n\nCurrent Customer Data:\n\nCustomer Name: {{ $json.name }}\nDays Since Last Activity: {{ $json.last_active_days }}\nNumber of Support Tickets: {{ $json.support_tickets }}\nSubscription Plan: {{ $json.subscription_plan }}\n\nPrevious Customer Analysis:\n\nPrevious Risk Level: {{ $json.previous_risk_level }}\nPrevious Reason: {{ $json.previous_reason }}\nPrevious Recommended Action: {{ $json.previous_recommended_action }}\n\nAnalyze the customer's current situation and compare it with the previous analysis.\n\nDetermine whether the customer's engagement has improved, worsened, or remained stable. Use the previous analysis as context, but base the risk classification primarily on the current customer data.\nClassify the customer using exactly one of these three risk levels:\n\nHEALTHY - The customer appears actively engaged and has no significant concerns.\n\nAT_RISK - The customer shows signs of declining engagement and may need proactive follow-up.\n\nURGENT - The customer has serious engagement or support concerns requiring immediate attention.\n\nReturn ONLY valid JSON in exactly this format:\n\n{\n  \"risk_level\": \"HEALTHY\",\n  \"reason\": \"Brief explanation referencing the customer's actual data\",\n  \"recommended_action\": \"Specific action to take\"\n}\n\nThe risk_level value must be exactly one of:\nHEALTHY\nAT_RISK\nURGENT\n\nDo not include markdown formatting or any text outside the JSON.\n\nAnalyze the customer's current situation and compare it with the previous analysis.\n\nDetermine whether the customer's engagement has:\n\n- IMPROVED\n- WORSENED\n- REMAINED_STABLE\n\nUse the previous analysis as historical context, but make your risk assessment based primarily on the current customer data.\n\nReturn ONLY valid JSON in exactly this format:\n\n{\n  \"risk_level\": \"HEALTHY\",\n  \"reason\": \"Explain the current customer risk assessment.\",\n  \"recommended_action\": \"Describe the recommended action.\",\n  \"engagement_trend\": \"IMPROVED\"\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        1104,
+        -304
+      ],
+      "id": "16c02541-bd6e-43fb-8066-c051ce8caf13",
+      "name": "AI Customer Risk Analysis"
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\n\nfor (let i = 0; i < items.length; i++) {\n  const item = items[i];\n\n  // Get the AI response\n  const aiText = item.json.output[0].content[0].text;\n  const analysis = JSON.parse(aiText);\n\n  // Get the original customer data from the earlier Edit Fields node\n  const customer = $('Prepare Customer Data').item.json;\n\n  // Combine customer data and AI analysis\n  item.json = {\n    ...customer,\n    ...analysis,\n  };\n}\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1376,
+        -16
+      ],
+      "id": "4b255fd5-013e-4e7f-8766-7d817658ba3a",
+      "name": "Parse AI Response"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.risk_level }}",
+                    "rightValue": "AT_RISK",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "825efc42-3146-419a-90e9-93145435e6d0"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "AT_RISK"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "35821ccf-df11-4f28-b08e-4670497b5b31",
+                    "leftValue": "={{ $json.risk_level }}",
+                    "rightValue": "HEALTHY",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "HEALTHY"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c176df8d-4415-4f66-be0a-6565b93a4d26",
+                    "leftValue": "={{ $json.risk_level }}",
+                    "rightValue": "URGENT",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "URGENT"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1808,
+        -128
+      ],
+      "id": "0215cb9c-b72c-41fa-9edf-dcb39ff48873",
+      "name": "Risk Level Router"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $json.Email }}",
+        "subject": "={{ $json.email_subject }}",
+        "emailType": "text",
+        "message": "={{ $json.email_body }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2288,
+        -288
+      ],
+      "id": "f2208f15-4c6f-46cd-b053-0df06cb0eff3",
+      "name": "Send Follow-Up Email"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "<YOUR_WEBHOOK_PATH>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -32,
+        -224
+      ],
+      "id": "0bb64ec3-0c8f-4246-a81f-3a6c7f069500",
+      "name": "Receive Customer Data"
+    },
+    {
+      "parameters": {
+        "operation": "get",
+        "dataTableId": "<YOUR_N8N_DATA_TABLE_ID>",
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "Email",
+              "keyValue": "={{ $json.email }}"
+            }
+          ]
+        },
+        "limit": 1,
+        "orderBy": true
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        784,
+        -32
+      ],
+      "id": "193af16e-7e38-4a0a-ac6e-b291e7ebb84c",
+      "name": "Get Previous Customer Analysis",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "sendTo": "<YOUR_EMAIL>",
+        "subject": "={{ $json.alert_subject }}",
+        "message": "={{ $json.alert_message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        2240,
+        128
+      ],
+      "id": "a34573fb-23d1-4da4-951b-df17002eb28a",
+      "name": "Send Urgent Alert Email 🚨"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "23ef787d-f80f-4465-a685-d4d54be6f4d7",
+              "name": "alert_subject",
+              "value": "🚨 URGENT: Customer Requires Immediate Attention",
+              "type": "string"
+            },
+            {
+              "id": "1c2b221d-7bd0-4384-9284-9471a84b6cd7",
+              "name": "alert_message",
+              "value": "=URGENT CUSTOMER ENGAGEMENT ALERT\n\nCustomer: {{ $json.Name }}\nEmail: {{ $json.Email }}\nSubscription Plan: {{ $json.subscription_plan }}\n\nRisk Analysis:\n{{ $json.reason }}\n\nRecommended Action:\n{{ $json.recommended_action }}\n\nPlease review this customer immediately.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2048,
+        96
+      ],
+      "id": "894cd009-3dde-455f-9ce0-5b2927dc72e0",
+      "name": "Create Urgent Alert Details"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "698a4418-8429-4f6d-880b-23e1c73ba3b3",
+              "name": "email_subject",
+              "value": "We noticed you haven't been active recently",
+              "type": "string"
+            },
+            {
+              "id": "1a64db67-a343-4510-8a5c-9c006ad67087",
+              "name": "email_body",
+              "value": "=Hi {{ $json.name }},\n\nWe noticed that you haven't been active recently and wanted to check in.\n\nOur customer engagement system identified your account as requiring some additional attention.\n\nReason:\n{{ $json.reason }}\n\nWe recommend the following action:\n\n{{ $json.recommended_action }}\n\nPlease let us know if there is anything we can do to help.\n\nBest regards,\nCustomer Success Team",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2048,
+        -288
+      ],
+      "id": "c034eb26-69fc-4a89-a074-4e346238045f",
+      "name": "Send At-Risk Follow-Up Email"
+    },
+    {
+      "parameters": {
+        "dataTableId": "<YOUR_N8N_DATA_TABLE_ID>",
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $json.name }}",
+            "Email": "={{ $json.email }}",
+            "last_active_days": "={{ $json.last_active_days }}",
+            "support_tickets": "={{ $json.support_tickets }}",
+            "subscription_plan": "={{ $json.subscription_plan }}",
+            "risk_level": "={{ $json.risk_level }}",
+            "reason": "={{ $json.reason }}",
+            "recommended_action": "={{ $json.recommended_action }}",
+            "engagement_trend": "={{ $json.engagement_trend }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "last_active_days",
+              "displayName": "last_active_days",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "support_tickets",
+              "displayName": "support_tickets",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "subscription_plan",
+              "displayName": "subscription_plan",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "risk_level",
+              "displayName": "risk_level",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "recommended_action",
+              "displayName": "recommended_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "engagement_trend",
+              "displayName": "engagement_trend",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1584,
+        -304
+      ],
+      "id": "465e3f5d-1163-4803-bcc8-da3803b896f8",
+      "name": "Save Customer Analysis History"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a9ee1b90-9c80-4ba3-9f32-d8b4049ff717",
+              "name": "name",
+              "value": "={{ $('Prepare Customer Data').first().json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "63b202be-27bd-4652-8b51-b8cf748d3140",
+              "name": "=email",
+              "value": "={{ $('Prepare Customer Data').first().json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "a7a03919-564d-4679-97c1-1768cead6fb4",
+              "name": "=last_active_days",
+              "value": "={{ $('Prepare Customer Data').first().json.last_active_days }}",
+              "type": "string"
+            },
+            {
+              "id": "1006313a-ab76-455d-be54-a2f924be6557",
+              "name": "support_tickets",
+              "value": "={{ $('Prepare Customer Data').first().json.support_tickets }}",
+              "type": "number"
+            },
+            {
+              "id": "43c8a442-9122-4169-8821-f6dee13da75d",
+              "name": "subscription_plan",
+              "value": "={{ $('Prepare Customer Data').first().json.subscription_plan }}",
+              "type": "string"
+            },
+            {
+              "id": "d19477e0-8ee8-4bc0-847d-265c934ea563",
+              "name": "=previous_risk_level",
+              "value": "={{ $json.risk_level || \"NONE\" }}",
+              "type": "string"
+            },
+            {
+              "id": "3689e98f-ba26-42b1-b8b2-aca3ca30bf33",
+              "name": "=previous_reason",
+              "value": "={{ $json.reason || \"No previous customer analysis available. This is the customer's first recorded analysis.\" }}",
+              "type": "string"
+            },
+            {
+              "id": "435f6fb1-d304-4284-9b2a-7d6f97d554ec",
+              "name": "previous_recommended_action",
+              "value": "={{ $json.recommended_action || \"Establish an initial engagement baseline and monitor future customer activity.\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        992,
+        -16
+      ],
+      "id": "0e1f0271-40b9-440b-8460-b514ab559098",
+      "name": "Prepare Customer Data for Analysis"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "be3b4a34-7d16-4dd4-aee3-d053d829436d",
+              "name": "status",
+              "value": "Customer is healthy and actively engaged. No follow-up is required.",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2096,
+        -96
+      ],
+      "id": "85ac75fd-bcac-4e8a-9e19-fcce0894feb8",
+      "name": "Record Healthy Customer"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.6-luna",
+          "mode": "list",
+          "cachedResultName": "GPT-5.6-LUNA"
+        },
+        "responses": {
+          "values": [
+            {
+              "content": "=You are a customer data validation system.\n\nAnalyze the following incoming customer submission and determine whether it is a legitimate customer entry.\n\nCustomer data:\n\nName: {{ $json.body.name }}\nEmail: {{ $json.body.email }}\nLast active days: {{ $json.body.last_active_days }}\nSupport tickets: {{ $json.body.support_tickets }}\nSubscription plan: {{ $json.body.subscription_plan }}\n\nClassify the entry using exactly one of these categories:\n\nVALID\n- Appears to be legitimate customer data.\n\nSPAM\n- Contains obvious nonsense, suspicious, irrelevant, or clearly fraudulent information.\n\nTEST_ENTRY\n- Appears to be a demonstration, test, placeholder, or intentionally fake submission.\n\nReturn ONLY valid JSON in this exact format:\n\n{\n  \"classification\": \"VALID\",\n  \"reason\": \"Brief explanation\"\n}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.3,
+      "position": [
+        96,
+        -16
+      ],
+      "id": "200d316a-f272-4ff0-bd9a-3ea0febb037d",
+      "name": "Validate Customer Entry"
+    },
+    {
+      "parameters": {
+        "jsCode": "const input = $input.first().json;\n\n// Get and parse the AI response\nconst aiText = input.output[0].content[0].text;\nconst validation = JSON.parse(aiText);\n\n// Get the original webhook data\nconst originalData = $('Receive Customer Data').first().json;\n\n// Return the original data plus the validation result\nreturn [\n  {\n    json: {\n      ...originalData,\n      ...validation,\n    },\n  },\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        352,
+        -288
+      ],
+      "id": "36d09c4f-cdbc-4f02-bcf4-7f8db28fc28a",
+      "name": "Parse Entry Validation"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.classification }}",
+                    "rightValue": "VALID",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "b8b5be0d-25ba-4631-86c6-76763b3d7ffb"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "VALID"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "51ff5cee-1ed5-4a03-a94e-9389f273260b",
+                    "leftValue": "={{ $json.classification }}",
+                    "rightValue": "SPAM",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "SPAM"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "cd2b6a43-770d-4515-94ec-7fa90d661575",
+                    "leftValue": "={{ $json.classification }}",
+                    "rightValue": "TEST_ENTRY",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "TEST_ENTRY"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        576,
+        -288
+      ],
+      "id": "db23863a-6866-48dd-91cd-06748689b098",
+      "name": "Entry Validation Router"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Prepare Customer Data": {
+      "main": [
+        [
+          {
+            "node": "Get Previous Customer Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Customer Risk Analysis": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse AI Response": {
+      "main": [
+        [
+          {
+            "node": "Save Customer Analysis History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Level Router": {
+      "main": [
+        [
+          {
+            "node": "Send At-Risk Follow-Up Email",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record Healthy Customer",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Create Urgent Alert Details",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Receive Customer Data": {
+      "main": [
+        [
+          {
+            "node": "Validate Customer Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Previous Customer Analysis": {
+      "main": [
+        [
+          {
+            "node": "Prepare Customer Data for Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Urgent Alert Details": {
+      "main": [
+        [
+          {
+            "node": "Send Urgent Alert Email 🚨",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send At-Risk Follow-Up Email": {
+      "main": [
+        [
+          {
+            "node": "Send Follow-Up Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Customer Analysis History": {
+      "main": [
+        [
+          {
+            "node": "Risk Level Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Customer Data for Analysis": {
+      "main": [
+        [
+          {
+            "node": "AI Customer Risk Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate Customer Entry": {
+      "main": [
+        [
+          {
+            "node": "Parse Entry Validation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Entry Validation": {
+      "main": [
+        [
+          {
+            "node": "Entry Validation Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Entry Validation Router": {
+      "main": [
+        [
+          {
+            "node": "Prepare Customer Data",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}

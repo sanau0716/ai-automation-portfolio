@@ -1,0 +1,946 @@
+{
+  "name": "2 Phase 3: Project 2 — AI Lead Follow-Up Monitor",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        128
+      ],
+      "id": "b48ce5da-29f5-4fe2-8e58-9d3f08bd0621",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        128
+      ],
+      "id": "8e750747-3d8c-44b6-bb76-3bd1b1141f70",
+      "name": "Get Leads from Database"
+    },
+    {
+      "parameters": {
+        "jsCode": "return $input.all().filter(item => {\n  const classification = item.json.classification;\n\n  return (\n    classification === 'High-Value Lead' ||\n    classification === 'Qualified Lead'\n  );\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        128
+      ],
+      "id": "c9b55a3c-71c1-4f25-ad9a-59af1690aa10",
+      "name": "Filter Eligible Leads"
+    },
+    {
+      "parameters": {
+        "jsCode": "const now = new Date();\n\nreturn $input.all().filter(item => {\n  const lead = item.json;\n\n  // New leads have not been contacted yet\n  if (!lead[\"Last Contacted\"]) {\n    return lead.Status === \"New\";\n  }\n\n  const lastContacted = new Date(lead[\"Last Contacted\"]);\n  const hoursSinceContact =\n    (now - lastContacted) / (1000 * 60 * 60);\n\n  // Follow up after 24 hours\n  return hoursSinceContact >= 24;\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        672,
+        128
+      ],
+      "id": "c242b064-9259-426c-a467-2c167c5d526d",
+      "name": "Check Follow-Up Eligibility"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const output = $json.output || '';\n\nconst followUpType =\n  output.match(/FOLLOW_UP_TYPE:\\s*(.*)/)?.[1]?.trim() || '';\n\nconst priority =\n  output.match(/PRIORITY:\\s*(.*)/)?.[1]?.trim() || '';\n\nconst subject =\n  output.match(/SUBJECT:\\s*(.*)/)?.[1]?.trim() || '';\n\nconst messageMatch =\n  output.match(/MESSAGE:\\s*([\\s\\S]*?)(?=\\nMESSAGE:|\\nRECOMMENDATION:|$)/);\n\nconst message =\n  messageMatch?.[1]?.trim() || '';\n\nconst recommendation =\n  output.match(/RECOMMENDATION:\\s*([\\s\\S]*)/)?.[1]?.trim() || '';\n\nconst sequence =\n  $('Determine Follow-Up Sequence').all()[$itemIndex].json.follow_up_number;\n\nreturn {\n  json: {\n    ...$json,\n    follow_up_number: sequence,\n    follow_up_type: followUpType,\n    follow_up_priority: priority,\n    follow_up_subject: subject,\n    follow_up_message: message,\n    follow_up_recommendation: recommendation\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1696,
+        -16
+      ],
+      "id": "01d7a5b8-c69e-4de7-a200-06090c0b7e2e",
+      "name": "Parse Follow-Up Strategy"
+    },
+    {
+      "parameters": {
+        "sendTo": "={{ $('Check Follow-Up Eligibility').item.json.email }}",
+        "subject": "={{ $('Parse Follow-Up Strategy').item.json.follow_up_subject }}",
+        "message": "={{ $('Parse Follow-Up Strategy').item.json.follow_up_message }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1920,
+        -16
+      ],
+      "id": "6d75c19c-ed82-40bc-9c16-48ef41db7924",
+      "name": "Send AI Follow-Up",
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const status = $json.Status || '';\n\nlet followUpNumber = 1;\n\nif (\n  status === 'AI Follow-Up Sent' ||\n  status === 'Follow-Up #1 Sent'\n) {\n  followUpNumber = 2;\n} else if (status === 'Follow-Up #2 Sent') {\n  followUpNumber = 3;\n} else if (status === 'Follow-Up #3 Sent') {\n  followUpNumber = 4;\n} else if (status === 'Follow-Up #4 Sent') {\n  followUpNumber = 5;\n}\n\nreturn {\n  json: {\n    ...$json,\n    follow_up_number: followUpNumber\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        128
+      ],
+      "id": "7f67a17d-4681-4565-a6b1-02594457dd04",
+      "name": "Determine Follow-Up Sequence"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "66e16b8d-595f-4550-85fb-f5a09d315311",
+              "leftValue": "={{ $json.follow_up_number }}",
+              "rightValue": 3,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1120,
+        128
+      ],
+      "id": "cf4ac9af-6ba7-4245-ba8f-b5a535cc1bca",
+      "name": "Stop at Follow-Up #4"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $json.email }}",
+            "Status": "Manual Review Required"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_score",
+              "displayName": "lead_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "classification",
+              "displayName": "classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recommended_action",
+              "displayName": "recommended_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Created At",
+              "displayName": "Created At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Contacted",
+              "displayName": "Last Contacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1408,
+        272
+      ],
+      "id": "ffe21010-8f3a-4f2c-b4ad-3a89bf824fd5",
+      "name": "Mark Manual Review Required"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an AI Follow-Up Specialist.\n\nCreate the next follow-up communication for this lead.\n\nLead information:\n\nName: {{ $json.name }}\nEmail: {{ $json.email }}\nCompany: {{ $json.company }}\nOriginal Message: {{ $json.message }}\nClassification: {{ $json.classification }}\nLead Score: {{ $json.lead_score }}\nUrgency: {{ $json.urgency }}\nQualification Reason: {{ $json.reason }}\nRecommended Action: {{ $json.recommended_action }}\nCurrent Status: {{ $json.Status }}\nLast Contacted: {{ $json[\"Last Contacted\"] }}\nFollow-Up Number: {{ $json.follow_up_number }}\n\nCreate a concise, professional, personalized follow-up based ONLY on the information provided.\n\nRules:\n\n- Use the lead's actual name.\n- Use the company name when provided.\n- Refer directly to the lead's actual business need from the Original Message.\n- Use the Qualification Reason and Recommended Action to guide the message.\n- Do not invent facts, statistics, customer results, case studies, prices, guarantees, product features, or specific business benefits.\n- Do not make unsupported claims such as \"businesses like yours achieve significant improvements.\"\n- Do not use placeholders or bracketed text anywhere in the email.\n- Never use [Your Name], [Your Company], [Your Title], [Company Name], or similar placeholders.\n- Do not invent a sender name or company name.\n- End the email with \"Best regards,\" only. Do not add a fictional signature.\n- The MESSAGE must be completely ready to send without manual editing.\n\nFollow-up rules:\n\nFollow-Up #1:\nCreate a personalized discovery-call invitation.\n\nFollow-Up #2:\nCreate a value-focused follow-up based on the lead's actual stated need.\nDo not simply repeat the first outreach.\n\nFollow-Up #3:\nCreate a final professional follow-up with a clear call to action.\n\nFollow-Up #4 or higher:\nDo not create another email.\nSet FOLLOW_UP_TYPE to Manual Review.\nSet RECOMMENDATION to Manual review required.\n\nReturn ONLY these five lines:\n\nFOLLOW_UP_TYPE: [Discovery Call / Value-Focused Follow-Up / Final Follow-Up / Manual Review]\nPRIORITY: [High / Medium / Low]\nSUBJECT: [email subject]\nMESSAGE: [complete ready-to-send email]\nRECOMMENDATION: [brief recommendation]",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1344,
+        -128
+      ],
+      "id": "0ac591c8-1a13-40b4-a862-93c5c6714d87",
+      "name": "AI Follow-Up Strategist"
+    },
+    {
+      "parameters": {
+        "model": "google/gemini-2.5-flash-lite",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1424,
+        112
+      ],
+      "id": "7a36f3a7-50f5-4c77-acc6-34c57729851e",
+      "name": "OpenRouter — Follow-Up LLM"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $('Check Follow-Up Eligibility').item.json.email }}",
+            "Status": "Follow-Up #2 Sent",
+            "Last Contacted": "={{ $now }}"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_score",
+              "displayName": "lead_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "classification",
+              "displayName": "classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recommended_action",
+              "displayName": "recommended_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Created At",
+              "displayName": "Created At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Contacted",
+              "displayName": "Last Contacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2368,
+        -112
+      ],
+      "id": "9c29e29b-13da-442e-8057-88c192444891",
+      "name": "Update Follow-Up Status"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "sheetName": {
+          "__rl": true,
+          "value": 559892092,
+          "mode": "list",
+          "cachedResultName": "Follow-Up Activity Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Name": "={{ $('Check Follow-Up Eligibility').item.json.name }}",
+            "Email": "={{ $('Check Follow-Up Eligibility').item.json.email }}",
+            "Follow-Up #": "={{ $('Determine Follow-Up Sequence').item.json.follow_up_number }}",
+            "Subject": "={{ $('Parse Follow-Up Strategy').all()[$itemIndex].json.follow_up_subject }}",
+            "Logged At": "={{ $now }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Name",
+              "displayName": "Name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Follow-Up #",
+              "displayName": "Follow-Up #",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Subject",
+              "displayName": "Subject",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Logged At",
+              "displayName": "Logged At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2592,
+        -112
+      ],
+      "id": "00e058d1-71e0-4734-ab3b-59486b01026f",
+      "name": "Log Follow-Up Activity"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "40f705de-e99b-4974-8829-cd2aa53fe1d7",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2144,
+        -16
+      ],
+      "id": "5fb7ff6d-26ac-49f4-a634-b03c7d6e049a",
+      "name": "Email Sent Successfully?"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Leads",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "email": "={{ $('Check Follow-Up Eligibility').item.json.email }}",
+            "Status": "Email Send Failed"
+          },
+          "matchingColumns": [
+            "email"
+          ],
+          "schema": [
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "phone",
+              "displayName": "phone",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message",
+              "displayName": "message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_score",
+              "displayName": "lead_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "classification",
+              "displayName": "classification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "urgency",
+              "displayName": "urgency",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "reason",
+              "displayName": "reason",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "recommended_action",
+              "displayName": "recommended_action",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Created At",
+              "displayName": "Created At",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Last Contacted",
+              "displayName": "Last Contacted",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2368,
+        80
+      ],
+      "id": "5d041eb6-ce61-4b03-9d46-514ac29b1289",
+      "name": "Mark Email Send Failed"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get Leads from Database",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Leads from Database": {
+      "main": [
+        [
+          {
+            "node": "Filter Eligible Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Filter Eligible Leads": {
+      "main": [
+        [
+          {
+            "node": "Check Follow-Up Eligibility",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Follow-Up Eligibility": {
+      "main": [
+        [
+          {
+            "node": "Determine Follow-Up Sequence",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Follow-Up Strategy": {
+      "main": [
+        [
+          {
+            "node": "Send AI Follow-Up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send AI Follow-Up": {
+      "main": [
+        [
+          {
+            "node": "Email Sent Successfully?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Determine Follow-Up Sequence": {
+      "main": [
+        [
+          {
+            "node": "Stop at Follow-Up #4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stop at Follow-Up #4": {
+      "main": [
+        [
+          {
+            "node": "AI Follow-Up Strategist",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Manual Review Required",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Follow-Up Strategist": {
+      "main": [
+        [
+          {
+            "node": "Parse Follow-Up Strategy",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter — Follow-Up LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Follow-Up Strategist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Follow-Up Status": {
+      "main": [
+        [
+          {
+            "node": "Log Follow-Up Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Email Sent Successfully?": {
+      "main": [
+        [
+          {
+            "node": "Update Follow-Up Status",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Email Send Failed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "nodeGroups": [],
+  "tags": []
+}
