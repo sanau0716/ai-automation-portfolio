@@ -14,14 +14,13 @@ Analyzes business information and evaluates potential opportunities for AI and w
 
 Analyzes a business website and produces structured insights that can support the automation audit and opportunity analysis.
 
-
 ## Architecture
 
 This project contains two n8n workflows that address different parts of the business automation auditing process.
 
 ```text
 Business Automation Audit
-          │
-          ├── AI Business Automation Auditor
-          │
-          └── Website Auditor Engine
+        |
+        ├── AI Business Automation Auditor
+        |
+        └── Website Auditor Engine
