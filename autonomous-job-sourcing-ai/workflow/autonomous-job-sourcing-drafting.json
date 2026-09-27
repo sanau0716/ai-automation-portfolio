@@ -6,8 +6,8 @@
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
       "position": [
-        1056,
-        -464
+        1024,
+        -320
       ],
       "id": "f08f8470-8a23-4474-909a-045ae2e86df5",
       "name": "Duplicate - Skip"
@@ -40,19 +40,6 @@
       "id": "876eaf33-a658-4739-b431-bfc2f005ed98",
       "name": "Split Out",
       "alwaysOutputData": true
-    },
-    {
-      "parameters": {
-        "options": {}
-      },
-      "type": "n8n-nodes-base.splitInBatches",
-      "typeVersion": 3,
-      "position": [
-        1040,
-        -256
-      ],
-      "id": "5af4235f-6976-47a7-abd5-1f7d935b08fa",
-      "name": "Loop Over Items"
     },
     {
       "parameters": {
@@ -1641,7 +1628,7 @@
     {
       "parameters": {
         "mode": "runOnceForEachItem",
-        "jsCode": "YOUR_N8N_WEBHOOK_URL"
+        "jsCode": "// 1. Handle Airtable nested fields structure or direct top-level fields\nconst inputData = $json.fields || $json;\n\nconst jobTitle = (inputData[\"Job Title\"] || inputData.job_title || \"\").toLowerCase();\nconst description = (inputData[\"Job Description\"] || inputData.description || \"\").toLowerCase();\nconst requiredSkillsStr = inputData[\"Required Skills\"] || inputData.required_skills || \"\";\nconst aiRelevance = (inputData[\"AI Automation Relevance\"] || inputData.ai_automation_relevance || \"\").toLowerCase();\nconst remoteField = inputData[\"Remote\"] || inputData.remote || false;\n\n// 2. Define your target profile / skills\nconst targetSkills = [\n  \"n8n\", \"ai\", \"automation\", \"python\", \"javascript\", \n  \"typescript\", \"api\", \"apis\", \"webhook\", \"webhooks\", \n  \"claude\", \"openai\", \"workflow\", \"workflows\", \"llm\", \"agents\"\n];\n\n// 3. Parse required skills into an array\nlet jobSkills = [];\nif (Array.isArray(requiredSkillsStr)) {\n  jobSkills = requiredSkillsStr;\n} else if (typeof requiredSkillsStr === 'string') {\n  jobSkills = requiredSkillsStr.split(',').map(s => s.trim()).filter(Boolean);\n}\n\n// 4. Calculate skill match score\nlet matchedSkills = [];\njobSkills.forEach(skill => {\n  const cleanSkill = skill.toLowerCase();\n  if (targetSkills.some(target => cleanSkill.includes(target))) {\n    matchedSkills.push(skill);\n  }\n});\n\nlet skillScore = 0;\nif (jobSkills.length > 0) {\n  skillScore = Math.round((matchedSkills.length / jobSkills.length) * 100);\n} else {\n  // Fallback check against description if skills array was empty\n  const matchesInDesc = targetSkills.filter(target => description.includes(target));\n  skillScore = Math.min(matchesInDesc.length * 20, 100);\n}\n\n// 5. Calculate AI Automation Relevance score\nlet relevanceScore = 50; // default baseline\nif (aiRelevance.includes(\"high\") || aiRelevance.includes(\"tightly coupled\") || aiRelevance.includes(\"core\")) {\n  relevanceScore = 100;\n} else if (aiRelevance.includes(\"moderate\") || aiRelevance.includes(\"relevant\")) {\n  relevanceScore = 75;\n} else if (aiRelevance.includes(\"low\") || aiRelevance.includes(\"little\")) {\n  relevanceScore = 25;\n}\n\n// 6. Calculate Remote score\nlet remoteScore = 50;\nif (remoteField === true || description.includes(\"remote\") || description.includes(\"work from home\")) {\n  remoteScore = 100;\n} else if (description.includes(\"hybrid\")) {\n  remoteScore = 50;\n} else {\n  remoteScore = 0;\n}\n\n// 7. Return the enhanced item with calculated scores\nreturn {\n  json: {\n    ...$json,\n    matched_skills: matchedSkills,\n    skill_score: skillScore,\n    relevance_score: relevanceScore,\n    remote_score: remoteScore\n  }\n};"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -2081,46 +2068,8 @@
     },
     {
       "parameters": {
-        "assignments": {
-          "assignments": [
-            {
-              "id": "73ecd81d-3745-462b-ae8d-778aa642a87c",
-              "name": "site_name",
-              "value": "[\"indeed\"]",
-              "type": "array"
-            },
-            {
-              "id": "c23d61e9-1f0b-4b5b-a649-606d14392804",
-              "name": "search_term",
-              "value": "AI Automation",
-              "type": "string"
-            },
-            {
-              "id": "1bc3ab72-2f62-47ad-bbe3-d6d02fd3cc98",
-              "name": "location",
-              "value": "Philippines",
-              "type": "string"
-            },
-            {
-              "id": "109d2947-1d59-432a-8a29-5f67c8dd81b5",
-              "name": "results_wanted",
-              "value": 10,
-              "type": "number"
-            },
-            {
-              "id": "d4ac41c8-9c49-4516-9136-a66f4e5c1aaf",
-              "name": "is_remote",
-              "value": true,
-              "type": "boolean"
-            },
-            {
-              "id": "37ec9e1f-8c9c-452f-9a86-033fcf9f8d46",
-              "name": "country_indeed",
-              "value": "Philippines",
-              "type": "string"
-            }
-          ]
-        },
+        "mode": "raw",
+        "jsonOutput": "{\n  \"search_term\": \"Site Reliability Engineer\",\n  \"location\": \"Remote\",\n  \"site_name\": [\n    \"linkedin\",\n    \"indeed\",\n    \"zip_recruiter\",\n    \"google\"\n  ],\n  \"results_wanted\": 25,\n  \"is_remote\": true,\n  \"country_indeed\": \"Philippines\"\n}",
         "options": {}
       },
       "type": "n8n-nodes-base.set",
@@ -2141,13 +2090,13 @@
           "parameters": [
             {
               "name": "x-api-key",
-              "value": "jobfinder-local-2026"
+              "value": "YOUR_JOBSPY_API_KEY"
             }
           ]
         },
         "sendBody": true,
         "specifyBody": "json",
-        "jsonBody": "={\n  \"site_name\": [\"indeed\"],\n  \"search_term\": \"AI Automation\",\n  \"location\": \"Philippines\",\n  \"results_wanted\": 10,\n  \"is_remote\": true,\n  \"country_indeed\": \"Philippines\"\n}",
+        "jsonBody": "={{ $('Set Search Parameters1').first().json }}",
         "options": {}
       },
       "type": "n8n-nodes-base.httpRequest",
@@ -2211,7 +2160,7 @@
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        576,
+        544,
         -240
       ],
       "id": "621b586c-6dc8-4cd4-8d8c-2daa445ff0d6",
@@ -2245,21 +2194,21 @@
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.3,
       "position": [
-        800,
-        -240
+        736,
+        -320
       ],
       "id": "57b6c1f7-74d7-4b4c-b11c-0c0d514bb7dc",
       "name": "Is New Job?"
     },
     {
       "parameters": {
-        "jsCode": "YOUR_N8N_WEBHOOK_URL"
+        "jsCode": "return items.map(item => {\n  // Unpack safely whether it's in body, fields, or root json\n  const raw = item.json.body || item.json.fields || item.json;\n\n  // Helper to find a key case-insensitively\n  function findKey(obj, targetKey) {\n    if (!obj) return '';\n    const foundKey = Object.keys(obj).find(k => k.toLowerCase() === targetKey.toLowerCase());\n    return foundKey ? obj[foundKey] : '';\n  }\n\n  return {\n    json: {\n      job_title: findKey(raw, 'job_title') || findKey(raw, 'job title') || 'Example Automation Role',\n      company: findKey(raw, 'company') || 'Example Company',\n      source: findKey(raw, 'source') || findKey(raw, 'site') || 'Webhook',\n      job_url: findKey(raw, 'job_url') || findKey(raw, 'job url') || 'https://example.com/job',\n      description: findKey(raw, 'description') || findKey(raw, 'job description') || 'Example job description used only as a fallback when testing the workflow.'\n    }\n  };\n});"
       },
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
       "position": [
-        1248,
-        -240
+        1696,
+        -224
       ],
       "id": "df609027-5f69-4a54-89fe-a2efdc171724",
       "name": "Extract Raw Job Text"
@@ -2672,6 +2621,19 @@
       ],
       "id": "dae574f6-b011-4540-b3d8-f531428699a2",
       "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1456,
+        -240
+      ],
+      "id": "df20ba6e-9c7a-4270-bee3-e04e8a1ed12a",
+      "name": "Loop Over Items"
     }
   ],
   "pinData": {},
@@ -2692,18 +2654,6 @@
         [
           {
             "node": "Normalize Job Payload",
-            "type": "main",
-            "index": 0
-          }
-        ]
-      ]
-    },
-    "Loop Over Items": {
-      "main": [
-        [],
-        [
-          {
-            "node": "Extract Raw Job Text",
             "type": "main",
             "index": 0
           }
@@ -2879,22 +2829,21 @@
             "node": "Is New Job?",
             "type": "main",
             "index": 0
+          },
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
           }
         ]
       ]
     },
     "Is New Job?": {
       "main": [
+        [],
         [
           {
             "node": "Duplicate - Skip",
-            "type": "main",
-            "index": 0
-          }
-        ],
-        [
-          {
-            "node": "Loop Over Items",
             "type": "main",
             "index": 0
           }
@@ -2955,6 +2904,29 @@
           }
         ]
       ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Extract Raw Job Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Application Draft": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
     }
   },
   "active": true,
@@ -2962,13 +2934,8 @@
     "executionOrder": "v1",
     "binaryMode": "separate"
   },
-  "versionId": "bd2e40e9-0418-45f9-9827-206051b1fd72",
-  "meta": {
-    "templateCredsSetupCompleted": true,
-    "instanceId": "4ec76cd5a5fe2a9d002e1ddef00531e58773bfd640fe935c77bb2f7bfb4fd1c1"
-  },
+  "meta": {},
   "nodeGroups": [],
-  "id": "Jt178MrydiwwKAaz",
   "tags": [
     {
       "updatedAt": "2026-09-26T14:59:37.738Z",
@@ -2977,5 +2944,6 @@
       "name": "jobspy"
     }
   ],
-  "_portfolio_note": "SANITIZED FOR PUBLIC GITHUB. Replace placeholder Airtable IDs, URLs, and credentials with your own values before importing into n8n."
+  "_portfolio_note": "SANITIZED FOR PUBLIC GITHUB. Credentials and Airtable resource IDs were removed. Reconnect credentials and select your own Airtable base/table after importing into n8n.",
+  "_source_version": "Repaired workflow supplied 2026-09-28"
 }

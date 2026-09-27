@@ -1,0 +1,1 @@
+This folder contains the sanitized n8n workflow export. Import it into n8n, then attach your own credentials and Airtable resources.

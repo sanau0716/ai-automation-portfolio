@@ -1,29 +1,38 @@
-# Setup
+# Setup Notes
 
-## Requirements
+## Required connections
 
-- n8n
-- An AI provider supported by the workflow
-- Airtable account/database configured for your own environment
-- Appropriate credentials for the services you choose to connect
+### OpenRouter
+Attach your own OpenRouter credential to:
 
-## Configuration
+- `OpenRouter Chat Model1`
+- `OpenRouter - Draft Generator`
 
-After importing the workflow:
+### Airtable
+Attach your own Airtable credential to all Airtable nodes and select your own base/table.
 
-1. Open each AI/API node and select your own credential.
-2. Replace Airtable placeholders with your own base/table IDs.
-3. Review webhook and environment-specific URLs.
-4. Test the workflow with sample data.
-5. Verify Airtable writes before connecting production data.
+Expected table name in the workflow is `Jobs`.
 
-## Security checklist
+### JobSpy
+The workflow expects a JobSpy HTTP service at:
 
-Before committing changes:
+`http://host.docker.internal:8000/api/v1/search_jobs`
 
-- [ ] No API keys
-- [ ] No OAuth tokens
-- [ ] No passwords
-- [ ] No private webhook URLs
-- [ ] No production customer/applicant records
-- [ ] No private database credentials
+Change this to your own endpoint when the service is hosted elsewhere.
+
+Set the `x-api-key` header to your own JobSpy API key after import.
+
+## Before enabling the schedule
+
+Review:
+
+- search term
+- target locations
+- sites to query
+- results count
+- remote requirement
+- Airtable mappings
+- score thresholds
+- application-draft prompt
+
+The public repository copy intentionally leaves these environment-specific connection details for the person importing the workflow.

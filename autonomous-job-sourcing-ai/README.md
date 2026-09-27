@@ -1,139 +1,130 @@
-# Autonomous Job Sourcing & Drafting Pipeline
+# Autonomous Job Sourcing & Application Drafting Pipeline
 
-An n8n-based AI automation system for sourcing, analyzing, qualifying, and preparing job opportunities for application.
+An n8n-based AI job sourcing pipeline that finds job listings, normalizes and de-duplicates them, analyzes requirements, scores candidate fit, routes the result, and generates an application draft for roles that meet the configured threshold.
 
-## What this project demonstrates
+## What this demonstrates
 
-This project demonstrates how AI can be combined with workflow automation to turn unstructured job-posting data into a structured decision pipeline.
+- Job aggregation through a local JobSpy API
+- Data normalization before downstream processing
+- Airtable-backed duplicate detection using Job ID
+- Defensive parsing of structured AI output
+- Candidate/job matching using an explicit skill taxonomy
+- Weighted scoring for skill fit, AI/automation relevance, and remote compatibility
+- Entry-level / low-experience scoring boost
+- Rule-based APPLY / CONSIDER / SKIP routing
+- AI-generated application drafting for APPLY results
+- Airtable state updates across qualification stages
+- Loop-based processing so multiple job results can move through the same pipeline
 
-The workflow includes:
-
-- Job intake and normalization
-- AI-powered job analysis
-- Candidate/job matching
-- Recommendation routing
-- Airtable-based job tracking
-- Application-drafting workflow
-- Automated status updates
-
-## High-level architecture
+## Workflow architecture
 
 ```text
-Job Data
-   │
-   ▼
-Normalize / Prepare Data
-   │
-   ▼
+Schedule Trigger (10 min)
+        |
+        v
+Set Search Parameters
+        |
+        v
+JobSpy Search API
+        |
+        v
+Split Out Jobs
+        |
+        v
+Normalize Job Payload
+        |
+        v
+Check Airtable for Duplicate ----> Duplicate - Skip
+        |
+        v
+Format / restore job data
+        |
+        v
+Is New Job?
+        |
+        v
+Loop Over Items
+        |
+        v
+Extract Raw Job Text
+        |
+        v
 AI Job Analysis
-   │
-   ├──────────────► Job Requirements
-   │
-   ├──────────────► Candidate Fit
-   │
-   └──────────────► Recommendation
-                         │
-             ┌───────────┼───────────┐
-             ▼           ▼           ▼
-           APPLY      CONSIDER      SKIP
-             │
-             ▼
-     Application Drafting
-             │
-             ▼
-       Airtable Tracking
+        |
+        v
+Parse + merge AI output safely
+        |
+        v
+Create Initial Airtable Entry
+        |
+        v
+Candidate / Job Match
+        |
+        v
+Overall Job Score
+        |
+        v
+Application Recommendation
+        |
+        v
+Route Recommendation
+   /        |        \
+ APPLY    CONSIDER    SKIP
+   |          |          |
+ Draft     Qualified   Rejected
+   |
+ Clean Draft JSON
+   |
+ Save Application Draft
 ```
 
-## Why this workflow exists
+## Scoring logic
 
-Manually reviewing job postings creates repetitive work:
+The current workflow calculates:
 
-1. Read the posting.
-2. Identify requirements.
-3. Compare the role against a candidate profile.
-4. Decide whether the opportunity is worth pursuing.
-5. Record the opportunity.
-6. Prepare application material.
+- **Skill score:** 40% of the base score
+- **AI/automation relevance:** 40%
+- **Remote compatibility:** 20%
+- **Entry-level boost:** +15 points when the posting indicates junior/entry-level/no-experience/training-friendly conditions
 
-The workflow moves those repetitive analysis steps into an automated pipeline while keeping the final application decision under human control.
+The final score is capped at 100.
 
-## AI decision layer
+Routing thresholds in the current workflow are:
 
-The workflow does not simply generate text. It uses AI to analyze job information and produce structured decisions that can drive subsequent workflow branches.
+- `81+` → `APPLY`
+- `50–80` → `CONSIDER`
+- `<50` → `SKIP`
 
-The portfolio version is configured with placeholders for external credentials and identifiers. It is intentionally not connected to the original production resources.
+These are implementation rules for the automation, not claims that the model's recommendation is objectively correct.
 
-## Repository structure
+## AI components
 
-```text
-autonomous-job-sourcing-ai/
-├── README.md
-├── workflow/
-│   └── autonomous-job-sourcing-pipeline.json
-├── docs/
-│   ├── architecture.md
-│   └── setup.md
-├── prompts/
-│   ├── job-analysis.md
-│   └── application-drafting.md
-├── sample-data/
-│   └── sample-job.json
-└── screenshots/
-    └── README.md
-```
+The workflow currently uses OpenRouter-backed chat models. The job-analysis model is configured as `openai/gpt-oss-120b`; the application-drafting model is configured as `qwen/qwen3-235b-a22b-2507`.
 
-## Portfolio / demo version
+The analysis prompt is instructed to return a fixed JSON schema and not invent unsupported job requirements. A separate parser strips accidental Markdown code fences and falls back to safe defaults when AI output cannot be parsed.
 
-This repository contains a sanitized n8n export.
+## Human-in-the-loop boundary
 
-Before importing it into another environment, replace the following placeholders with the user's own resources:
+The pipeline automates sourcing, analysis, qualification, routing, and draft generation. It does **not** submit applications automatically. The generated application is stored for review, keeping the final submission decision under human control.
 
-- Airtable base/table identifiers
-- n8n webhook or environment-specific URLs
-- AI/API credentials
-- Other environment-specific configuration
-
-**Do not commit real API keys, OAuth tokens, passwords, or private customer data.**
-
-## Importing into n8n
-
-1. Download the workflow JSON.
-2. Open an n8n instance.
-3. Use the workflow import option.
-4. Import `workflow/autonomous-job-sourcing-pipeline.json`.
-5. Configure your own credentials.
-6. Replace placeholder Airtable IDs and other environment-specific values.
-7. Test with sample data before connecting production systems.
-
-## Important design principle
-
-The workflow is designed as an **AI-assisted decision system**, not an autonomous system that blindly submits applications.
-
-A recommendation such as `APPLY` should be treated as an automation output that can be reviewed before an external action is taken.
-
-## Security
-
-This repository is intentionally sanitized for public demonstration.
-
-Never publish:
-
-- API keys
-- OAuth tokens
-- Passwords
-- Private webhook URLs
-- Personal applicant/customer data
-- Production database identifiers when they expose private infrastructure
-
-## Technology
+## Dependencies
 
 - n8n
-- AI/LLM workflow nodes
+- JobSpy service/API reachable from n8n
 - Airtable
-- Webhooks / structured job data
-- JavaScript workflow logic
+- OpenRouter
 
-## Status
+## Import / setup
 
-**Portfolio project — sanitized demonstration version**
+1. Import `workflow/autonomous-job-sourcing-drafting.json` into n8n.
+2. Connect your own OpenRouter credential to the two OpenRouter nodes.
+3. Connect your own Airtable credential to the Airtable nodes.
+4. Select your own Airtable base and `Jobs` table in the Airtable nodes.
+5. Configure the JobSpy API endpoint and API key.
+6. Review the search parameters before enabling the schedule trigger.
 
-The production workflow may contain environment-specific configuration that is intentionally removed from this repository.
+The GitHub copy is intentionally sanitized; it does not contain the original Airtable IDs or credential references.
+
+## Project status
+
+This repository version represents a repaired and updated workflow snapshot. The n8n workflow itself remains the source of truth for the implementation details.
