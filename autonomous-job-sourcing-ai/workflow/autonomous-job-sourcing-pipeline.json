@@ -1,0 +1,2981 @@
+{
+  "name": "Autonomous Job Sourcing & Drafting Pipeline",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1056,
+        -464
+      ],
+      "id": "f08f8470-8a23-4474-909a-045ae2e86df5",
+      "name": "Duplicate - Skip"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Get the original intact job data from the Loop node\nconst originalJob = $('Loop Over Items').item.json;\n\n// 2. Safely grab the AI's text output (handles different n8n AI node outputs)\nconst aiText = $json.text || $json.output || $json.message?.content || $json.response || \"\";\n\n// 3. Clean and parse the AI JSON (strips markdown code blocks if the AI misbehaves)\nlet parsedAI = {};\ntry {\n  const cleanText = aiText.replace(/```json/gi, '').replace(/```/g, '').trim();\n  parsedAI = JSON.parse(cleanText);\n} catch (e) {\n  // Fallback to prevent workflow crashing if AI hallucinates formatting\n  parsedAI = {\n    required_skills: [],\n    experience_required: \"Error parsing AI data\",\n    salary: \"\",\n    employment_type: \"\",\n    location: \"\",\n    remote: \"\",\n    job_summary: \"Error parsing AI data\",\n    ai_automation_relevance: \"\"\n  };\n}\n\n// 4. MERGE original data with AI data to enforce Data Integrity\nreturn {\n  json: {\n    ...originalJob,\n    ...parsedAI\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -512,
+        16
+      ],
+      "id": "ec668d61-ec02-4d5f-bd55-169ff3c00e25",
+      "name": "Parse AI Analysis"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "jobs",
+        "include": "allOtherFields",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -96,
+        -240
+      ],
+      "id": "876eaf33-a658-4739-b431-bfc2f005ed98",
+      "name": "Split Out",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        1040,
+        -256
+      ],
+      "id": "5af4235f-6976-47a7-abd5-1f7d935b08fa",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-120b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        -816,
+        192
+      ],
+      "id": "2d590cea-f90d-4d19-a6b4-8db3c359ce2c",
+      "name": "OpenRouter Chat Model1"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.fields.Recommendation }}",
+                    "rightValue": "APPLY",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "9dd8f655-c9cb-4d15-8277-1d25f5ec9757"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "5a58bf47-646a-4c73-a35a-a4cc8f951bd1",
+                    "leftValue": "={{ $json.fields.Recommendation }}",
+                    "rightValue": "CONSIDER",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "8dd6fda5-7f90-4f24-81c4-e3bf1d9e9460",
+                    "leftValue": "={{ $json.fields.Recommendation }}",
+                    "rightValue": "SKIP",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        432,
+        48
+      ],
+      "id": "62d9f436-8865-4952-b7f4-57213f8258e1",
+      "name": "Route Recommendation"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Jobs",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Remote": false,
+            "id": "={{$json.id}}",
+            "Status": "Qualified",
+            "Job Score": "={{ $json.fields['Job Score'] }}",
+            "Recommendation": "CONSIDER",
+            "Job ID": "={{ $json.job_id || $json.fields?.['Job ID'] }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job URL",
+              "displayName": "Job URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "OnlineJobs.ph",
+                  "value": "OnlineJobs.ph"
+                },
+                {
+                  "name": "LinkedIn",
+                  "value": "LinkedIn"
+                },
+                {
+                  "name": "Himalayas",
+                  "value": "Himalayas"
+                },
+                {
+                  "name": "Upwork",
+                  "value": "Upwork"
+                },
+                {
+                  "name": "Indeed",
+                  "value": "Indeed"
+                },
+                {
+                  "name": "Company Website",
+                  "value": "Company Website"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Description",
+              "displayName": "Job Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Required Skills",
+              "displayName": "Required Skills",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Experience Required",
+              "displayName": "Experience Required",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Salary",
+              "displayName": "Salary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Remote",
+              "displayName": "Remote",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Score",
+              "displayName": "Job Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Recommendation",
+              "displayName": "Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "APPLY",
+                  "value": "APPLY"
+                },
+                {
+                  "name": "CONSIDER",
+                  "value": "CONSIDER"
+                },
+                {
+                  "name": "SKIP",
+                  "value": "SKIP"
+                },
+                {
+                  "name": "90",
+                  "value": "90"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Analyzing",
+                  "value": "Analyzing"
+                },
+                {
+                  "name": "Qualified",
+                  "value": "Qualified"
+                },
+                {
+                  "name": "Application Ready",
+                  "value": "Application Ready"
+                },
+                {
+                  "name": "Applied",
+                  "value": "Applied"
+                },
+                {
+                  "name": "Interview",
+                  "value": "Interview"
+                },
+                {
+                  "name": "Rejected",
+                  "value": "Rejected"
+                },
+                {
+                  "name": "Skipped",
+                  "value": "Skipped"
+                },
+                {
+                  "name": "APPLY",
+                  "value": "APPLY"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date Found",
+              "displayName": "Date Found",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employment Type",
+              "displayName": "Employment Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Summary",
+              "displayName": "Job Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Automation Relevance",
+              "displayName": "AI Automation Relevance",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Why Good Fit",
+              "displayName": "Why Good Fit",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job ID",
+              "displayName": "Job ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        656,
+        128
+      ],
+      "id": "27f0c0da-2b12-47c4-bc26-0662645bb745",
+      "name": "Update Qualified Record"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Jobs",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Remote": false,
+            "id": "={{$json.id}}",
+            "Recommendation": "={{ $json.fields.Recommendation }}",
+            "Status": "Rejected",
+            "Job Score": "={{ $json.fields['Job Score'] }}",
+            "Job ID": "={{ $json.job_id || $json.fields?.['Job ID'] }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job URL",
+              "displayName": "Job URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "OnlineJobs.ph",
+                  "value": "OnlineJobs.ph"
+                },
+                {
+                  "name": "LinkedIn",
+                  "value": "LinkedIn"
+                },
+                {
+                  "name": "Himalayas",
+                  "value": "Himalayas"
+                },
+                {
+                  "name": "Upwork",
+                  "value": "Upwork"
+                },
+                {
+                  "name": "Indeed",
+                  "value": "Indeed"
+                },
+                {
+                  "name": "Company Website",
+                  "value": "Company Website"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Description",
+              "displayName": "Job Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Required Skills",
+              "displayName": "Required Skills",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Experience Required",
+              "displayName": "Experience Required",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Salary",
+              "displayName": "Salary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Remote",
+              "displayName": "Remote",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Score",
+              "displayName": "Job Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Recommendation",
+              "displayName": "Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "APPLY",
+                  "value": "APPLY"
+                },
+                {
+                  "name": "CONSIDER",
+                  "value": "CONSIDER"
+                },
+                {
+                  "name": "SKIP",
+                  "value": "SKIP"
+                },
+                {
+                  "name": "90",
+                  "value": "90"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Analyzing",
+                  "value": "Analyzing"
+                },
+                {
+                  "name": "Qualified",
+                  "value": "Qualified"
+                },
+                {
+                  "name": "Application Ready",
+                  "value": "Application Ready"
+                },
+                {
+                  "name": "Applied",
+                  "value": "Applied"
+                },
+                {
+                  "name": "Interview",
+                  "value": "Interview"
+                },
+                {
+                  "name": "Rejected",
+                  "value": "Rejected"
+                },
+                {
+                  "name": "Skipped",
+                  "value": "Skipped"
+                },
+                {
+                  "name": "APPLY",
+                  "value": "APPLY"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date Found",
+              "displayName": "Date Found",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employment Type",
+              "displayName": "Employment Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Summary",
+              "displayName": "Job Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Automation Relevance",
+              "displayName": "AI Automation Relevance",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Why Good Fit",
+              "displayName": "Why Good Fit",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job ID",
+              "displayName": "Job ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        624,
+        288
+      ],
+      "id": "cdd7aef9-dd4c-4fa4-b791-15bc4247c949",
+      "name": "Update Rejected Record"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Jobs",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Remote": false,
+            "id": "={{$json.id}}",
+            "Status": "Application Ready",
+            "Job Score": "={{ $json.fields['Job Score'] }}",
+            "Recommendation": "APPLY",
+            "Experience Required": "=",
+            "Job ID": "={{ $json.job_id || $json.fields?.['Job ID'] }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job ID",
+              "displayName": "Job ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job URL",
+              "displayName": "Job URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "OnlineJobs.ph",
+                  "value": "OnlineJobs.ph"
+                },
+                {
+                  "name": "LinkedIn",
+                  "value": "LinkedIn"
+                },
+                {
+                  "name": "Himalayas",
+                  "value": "Himalayas"
+                },
+                {
+                  "name": "Upwork",
+                  "value": "Upwork"
+                },
+                {
+                  "name": "Indeed",
+                  "value": "Indeed"
+                },
+                {
+                  "name": "Company Website",
+                  "value": "Company Website"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Description",
+              "displayName": "Job Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Required Skills",
+              "displayName": "Required Skills",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Experience Required",
+              "displayName": "Experience Required",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Salary",
+              "displayName": "Salary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Remote",
+              "displayName": "Remote",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Score",
+              "displayName": "Job Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Recommendation",
+              "displayName": "Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "APPLY",
+                  "value": "APPLY"
+                },
+                {
+                  "name": "CONSIDER",
+                  "value": "CONSIDER"
+                },
+                {
+                  "name": "SKIP",
+                  "value": "SKIP"
+                },
+                {
+                  "name": "90",
+                  "value": "90"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Analyzing",
+                  "value": "Analyzing"
+                },
+                {
+                  "name": "Qualified",
+                  "value": "Qualified"
+                },
+                {
+                  "name": "Application Ready",
+                  "value": "Application Ready"
+                },
+                {
+                  "name": "Applied",
+                  "value": "Applied"
+                },
+                {
+                  "name": "Interview",
+                  "value": "Interview"
+                },
+                {
+                  "name": "Rejected",
+                  "value": "Rejected"
+                },
+                {
+                  "name": "Skipped",
+                  "value": "Skipped"
+                },
+                {
+                  "name": "APPLY",
+                  "value": "APPLY"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date Found",
+              "displayName": "Date Found",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employment Type",
+              "displayName": "Employment Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Summary",
+              "displayName": "Job Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Automation Relevance",
+              "displayName": "AI Automation Relevance",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Why Good Fit",
+              "displayName": "Why Good Fit",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Application Letter",
+              "displayName": "Application Letter",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        640,
+        -32
+      ],
+      "id": "cbe9bd7b-815a-49ba-9edf-dcc7739f8acc",
+      "name": "Update Apply Record"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=You are an expert career coach and technical writer. \n\nBased on the job description and extracted data provided, write a tailored, professional application profile and cover letter.\n\nIMPORTANT RULES:\n- Return ONLY valid JSON.\n- Do NOT use Markdown formatting around the output (no ```json code fences).\n- Use this exact JSON schema:\n{\n  \"application_draft\": \"Your detailed tailored cover letter and profile text here...\"\n}\n\n\nJob Title: {{ $json.fields?.['Job Title'] || $json.job_title }}\nCompany: {{ $json.fields?.['Company'] || $json.company }}\nJob Summary: {{ $json.fields?.['Job Summary'] || $json.job_summary }}\nRequired Skills: {{ $json.fields?.['Required Skills'] || $json.required_skills }}\nMatched Skills: {{ $json.matched_skills ? $json.matched_skills.join(', ') : '' }}\nJob Description: {{ $json.fields?.['Job Description'] || $json.description }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        832,
+        -16
+      ],
+      "id": "f2b69826-c0e3-4060-a554-4e0985f5e00d",
+      "name": "Generate Application Draft"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Jobs",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Remote": false,
+            "id": "={{ $('Create Initial Airtable Entry').item.json.id }}",
+            "Why Good Fit": "=",
+            "Experience Required": "=",
+            "Application Letter": "={{ $json.application_draft }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job ID",
+              "displayName": "Job ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job URL",
+              "displayName": "Job URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "OnlineJobs.ph",
+                  "value": "OnlineJobs.ph"
+                },
+                {
+                  "name": "LinkedIn",
+                  "value": "LinkedIn"
+                },
+                {
+                  "name": "Himalayas",
+                  "value": "Himalayas"
+                },
+                {
+                  "name": "Upwork",
+                  "value": "Upwork"
+                },
+                {
+                  "name": "Indeed",
+                  "value": "Indeed"
+                },
+                {
+                  "name": "Company Website",
+                  "value": "Company Website"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Description",
+              "displayName": "Job Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Required Skills",
+              "displayName": "Required Skills",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Experience Required",
+              "displayName": "Experience Required",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Salary",
+              "displayName": "Salary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Remote",
+              "displayName": "Remote",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Score",
+              "displayName": "Job Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Recommendation",
+              "displayName": "Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "APPLY",
+                  "value": "APPLY"
+                },
+                {
+                  "name": "CONSIDER",
+                  "value": "CONSIDER"
+                },
+                {
+                  "name": "SKIP",
+                  "value": "SKIP"
+                },
+                {
+                  "name": "90",
+                  "value": "90"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Analyzing",
+                  "value": "Analyzing"
+                },
+                {
+                  "name": "Qualified",
+                  "value": "Qualified"
+                },
+                {
+                  "name": "Application Ready",
+                  "value": "Application Ready"
+                },
+                {
+                  "name": "Applied",
+                  "value": "Applied"
+                },
+                {
+                  "name": "Interview",
+                  "value": "Interview"
+                },
+                {
+                  "name": "Rejected",
+                  "value": "Rejected"
+                },
+                {
+                  "name": "Skipped",
+                  "value": "Skipped"
+                },
+                {
+                  "name": "APPLY",
+                  "value": "APPLY"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date Found",
+              "displayName": "Date Found",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employment Type",
+              "displayName": "Employment Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Summary",
+              "displayName": "Job Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Automation Relevance",
+              "displayName": "AI Automation Relevance",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Why Good Fit",
+              "displayName": "Why Good Fit",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Application Letter",
+              "displayName": "Application Letter",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        1296,
+        -16
+      ],
+      "id": "578464f6-4b41-4d5d-b378-9c66edf5642c",
+      "name": "Save Application Draft"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "YOUR_N8N_WEBHOOK_URL"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -208,
+        16
+      ],
+      "id": "eae5b136-482f-4f5b-b480-12f5798e7339",
+      "name": "Calculate Candidate-Job Match"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Jobs",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Remote": "={{ $json.remote_score >= 50 }}",
+            "Job Title": "={{ $json.job_title || $json.fields?.['Job Title'] }}",
+            "Company": "={{ $json.company || $json.fields?.['Company'] }}",
+            "Source": "={{ $json.source || $json.fields?.['Source'] }}",
+            "Job URL": "={{ $json.job_url || $json.fields?.['Job URL'] }}",
+            "Job Description": "={{ $json.description || $json.fields?.['Job Description'] }}",
+            "Required Skills": "={{$json.fields[\"Required Skills\"]}}",
+            "Salary": "={{ $json.salary || \"\" }}",
+            "Job Score": "={{ $json.job_score }}",
+            "Recommendation": "={{ $json.recommendation }}",
+            "Status": "New",
+            "Job Summary": "={{ $json.fields[\"AI Automation Relevance\"] }}",
+            "AI Automation Relevance": "={{ $json.fields[\"AI Automation Relevance\"] }}",
+            "Location": "={{ $json.location || \"\" }}",
+            "Employment Type": "={{ $json.employment_type || $json.fields?.['Employment Type'] || \"Full time\" }}",
+            "Date Found": "={{ $json.createdTime }}",
+            "id": "={{ $json.id }}",
+            "Job ID": "={{ $json.job_id || $json.fields?.['Job ID'] }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": true,
+              "removed": false
+            },
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job URL",
+              "displayName": "Job URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "OnlineJobs.ph",
+                  "value": "OnlineJobs.ph"
+                },
+                {
+                  "name": "LinkedIn",
+                  "value": "LinkedIn"
+                },
+                {
+                  "name": "Himalayas",
+                  "value": "Himalayas"
+                },
+                {
+                  "name": "Upwork",
+                  "value": "Upwork"
+                },
+                {
+                  "name": "Indeed",
+                  "value": "Indeed"
+                },
+                {
+                  "name": "Company Website",
+                  "value": "Company Website"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Description",
+              "displayName": "Job Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Required Skills",
+              "displayName": "Required Skills",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Experience Required",
+              "displayName": "Experience Required",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Salary",
+              "displayName": "Salary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Remote",
+              "displayName": "Remote",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Score",
+              "displayName": "Job Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Recommendation",
+              "displayName": "Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "APPLY",
+                  "value": "APPLY"
+                },
+                {
+                  "name": "CONSIDER",
+                  "value": "CONSIDER"
+                },
+                {
+                  "name": "SKIP",
+                  "value": "SKIP"
+                },
+                {
+                  "name": "90",
+                  "value": "90"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Analyzing",
+                  "value": "Analyzing"
+                },
+                {
+                  "name": "Qualified",
+                  "value": "Qualified"
+                },
+                {
+                  "name": "Application Ready",
+                  "value": "Application Ready"
+                },
+                {
+                  "name": "Applied",
+                  "value": "Applied"
+                },
+                {
+                  "name": "Interview",
+                  "value": "Interview"
+                },
+                {
+                  "name": "Rejected",
+                  "value": "Rejected"
+                },
+                {
+                  "name": "Skipped",
+                  "value": "Skipped"
+                },
+                {
+                  "name": "APPLY",
+                  "value": "APPLY"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date Found",
+              "displayName": "Date Found",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employment Type",
+              "displayName": "Employment Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Summary",
+              "displayName": "Job Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Automation Relevance",
+              "displayName": "AI Automation Relevance",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Why Good Fit",
+              "displayName": "Why Good Fit",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job ID",
+              "displayName": "Job ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        288,
+        16
+      ],
+      "id": "d2fd5038-b80b-42f8-9908-09cd0cda7e2f",
+      "name": "Update Job Analysis"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1. Grab scores and text fields from previous nodes (handling Airtable nested fields)\nconst inputData = $json.fields || $json;\nconst jobTitle = (inputData[\"Job Title\"] || inputData.job_title || \"\").toLowerCase();\nconst experienceReq = (inputData[\"Experience Required\"] || inputData.experience_required || \"\").toLowerCase();\nconst description = (inputData[\"Job Description\"] || inputData.description || \"\").toLowerCase();\n\nconst skillScore = $json.skill_score || 0;\nconst relevanceScore = $json.relevance_score || 0;\nconst remoteScore = $json.remote_score || 0;\n\n// 2. Check for entry-level friendliness or zero-experience openness\nconst isEntryLevelFriendly = \n  experienceReq.includes(\"entry level\") || \n  experienceReq.includes(\"no experience\") || \n  experienceReq.includes(\"zero experience\") || \n  experienceReq.includes(\"fresh graduate\") || \n  experienceReq.includes(\"0-1\") || \n  experienceReq.includes(\"0–1\") || \n  experienceReq.includes(\"trainee\") || \n  experienceReq.includes(\"junior\") || \n  description.includes(\"entry level\") ||\n  description.includes(\"no prior experience\") ||\n  description.includes(\"training provided\");\n\n// 3. Define your weighting matrix (total = 1.0)\nconst weightSkill = 0.4;       // Gives more weight to your personal tool stack\nconst weightRelevance = 0.4;\nconst weightRemote = 0.2;\n\n// 4. Calculate base weighted overall job score (0 to 100)\nlet overallScore = (skillScore * weightSkill) + \n                   (relevanceScore * weightRelevance) + \n                   (remoteScore * weightRemote);\n\n// 5. Apply an Entry-Level / Zero-Experience Boost (e.g., +15 point bonus)\nlet entryBoost = 0;\nif (isEntryLevelFriendly) {\n  entryBoost = 15;\n}\n\n// Combine score + boost and cap the maximum at 100\noverallScore = Math.min(Math.round(overallScore + entryBoost), 100);\n\n// 6. Return the item with the final score and entry-level flag\nreturn {\n  json: {\n    ...$json,\n    is_entry_level_friendly: isEntryLevelFriendly,\n    job_score: overallScore\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -48,
+        -32
+      ],
+      "id": "48d85aec-a97e-4655-816c-cc8f4051faeb",
+      "name": "Calculate Overall Job Score"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const jobScore = Number($json.job_score || 0);\n\nlet recommendation;\n\nif (jobScore >= 81) {\n  recommendation = \"APPLY\";\n} else if (jobScore >= 50) {\n  recommendation = \"CONSIDER\";\n} else {\n  recommendation = \"SKIP\";\n}\n\nreturn {\n  json: {\n    ...$json,\n    recommendation\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        112,
+        16
+      ],
+      "id": "05123a4a-a7ef-4e56-a5e4-93b16a640467",
+      "name": "Set Application Recommendation"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Analyze the job posting provided below.\n\nYour job is to extract and analyze information from the job posting and return ONLY the exact JSON schema provided.\n\nJOB POSTING:\n\nJob Title: {{ $json.job_title }}\nCompany: {{ $json.company }}\nSource: {{ $json.source }}\nJob URL: {{ $json.job_url }}\nDescription: {{ $json.description }}\n\nReturn ONLY valid JSON.\n\nUse this exact schema:\n\n{\n  \"required_skills\": [],\n  \"experience_required\": \"\",\n  \"employment_type\": \"\",\n  \"location\": \"\",\n  \"job_summary\": \"\",\n  \"ai_automation_relevance\": \"\"\n}\n\nRules:\n\n1. required_skills:\nExtract the important skills explicitly required or preferred in the job description.\n\nInclude:\n- Software and platforms\n- Programming languages\n- APIs\n- AI tools\n- Automation tools\n- Workflow tools\n- Marketing or business platforms\n- Technical skills\n- Other clearly relevant professional skills\n\nReturn an array of strings.\n\nDo not invent skills that are not supported by the job description.\n\n2. experience_required:\nExtract the required or preferred experience from the job description.\n\nPreserve the meaning and important details of the requirement.\n\nIf no experience requirement is stated, return \"\".\n\n3. employment_type:\nExtract the employment type stated in the job posting, such as:\n- Full-time\n- Part-time\n- Contract\n- Freelance\n- Temporary\n- Internship\n\nIf the job description does not clearly state it, return \"\".\n\n4. location:\nExtract the stated work location from the job posting.\n\nIf no location is stated, return \"\".\n\n5. job_summary:\nWrite a concise summary describing what the person will actually do in the role.\n\nBase this only on the job description.\n\n6. ai_automation_relevance:\nAnalyze how relevant the job is to:\n- Artificial intelligence\n- AI tools\n- Automation\n- Workflow automation\n- APIs\n- AI agents\n- Process automation\n- Data automation\n- AI-assisted workflows\n\nExplain the relevance based ONLY on what is actually stated or clearly demonstrated by the job description.\n\nIf the role has little or no AI/automation relevance, say so clearly.\n\nIMPORTANT:\n\n- Return ONLY the JSON object.\n- Do NOT use Markdown.\n- Do NOT use ```json code fences.\n- Do NOT calculate Job Score.\n- Do NOT calculate Recommendation.\n- Do NOT return job_score.\n- Do NOT return recommendation.\n- Do NOT return skill_score.\n- Do NOT return relevance_score.\n- Do NOT return remote_score.\n- Do NOT return matched_skills.\n- Do NOT invent information.\n- Do NOT infer requirements that are not supported by the job posting.\n- Do NOT add fields outside the exact schema.",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        -768,
+        16
+      ],
+      "id": "73b956b1-8bd9-447b-92a6-b045510e3fdb",
+      "name": "Analyze Job Posting"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -736,
+        -688
+      ],
+      "id": "447fcac8-1a94-43b7-a0e1-4e5e7ac15862",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "73ecd81d-3745-462b-ae8d-778aa642a87c",
+              "name": "site_name",
+              "value": "[\"indeed\"]",
+              "type": "array"
+            },
+            {
+              "id": "c23d61e9-1f0b-4b5b-a649-606d14392804",
+              "name": "search_term",
+              "value": "AI Automation",
+              "type": "string"
+            },
+            {
+              "id": "1bc3ab72-2f62-47ad-bbe3-d6d02fd3cc98",
+              "name": "location",
+              "value": "Philippines",
+              "type": "string"
+            },
+            {
+              "id": "109d2947-1d59-432a-8a29-5f67c8dd81b5",
+              "name": "results_wanted",
+              "value": 10,
+              "type": "number"
+            },
+            {
+              "id": "d4ac41c8-9c49-4516-9136-a66f4e5c1aaf",
+              "name": "is_remote",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "37ec9e1f-8c9c-452f-9a86-033fcf9f8d46",
+              "name": "country_indeed",
+              "value": "Philippines",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -544,
+        -240
+      ],
+      "id": "683ed8e8-98c2-4774-b2d2-8a6418d429f0",
+      "name": "Set Search Parameters1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://host.docker.internal:8000/api/v1/search_jobs",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "jobfinder-local-2026"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"site_name\": [\"indeed\"],\n  \"search_term\": \"AI Automation\",\n  \"location\": \"Philippines\",\n  \"results_wanted\": 10,\n  \"is_remote\": true,\n  \"country_indeed\": \"Philippines\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -320,
+        -240
+      ],
+      "id": "4e21c1c6-ec2c-49c5-9a26-ab5491e42a1b",
+      "name": "JobSpy - Search Jobs"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => {\n  const job = item.json.jobs || {};\n\n  return {\n    json: {\n      job_id: job.id || \"\",\n      job_title: job.title || \"\",\n      company: job.company || \"\",\n\n      job_url: job.job_url || \"\",\n      job_url_direct: job.job_url_direct || \"\",\n\n      source: job.site || \"\",\n      description: job.description || \"\",\n      date_posted: job.date_posted || \"\",\n\n      employment_type: job.job_type || \"\",\n      remote: job.is_remote === true,\n      location: job.location || \"\",\n\n      salary: {\n        source: job.salary_source || \"\",\n        min: job.min_amount ?? null,\n        max: job.max_amount ?? null,\n        currency: job.currency || \"\",\n        interval: job.interval || \"\"\n      },\n\n      job_level: job.job_level || \"\",\n      job_function: job.job_function || \"\",\n      listing_type: job.listing_type || \"\",\n\n      emails: job.emails ?? null,\n\n      company_industry: job.company_industry ?? null,\n      company_description: job.company_description ?? null,\n\n      skills: job.skills ?? null,\n      experience_range: job.experience_range ?? null,\n\n      company_rating: job.company_rating ?? null,\n      company_reviews_count: job.company_reviews_count ?? null,\n      vacancy_count: job.vacancy_count ?? null,\n\n      work_from_home_type: job.work_from_home_type ?? null,\n\n      jobspy_raw: job\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        128,
+        -240
+      ],
+      "id": "136d50e4-4274-4770-becc-f55b71df8361",
+      "name": "Normalize Job Payload",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "operation": "search",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Jobs",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "filterByFormula": "=={{ \"{Job ID} = '\" + $json.job_id + \"'\" }}",
+        "returnAll": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        352,
+        -240
+      ],
+      "id": "e136dcca-8ce7-441b-8c53-d22c88e436b3",
+      "name": "Check Airtable for Duplicate",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Restore Job Data - Pairs incoming Airtable search results with original normalized jobs\nconst normalizedJobs = $('Normalize Job Payload').all();\nconst searchResults = $input.all();\n\nreturn normalizedJobs.map((jobResult, index) => {\n  const originalJob = jobResult.json;\n  const searchItem = searchResults[index] ? searchResults[index].json : {};\n\n  // Check if search returned a valid Airtable record with an ID\n  const hasAirtableRecord = Boolean(searchItem.id || searchItem.id !== undefined && searchItem.fields);\n  const airtableRecordId = searchItem.id || (searchItem.fields ? searchItem.id : null);\n\n  return {\n    json: {\n      ...originalJob, // Preserves ALL original JobSpy & normalized fields intact\n      airtable_record_id: airtableRecordId,\n      duplicate_found: hasAirtableRecord\n    }\n  };\n});"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        576,
+        -240
+      ],
+      "id": "621b586c-6dc8-4cd4-8d8c-2daa445ff0d6",
+      "name": "Format Job Properties"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f5777721-d68b-469f-93e4-7e55ccf4fb7e",
+              "leftValue": "={{$json.id}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        800,
+        -240
+      ],
+      "id": "57b6c1f7-74d7-4b4c-b11c-0c0d514bb7dc",
+      "name": "Is New Job?"
+    },
+    {
+      "parameters": {
+        "jsCode": "YOUR_N8N_WEBHOOK_URL"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -240
+      ],
+      "id": "df609027-5f69-4a54-89fe-a2efdc171724",
+      "name": "Extract Raw Job Text"
+    },
+    {
+      "parameters": {
+        "operation": "create",
+        "base": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_BASE_ID",
+          "mode": "list",
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "table": {
+          "__rl": true,
+          "value": "YOUR_AIRTABLE_TABLE_ID",
+          "mode": "list",
+          "cachedResultName": "Jobs",
+          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Remote": false,
+            "Company": "={{ $json.company }}",
+            "Job URL": "={{ $json.job_url }}",
+            "Source": "={{ $json.source === 'indeed' ? 'Indeed' : $json.source === 'linkedin' ? 'LinkedIn' : $json.source === 'upwork' ? 'Upwork' : 'Other' }}",
+            "Job Description": "={{ $json.description }}",
+            "Status": "Analyzing",
+            "Job Title": "={{ $json.job_title }}",
+            "Required Skills": "={{ $json.required_skills.join(', ') }}",
+            "Experience Required": "={{ $json.experience_required }}",
+            "Salary": "={{ typeof $json.salary === 'string' ? $json.salary : ($json.salary && $json.salary.min ? $json.salary.currency + ' ' + $json.salary.min + '-' + $json.salary.max : '') }}",
+            "Job Summary": "={{ $json.job_summary }}",
+            "AI Automation Relevance": "={{ $json.ai_automation_relevance }}",
+            "Location": "={{ $json.location }}",
+            "Employment Type": "={{ $json.employment_type }}",
+            "Job ID": "={{ $json.job_id }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Job Title",
+              "displayName": "Job Title",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Company",
+              "displayName": "Company",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job URL",
+              "displayName": "Job URL",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Source",
+              "displayName": "Source",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "OnlineJobs.ph",
+                  "value": "OnlineJobs.ph"
+                },
+                {
+                  "name": "LinkedIn",
+                  "value": "LinkedIn"
+                },
+                {
+                  "name": "Himalayas",
+                  "value": "Himalayas"
+                },
+                {
+                  "name": "Upwork",
+                  "value": "Upwork"
+                },
+                {
+                  "name": "Indeed",
+                  "value": "Indeed"
+                },
+                {
+                  "name": "Company Website",
+                  "value": "Company Website"
+                },
+                {
+                  "name": "Other",
+                  "value": "Other"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Description",
+              "displayName": "Job Description",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Required Skills",
+              "displayName": "Required Skills",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Experience Required",
+              "displayName": "Experience Required",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Salary",
+              "displayName": "Salary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Remote",
+              "displayName": "Remote",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "boolean",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Score",
+              "displayName": "Job Score",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "number",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Recommendation",
+              "displayName": "Recommendation",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "APPLY",
+                  "value": "APPLY"
+                },
+                {
+                  "name": "CONSIDER",
+                  "value": "CONSIDER"
+                },
+                {
+                  "name": "SKIP",
+                  "value": "SKIP"
+                },
+                {
+                  "name": "90",
+                  "value": "90"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Status",
+              "displayName": "Status",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "options",
+              "options": [
+                {
+                  "name": "New",
+                  "value": "New"
+                },
+                {
+                  "name": "Analyzing",
+                  "value": "Analyzing"
+                },
+                {
+                  "name": "Qualified",
+                  "value": "Qualified"
+                },
+                {
+                  "name": "Application Ready",
+                  "value": "Application Ready"
+                },
+                {
+                  "name": "Applied",
+                  "value": "Applied"
+                },
+                {
+                  "name": "Interview",
+                  "value": "Interview"
+                },
+                {
+                  "name": "Rejected",
+                  "value": "Rejected"
+                },
+                {
+                  "name": "Skipped",
+                  "value": "Skipped"
+                },
+                {
+                  "name": "APPLY",
+                  "value": "APPLY"
+                }
+              ],
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Date Found",
+              "displayName": "Date Found",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Notes",
+              "displayName": "Notes",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Employment Type",
+              "displayName": "Employment Type",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Location",
+              "displayName": "Location",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job Summary",
+              "displayName": "Job Summary",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "AI Automation Relevance",
+              "displayName": "AI Automation Relevance",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Why Good Fit",
+              "displayName": "Why Good Fit",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            },
+            {
+              "id": "Job ID",
+              "displayName": "Job ID",
+              "required": false,
+              "defaultMatch": false,
+              "canBeUsedToMatch": true,
+              "display": true,
+              "type": "string",
+              "readOnly": false,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {
+          "typecast": true
+        }
+      },
+      "type": "n8n-nodes-base.airtable",
+      "typeVersion": 2.2,
+      "position": [
+        -368,
+        64
+      ],
+      "id": "a81bb1a6-65f7-49aa-9aa7-ad1c7c90ae32",
+      "name": "Create Initial Airtable Entry"
+    },
+    {
+      "parameters": {
+        "model": "qwen/qwen3-235b-a22b-2507",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        864,
+        192
+      ],
+      "id": "a802eb56-5e8b-4a33-8ced-4164001ac4b8",
+      "name": "OpenRouter - Draft Generator"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "let draftText = \"\";\nlet rawOutput = $input.item.json.output;\nif (!rawOutput) {\n  rawOutput = $input.item.json.text;\n}\nif (!rawOutput) {\n  rawOutput = $input.item.json;\n}\n\nif (typeof rawOutput === 'string') {\n  const cleanStr = rawOutput.trim().replace(/^```json\\s*|^```\\s*|\\s*```$/g, '');\n  try {\n    const parsed = JSON.parse(cleanStr);\n    draftText = parsed.application_draft || parsed.text || cleanStr;\n  } catch (e) {\n    draftText = cleanStr;\n  }\n} else if (typeof rawOutput === 'object' && rawOutput !== null) {\n  draftText = rawOutput.application_draft || rawOutput.text || JSON.stringify(rawOutput);\n}\n\nreturn {\n  json: {\n    ...$input.item.json,\n    application_draft: draftText\n  }\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1136,
+        0
+      ],
+      "id": "21892730-4ea0-4118-938b-8a61a28d1c30",
+      "name": "Clean AI Draft JSON"
+    },
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 10
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        -768,
+        -240
+      ],
+      "id": "dae574f6-b011-4540-b3d8-f531428699a2",
+      "name": "Schedule Trigger"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Parse AI Analysis": {
+      "main": [
+        [
+          {
+            "node": "Create Initial Airtable Entry",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Normalize Job Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Extract Raw Job Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Analyze Job Posting",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Recommendation": {
+      "main": [
+        [
+          {
+            "node": "Update Apply Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Qualified Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Update Rejected Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Apply Record": {
+      "main": [
+        [
+          {
+            "node": "Generate Application Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generate Application Draft": {
+      "main": [
+        [
+          {
+            "node": "Clean AI Draft JSON",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Candidate-Job Match": {
+      "main": [
+        [
+          {
+            "node": "Calculate Overall Job Score",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Job Analysis": {
+      "main": [
+        [
+          {
+            "node": "Route Recommendation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Calculate Overall Job Score": {
+      "main": [
+        [
+          {
+            "node": "Set Application Recommendation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Application Recommendation": {
+      "main": [
+        [
+          {
+            "node": "Update Job Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Analyze Job Posting": {
+      "main": [
+        [
+          {
+            "node": "Parse AI Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        []
+      ]
+    },
+    "Set Search Parameters1": {
+      "main": [
+        [
+          {
+            "node": "JobSpy - Search Jobs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "JobSpy - Search Jobs": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Job Payload": {
+      "main": [
+        [
+          {
+            "node": "Check Airtable for Duplicate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Check Airtable for Duplicate": {
+      "main": [
+        [
+          {
+            "node": "Format Job Properties",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Job Properties": {
+      "main": [
+        [
+          {
+            "node": "Is New Job?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is New Job?": {
+      "main": [
+        [
+          {
+            "node": "Duplicate - Skip",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Raw Job Text": {
+      "main": [
+        [
+          {
+            "node": "Analyze Job Posting",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Initial Airtable Entry": {
+      "main": [
+        [
+          {
+            "node": "Calculate Candidate-Job Match",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter - Draft Generator": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Generate Application Draft",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Clean AI Draft JSON": {
+      "main": [
+        [
+          {
+            "node": "Save Application Draft",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Search Parameters1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "bd2e40e9-0418-45f9-9827-206051b1fd72",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "4ec76cd5a5fe2a9d002e1ddef00531e58773bfd640fe935c77bb2f7bfb4fd1c1"
+  },
+  "nodeGroups": [],
+  "id": "Jt178MrydiwwKAaz",
+  "tags": [
+    {
+      "updatedAt": "2026-09-26T14:59:37.738Z",
+      "createdAt": "2026-09-26T14:59:37.738Z",
+      "id": "4fLRDTNeGJw5ULom",
+      "name": "jobspy"
+    }
+  ],
+  "_portfolio_note": "SANITIZED FOR PUBLIC GITHUB. Replace placeholder Airtable IDs, URLs, and credentials with your own values before importing into n8n."
+}

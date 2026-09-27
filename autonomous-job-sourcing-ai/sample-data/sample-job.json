@@ -1,0 +1,15 @@
+{
+  "job_id": "DEMO-001",
+  "title": "AI Automation Specialist",
+  "company": "Example Company",
+  "employment_type": "Remote",
+  "location": "Remote",
+  "description": "Example job posting used only for testing the portfolio workflow.",
+  "required_skills": [
+    "n8n",
+    "AI automation",
+    "APIs",
+    "workflow design"
+  ],
+  "experience_required": "2+ years"
+}
