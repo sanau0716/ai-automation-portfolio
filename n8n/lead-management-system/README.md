@@ -1,60 +1,171 @@
-# Lead Management System
+# AI Lead Management System
 
-An AI-powered lead management system built with n8n to automate lead qualification, personalized responses, and follow-up monitoring.
+An n8n-based AI automation project for lead qualification, personalized responses, scheduled follow-ups, and manual review escalation.
 
 ## Project Overview
 
-This project demonstrates an end-to-end lead management process where incoming leads are analyzed by AI, qualified based on business criteria, and routed into appropriate follow-up actions.
+This project contains two complementary workflows with 29 nodes in total.
 
-The system is designed to reduce manual lead handling while helping businesses respond faster and prioritize leads based on their potential value.
+The workflows demonstrate how AI and business automation can support lead intake, qualification, communication, and follow-up management.
 
-The project contains two complementary workflows:
+## Workflow 1: AI Lead Qualification and Response
 
-### Workflow 1 — Lead Qualification & Response
+**File:** `phase-3-lead-qualification-response.json`
 
-Analyzes newly received leads using AI and determines their qualification level.
+**Nodes:** 14
 
-The workflow evaluates lead information and produces structured analysis including:
+### Workflow Components
 
-- Lead score
-- Lead qualification
-- Lead analysis
-- Recommended action
-- Personalized response
+1. Receive incoming lead data through an n8n webhook.
+2. Process the lead using an AI qualification agent.
+3. Use Gemini 2.5 Flash-Lite through the OpenRouter integration.
+4. Parse the AI qualification result using a JavaScript Code node.
+5. Store qualification information in Google Sheets.
+6. Route leads according to high-value and qualification conditions.
+7. Send Gmail notifications and follow-up messages.
+8. Update lead status in Google Sheets.
 
-Leads can then be handled differently depending on their qualification and potential business value.
+### Technical Capabilities
 
-### Workflow 2 — Lead Follow-Up Monitor
+- Webhook-triggered automation
+- AI-assisted lead qualification
+- Structured result processing
+- Conditional lead routing
+- Automated email communication
+- Google Sheets data integration
 
-Monitors qualified leads and manages the follow-up process.
+## Workflow 2: AI Lead Follow-Up Monitor
 
-The workflow helps ensure that leads do not become forgotten after the initial response by tracking the appropriate follow-up stage and triggering communication when required.
+**File:** `phase-3-lead-follow-up-monitor.json`
+
+**Nodes:** 15
+
+### Workflow Components
+
+1. Run automatically using an n8n Schedule Trigger.
+2. Retrieve lead records from Google Sheets.
+3. Filter eligible leads using JavaScript.
+4. Determine follow-up eligibility and sequence.
+5. Apply a four-follow-up limit.
+6. Escalate leads requiring manual review.
+7. Generate follow-up strategies using an AI agent connected to OpenRouter.
+8. Send follow-up messages through Gmail.
+9. Check email-send results.
+10. Update follow-up status and activity logs in Google Sheets.
+
+### Technical Capabilities
+
+- Scheduled workflow execution
+- Lead filtering and eligibility logic
+- AI-assisted follow-up planning
+- Automated email delivery
+- Follow-up sequence limits
+- Manual review escalation
+- Activity logging
+- Email failure status handling
+
+## Technology Stack
+
+| Technology | Purpose |
+|---|---|
+| n8n | Workflow orchestration |
+| Webhooks | Lead intake |
+| OpenRouter | AI model connectivity |
+| Gemini 2.5 Flash-Lite | Lead qualification model |
+| AI Agents | Qualification and follow-up strategy |
+| JavaScript | Parsing, filtering, and business logic |
+| Gmail | Notifications and lead communication |
+| Google Sheets | Lead records, statuses, and activity logs |
 
 ## Architecture
 
 ```text
-                    New Lead
-                       │
-                       ▼
-                Lead Qualification
-                       │
-                       ▼
-                  AI Analysis
-                       │
-              ┌────────┴────────┐
-              │                 │
-              ▼                 ▼
-        Lead Score         Qualification
-              │                 │
-              └────────┬────────┘
-                       ▼
-              Personalized Response
-                       │
-                       ▼
-                Follow-Up Process
-                       │
-                       ▼
-              Follow-Up Monitoring
-                       │
-                       ▼
-                Next Action
+Incoming Lead
+     |
+     v
+Webhook Trigger
+     |
+     v
+AI Qualification
+     |
+     v
+Parse AI Result
+     |
+     v
+Google Sheets
+     |
+     v
+Conditional Lead Routing
+     |
+     +-- High-Value Lead
+     |       |
+     |       +-- Owner Alert
+     |       +-- Lead Follow-Up
+     |
+     +-- Qualified Lead
+     |       |
+     |       +-- Lead Follow-Up
+     |
+     +-- Low-Value Lead
+             |
+             +-- Lead Follow-Up
+
+
+Scheduled Follow-Up Monitor
+     |
+     v
+Retrieve Leads from Google Sheets
+     |
+     v
+Eligibility and Sequence Checks
+     |
+     +-- Follow-Up Limit Reached
+     |       |
+     |       v
+     |   Manual Review
+     |
+     +-- Eligible for Follow-Up
+             |
+             v
+       AI Follow-Up Strategy
+             |
+             v
+       Gmail Communication
+             |
+             v
+       Status and Activity Updates
+```
+
+The diagram summarizes the workflow connections and does not represent every internal branch.
+
+## Reliability and Operational Considerations
+
+The exported workflows contain:
+
+- Conditional routing for lead qualification.
+- Scheduled follow-up eligibility checks.
+- A four-follow-up limit and manual review path.
+- Email-send result checks and failure status updates.
+
+Potential improvements include:
+
+- Persisting incoming leads before AI processing.
+- Adding AI provider retry and fallback handling.
+- Verifying Gmail error detection and status updates.
+- Adding centralized workflow error monitoring.
+
+## Project Status
+
+Portfolio implementation. The repository contains workflow definitions, but these files alone do not establish production uptime, client deployment, or measured business results.
+
+## Skills Demonstrated
+
+- AI workflow development
+- API-connected AI model integration
+- Webhook automation
+- JavaScript data processing
+- Conditional business logic
+- Email automation
+- Scheduled follow-up orchestration
+- Google Sheets integration
+- Human review escalation
