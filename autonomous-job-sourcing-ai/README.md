@@ -78,6 +78,16 @@ Route Recommendation
  Save Application Draft
 ```
 
+## n8n Workflow Visualization
+
+The following screenshot shows the Autonomous Job Sourcing and Application Drafting Pipeline in the local n8n editor.
+
+![Autonomous Job Sourcing AI Workflow](screenshots/autonomous-job-sourcing-workflow.png)
+
+The workflow integrates job discovery, Airtable duplicate detection, AI job analysis, candidate-job scoring, recommendation routing, and application draft generation.
+
+**Implementation note:** The screenshot represents a local workflow configuration. The exported GitHub JSON is a sanitized workflow snapshot and may differ from the local version.
+
 ## Scoring logic
 
 The current workflow calculates:
