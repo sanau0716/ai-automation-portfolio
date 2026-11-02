@@ -156,7 +156,21 @@ Potential improvements include:
 
 ## Project Status
 
-Portfolio implementation. The repository contains workflow definitions, but these files alone do not establish production uptime, client deployment, or measured business results.
+### Live Business Deployment
+
+The AI Lead Qualification and Response workflow is deployed on **awtomateai.com**, where website inquiries trigger a self-hosted n8n automation.
+
+The website has received real inquiries. This is an operational deployment for the developer's own business, not a paid client implementation.
+
+The live workflow uses AI-assisted qualification, conditional lead routing, Gmail communication, and Google Sheets integration as represented in the exported workflow.
+
+### Portfolio Implementation
+
+The AI Lead Follow-Up Monitor is a separate portfolio workflow and is not currently part of the live website deployment.
+
+### Limitations
+
+No claims are made regarding paying clients, conversion rates, measured ROI, or guaranteed production uptime. The exported workflows may differ from their currently deployed configurations.
 
 ## Skills Demonstrated
 
