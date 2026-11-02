@@ -95,13 +95,23 @@ An automation project for analyzing job opportunities and supporting application
 
 **Status:** Portfolio implementation.
 
-### 7. LeadFlow AI  Zapier Automation
+### 7. LeadFlow AI  Original Zapier Implementation
 
-[View Project](zapier/leadflow-ai)
+[View Original Zapier Workflow](zapier/leadflow-ai)
 
-A Zapier-based lead automation project with sanitized workflow documentation.
+The original Zapier implementation of the lead automation project.
 
-**Status:** Portfolio implementation.
+After the Zapier trial expired, I recreated the automation using n8n, allowing me to continue developing and operating the workflow through a self-hosted platform.
+
+The n8n version is now connected to awtomateai.com and processes real website inquiries.
+
+**Technical experience demonstrated:**
+- Cross-platform workflow migration
+- Zapier and n8n automation development
+- Workflow reconstruction and integration
+- Self-hosted automation deployment
+
+**Status:** Original Zapier implementation superseded by the live n8n version. Both belong to the same automation project.
 
 ---
 
