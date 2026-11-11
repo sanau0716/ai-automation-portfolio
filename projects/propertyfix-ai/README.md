@@ -1,6 +1,10 @@
 # PropertyFix AI 2.0 — Maintenance Intelligence
 
-**Status:** Unpublished n8n portfolio proof of concept, created and tested November 11, 2026. **Not** a live tenant-facing service or verified contractor-dispatch system.
+![PropertyFix AI 2.0 workflow overview](assets/workflow-overview.svg)
+
+*Simplified visual of the live n8n workflow. Approval is for the triage plan only; no vendor dispatch or emergency response is automated.*
+
+**Status:** Live and active in my self-hosted n8n instance as of November 11, 2026. It remains a developing proof of concept, **not** a verified tenant-facing emergency-response or contractor-dispatch service.
 
 **Stack:** Self-hosted n8n · n8n Form Trigger · n8n Data Tables · OpenRouter LLM · JavaScript · Gmail · Slack
 
@@ -73,7 +77,7 @@ All data used in the following tests was synthetic:
 - **Execution #409:** Routine plumbing with explicit negation was classified as routine, its manager approval persisted, and the standard Slack route executed with simulated delivery.
 - **Execution #410:** Sparks and smoke were classified as emergency, the dedicated Slack emergency route executed with simulated delivery, and an approved manager review persisted as `emergency_review_acknowledged`.
 
-Gmail notifications, Slack notifications, and approval responses were **pinned/simulated** during these tests. The Slack credential itself was independently verified via a successful real delivery test (#407), but live PropertyFix Slack delivery and the AI error branch still require dedicated testing. Live notification delivery, production form access controls, broad natural-language negation handling, actual emergency response, concurrent submissions, and sustained operational performance have **not** been verified.
+Gmail notifications, Slack notifications, and approval responses were **pinned/simulated** during these tests. The Slack credential itself was independently verified via a successful real delivery test (#407), but delivery through the actual PropertyFix Slack notification nodes and the AI error branch still require dedicated testing. Live notification delivery, production form access controls, broad natural-language negation handling, actual emergency response, concurrent submissions, and sustained operational performance have **not** been verified.
 
 ## Data handling and safety
 

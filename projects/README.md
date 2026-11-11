@@ -7,8 +7,8 @@ Each project has its own folder with an explanation of what I built, plus workfl
 | Project | Why you might open it | Stage |
 | --- | --- | --- |
 | **[Lead Management](lead-management)** | See a website-connected n8n workflow and its original Zapier version together | Lead qualification live for my own business |
-| **[Smart Scheduler V1](smart-scheduler)** | See human-approved Gmail-to-Calendar automation with a real event-creation test | Activated for my account; ongoing verification |
-| **[PropertyFix AI 2.0](propertyfix-ai)** | Explore AI maintenance triage, safety rules, manager approvals, and Slack routing | Unpublished prototype; synthetic tests |
+| **[Smart Scheduler V1](smart-scheduler)** | See human-approved Gmail-to-Calendar automation with a real event-creation test | **Live in n8n**; ongoing verification |
+| **[PropertyFix AI 2.0](propertyfix-ai)** | Explore AI maintenance triage, safety rules, manager approvals, and Slack routing | **Live in n8n**; safety validation ongoing |
 | **[Business Opportunity Finder](business-opportunity-finder)** | Review research and AI-assisted opportunity scoring on real-world data | Tested prototype |
 | **[Customer Engagement](customer-engagement)** | Explore customer monitoring and response-management workflows | Portfolio prototype |
 | **[Business Automation Auditor](business-automation-auditor)** | Inspect website auditing and automation opportunity workflows | Portfolio prototype |
