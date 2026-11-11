@@ -60,9 +60,12 @@ All data used in the following tests was synthetic:
 - **Execution #400:** Smoke and sparking at an electrical panel were classified as emergency electrical work, persisted as requiring immediate review, and routed to the simulated emergency notification.
 - **Execution #401:** The electrical hazard was re-tested after response-target enhancements. The saved record contained emergency priority, risk score 100, a five-minute illustrative response target, and explicit recommended human action.
 
-- **Execution #402:** Human approval response was simulated and the manager decision was saved to the ledger. This also surfaced a **known bug**: the phrase “no flooding” falsely triggered an emergency due to keyword matching. **Correction and retest are pending.**
+- **Execution #402:** Human approval response was simulated and the manager decision was saved to the ledger. This also surfaced a **known bug**: the phrase “no flooding” falsely triggered an emergency due to keyword matching. The negation check was subsequently corrected and retested in executions **#405** and **#406**.
 
-Gmail notifications and approval responses were **pinned/simulated** during these tests. Live notification delivery, production form access controls, accurate negation handling, actual emergency response, concurrent submissions, and sustained operational performance have **not** been verified.
+- **Execution #405:** Correctly treated “no flooding or fire” as a routine maintenance case and persisted an approved triage-plan decision (simulated).
+- **Execution #406:** Correctly retained emergency classification for real sparks/smoke and persisted an approved triage-plan decision (simulated).
+
+Gmail notifications and approval responses were **pinned/simulated** during these tests. Live notification delivery, production form access controls, broad natural-language negation handling, actual emergency response, concurrent submissions, and sustained operational performance have **not** been verified.
 
 ## Data handling and safety
 
@@ -70,7 +73,7 @@ This GitHub documentation contains no real resident data, credential IDs, privat
 
 ## Next engineering milestones
 
-1. Correct and retest negated hazard descriptions (for example, “no flooding”), plus a broader clinical-style negation/ambiguity test matrix; this is a **known release blocker**.
+1. Expand safety-rule tests beyond the verified “no flooding or fire” example, including tricky negations and multiple hazards; deterministic keyword rules remain an imperfect heuristic.
 2. Extend the existing approval decision into a work-order state machine (assigned / in-progress / completed / rejected).
 3. Build duplicate detection for near-identical requests and safe update/reopen behavior.
 4. Add vendor skills, location, availability, and cost-aware dispatch **recommendations** rather than automatic dispatch.
