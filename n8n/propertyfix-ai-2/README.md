@@ -10,7 +10,7 @@ Property managers receive maintenance requests in unstructured messages and form
 
 ## What I built
 
-**PropertyFix AI 2.0** is a 12-node, human-supervised maintenance intake and triage workflow. It captures a request, preserves the original submission in a persistent case ledger, uses AI to summarize the issue and suggest a relevant trade, applies deterministic safety overrides, and generates a manager-facing review notification. It assigns **illustrative** response targets and risk scores without claiming to have dispatched anyone.
+**PropertyFix AI 2.0** is a 15-node, human-supervised maintenance intake and triage workflow. It captures a request, preserves the original submission in a persistent case ledger, uses AI to summarize the issue and suggest a relevant trade, applies deterministic safety overrides, and generates manager-facing review notifications followed by an explicit approve/reject decision that is saved in the ledger. It assigns **illustrative** response targets and risk scores without claiming to have dispatched anyone.
 
 The project builds on my earlier *PropertyFix AI* maintenance-automation concept. It is a **new n8n implementation**; the original Zapier source files have not been verified within the connected GitHub repository.
 
@@ -29,8 +29,9 @@ flowchart TD
     H --> I{Potential emergency?}
     I -- Yes --> J[Emergency manager notification]
     I -- No --> K[Standard manager review queue]
-    J --> L[Human decision required]
+    J --> L[Manager approval email]
     K --> L
+    L --> M[Record decision in case ledger]
 ```
 
 ## Features relevant to property-management teams
@@ -46,6 +47,7 @@ flowchart TD
 | Case management | Data Table persists identifier, status, source details, AI decisions, and timestamps |
 | Operational targets | Illustrative targets: emergency 5 minutes, urgent 60 minutes, routine 24 hours, uncertain 120 minutes |
 | Review queues | Routes potential emergencies separately from ordinary manager reviews |
+| Human decision checkpoint | Gmail approval/rejection form followed by persistent decision status |
 | Guardrails | No autonomous contractor assignment, emergency-service call, or tenant promise is made |
 
 **Response targets are demonstration configuration values, not contracted SLAs.** A property manager must configure real service policies, staffed coverage, and local emergency procedures before using them operationally.
@@ -58,7 +60,9 @@ All data used in the following tests was synthetic:
 - **Execution #400:** Smoke and sparking at an electrical panel were classified as emergency electrical work, persisted as requiring immediate review, and routed to the simulated emergency notification.
 - **Execution #401:** The electrical hazard was re-tested after response-target enhancements. The saved record contained emergency priority, risk score 100, a five-minute illustrative response target, and explicit recommended human action.
 
-Gmail notifications were **pinned/simulated** during these tests. Live notification delivery, production form access controls, actual emergency response, concurrent submissions, and sustained operational performance have **not** been verified.
+- **Execution #402:** Human approval response was simulated and the manager decision was saved to the ledger. This also surfaced a **known bug**: the phrase “no flooding” falsely triggered an emergency due to keyword matching. **Correction and retest are pending.**
+
+Gmail notifications and approval responses were **pinned/simulated** during these tests. Live notification delivery, production form access controls, accurate negation handling, actual emergency response, concurrent submissions, and sustained operational performance have **not** been verified.
 
 ## Data handling and safety
 
@@ -66,12 +70,13 @@ This GitHub documentation contains no real resident data, credential IDs, privat
 
 ## Next engineering milestones
 
-1. Add explicit supervisor approval and a work-order state machine (approved / assigned / in-progress / completed / rejected).
-2. Build duplicate detection for near-identical requests and safe update/reopen behavior.
-3. Add vendor skills, location, availability, and cost-aware dispatch **recommendations** rather than automatic dispatch.
-4. Add SLA aging, escalation reminders, and an operations dashboard.
-5. Test low-confidence cases, false-positive hazards, failed LLM calls, duplicates, and volume/concurrency.
-6. Export a sanitized workflow JSON and add screenshots after reviewing for credentials and private configuration.
+1. Correct and retest negated hazard descriptions (for example, “no flooding”), plus a broader clinical-style negation/ambiguity test matrix; this is a **known release blocker**.
+2. Extend the existing approval decision into a work-order state machine (assigned / in-progress / completed / rejected).
+3. Build duplicate detection for near-identical requests and safe update/reopen behavior.
+4. Add vendor skills, location, availability, and cost-aware dispatch **recommendations** rather than automatic dispatch.
+5. Add SLA aging, escalation reminders, and an operations dashboard.
+6. Test low-confidence cases, false-positive hazards, failed LLM calls, duplicates, and volume/concurrency.
+7. Export a sanitized workflow JSON and add screenshots after reviewing for credentials and private configuration.
 
 ---
 
