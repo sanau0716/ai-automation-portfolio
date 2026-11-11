@@ -8,17 +8,17 @@ I started building these projects to solve practical problems: following up with
 
 You can explore the projects below, look through the workflows, and see what I've actually tested.
 
-**[See all projects](PROJECTS.md)** · **[n8n workflows](n8n/README.md)** · **[Zapier projects](zapier/README.md)** · **[My website](https://awtomateai.com)**
+**[See all projects](PROJECTS.md)** · **[Project folders](projects/README.md)** · **[My website](https://awtomateai.com)**
 
 ## My projects at a glance
 
 | Project | What I built | Where it stands |
 | --- | --- | --- |
-| **[AI Lead Management](n8n/lead-management-system)** | A lead intake and qualification system connected to my business website. I first built it in [Zapier](zapier/leadflow-ai), then rebuilt it in n8n. | Lead qualification is live on my own website; follow-up monitoring is a prototype |
-| **[Customer Engagement System](n8n/customer-engagement-system)** | Workflows to flag customer concerns and help organize responses. | Portfolio prototype |
-| **[Business Automation Auditor](n8n/business-audit-system/business-automation-auditor)** | An AI-assisted way to review businesses and find tasks worth automating. | Portfolio prototype |
-| **[Business Opportunity Finder](n8n/business-opportunity-system)** | A research workflow that finds businesses and looks for automation opportunities. | Tested with real business research data |
-| **[Autonomous Job Sourcing](autonomous-job-sourcing-ai)** | A tool to research jobs, compare requirements, and prepare application drafts for me to review. | Portfolio prototype |
+| **[AI Lead Management](projects/lead-management/n8n)** | A lead intake and qualification system connected to my business website. I first built it in [Zapier](projects/lead-management/zapier), then rebuilt it in n8n. | Lead qualification is live on my own website; follow-up monitoring is a prototype |
+| **[Customer Engagement System](projects/customer-engagement)** | Workflows to flag customer concerns and help organize responses. | Portfolio prototype |
+| **[Business Automation Auditor](projects/business-automation-auditor)** | An AI-assisted way to review businesses and find tasks worth automating. | Portfolio prototype |
+| **[Business Opportunity Finder](projects/business-opportunity-finder)** | A research workflow that finds businesses and looks for automation opportunities. | Tested with real business research data |
+| **[Autonomous Job Sourcing](projects/autonomous-job-sourcing)** | A tool to research jobs, compare requirements, and prepare application drafts for me to review. | Portfolio prototype |
 
 ### More projects I'm working on
 
