@@ -1,166 +1,59 @@
 # AI Automation Portfolio
 
-### AI Automation Developer & Workflow Engineer
+### Hi, I'm an automation builder who enjoys turning repetitive work into simpler processes.
 
-**n8n | AI Agents | APIs | Webhooks | JavaScript | Business Process Automation**
+I work with **n8n, AI tools, APIs, and JavaScript** to connect systems and make everyday business tasks easier to manage.
 
-I design and build AI-assisted workflow automations that connect business systems, process information, support decision-making, and reduce repetitive work.
+I started building these projects to solve practical problems: following up with leads, understanding customer messages, researching potential clients, and keeping track of requests that would otherwise get lost in an inbox. Some are running in my own business; others are working prototypes that I've built and tested as I develop my skills.
 
-My portfolio includes a live website-integrated automation for my own business, workflows tested with real-world data, and independently developed automation projects.
+You can explore the projects below, look through the workflows, and see what I've actually tested.
 
-My work focuses on practical system integration, structured AI outputs, workflow logic, and maintainable automation design.
+**[See all projects](PROJECTS.md)** · **[Project folders](projects/README.md)** · **[My website](https://awtomateai.com)**
 
-## Featured Projects
+## My projects at a glance
 
-### 1. AI Lead Management & Qualification
+| Project | What I built | Where it stands |
+| --- | --- | --- |
+| **[AI Lead Management](projects/lead-management/n8n)** | A lead intake and qualification system connected to my business website. I first built it in [Zapier](projects/lead-management/zapier), then rebuilt it in n8n. | Lead qualification is live on my own website; follow-up monitoring is a prototype |
+| **[Customer Engagement System](projects/customer-engagement)** | Workflows to flag customer concerns and help organize responses. | Portfolio prototype |
+| **[Business Automation Auditor](projects/business-automation-auditor)** | An AI-assisted way to review businesses and find tasks worth automating. | Portfolio prototype |
+| **[Business Opportunity Finder](projects/business-opportunity-finder)** | A research workflow that finds businesses and looks for automation opportunities. | Tested with real business research data |
+| **[Autonomous Job Sourcing](projects/autonomous-job-sourcing)** | A tool to research jobs, compare requirements, and prepare application drafts for me to review. | Portfolio prototype |
 
-**Status:** Lead qualification deployed for my own business; follow-up monitoring is a portfolio implementation.
+### More projects I'm working on
 
-[View Project](n8n/lead-management-system)
+These are currently documented in pull requests, so their folders aren't on the main branch yet.
 
-Developed an AI-assisted lead intake, qualification, and response system integrated with my business website, [awtomateai.com](https://awtomateai.com).
+| Project | What it does | Where to see it |
+| --- | --- | --- |
+| **Smart Scheduler V1** | Reviews appointment emails and creates calendar events after approval. | [Project PR #1](https://github.com/sanau0716/ai-automation-portfolio/pull/1) |
+| **PropertyFix AI 2.0** | Sorts maintenance requests by urgency and sends them to a manager for review. | [Project PR #2](https://github.com/sanau0716/ai-automation-portfolio/pull/2) |
 
-**Technical highlights:**
-- Webhook-based lead intake
-- AI-assisted lead analysis and qualification
-- Conditional routing and email responses
-- Google Sheets integration
-- JavaScript workflow processing
-- Separate scheduled follow-up monitoring workflow
+**[Browse the full project directory →](PROJECTS.md)** for the tools used, workflow details, test evidence, and current limitations.
 
-**Workflow complexity:** 29 nodes across two n8n workflows.
+## How I work
 
-**Cross-platform development:** Originally built as LeadFlow AI using Zapier, then rebuilt using self-hosted n8n after the Zapier trial expired.
+I usually begin with the part of a process that's taking too much time or creating confusion. Then I sketch out the steps, connect the tools, add the logic, and test what happens when the information isn't as clean as expected.
 
-[View Original Zapier Implementation](zapier/leadflow-ai)
+I'm especially interested in the point where **AI helps make sense of information, but a person still makes the important decision**. You'll see that approach in projects that involve customer replies, scheduling, and maintenance requests.
 
-The live qualification workflow has processed real website inquiries. No verified customer conversions or revenue improvements are claimed.
+### Tools I've worked with
 
-### 2. AI Customer Engagement System
+**Automation:** n8n, Zapier, webhooks, REST APIs  
+**AI:** OpenRouter, Gemini, structured AI responses  
+**Code and data:** JavaScript, JSON, Google Sheets, Airtable  
+**Other integrations:** Gmail, Slack, Google Calendar, Apify, Firecrawl, Crawl4AI  
+**Infrastructure:** Self-hosted n8n and local development setups
 
-**Status:** Portfolio implementation; not deployed live.
+## A quick note about the projects
 
-[View Project](n8n/customer-engagement-system)
+I want the portfolio to show the work as it is, not make it sound bigger than it is.
 
-Developed two complementary workflows for monitoring customer engagement risks and managing AI-assisted customer responses.
+The lead qualification workflow is connected to my own live website and has received actual inquiries. The Business Opportunity Finder has been tested on real research data. The other projects are demonstrations or works in progress unless their README says otherwise. **These are not paid-client case studies**, and I don't claim results like revenue increases or hours saved without evidence.
 
-**Technical highlights:**
-- Customer engagement and risk monitoring
-- AI-assisted message analysis
-- Conditional routing and escalation
-- Structured data processing
-- Email response management
-- Safeguards against automated reply loops
+If you're reviewing my work for a role or a project, I'd be glad for you to look at the workflow structure, decisions, and safeguards—not just the screenshots.
 
-**Workflow complexity:** 36 nodes across two workflows.
-
-### 3. AI Business Automation Auditor
-
-**Status:** Portfolio implementation.
-
-[View Project](n8n/business-audit-system/business-automation-auditor)
-
-Developed a two-workflow business auditing system for analyzing websites and identifying potential automation opportunities.
-
-**Technical highlights:**
-- Business discovery using Apify
-- Website retrieval and Firecrawl integration
-- AI-assisted business analysis
-- JavaScript-based audit scoring
-- Automation opportunity recommendations
-- Google Sheets reporting
-
-**Workflow complexity:** 23 nodes across two workflows.
-
-### 4. AI Business Opportunity Finder
-
-**Status:** Executed with real-world business research data; not continuously deployed as a production service.
-
-[View Project](n8n/business-opportunity-system)
-
-Built an AI-assisted business research pipeline that discovers businesses, analyzes their websites, and identifies potential automation opportunities.
-
-**Technical highlights:**
-- Google Maps business discovery
-- Crawl4AI website analysis
-- OpenRouter AI integration
-- Automation opportunity scoring
-- Structured Google Sheets results
-
-**Workflow complexity:** 17 nodes.
-
-The project includes a screenshot of actual business research results produced during testing.
-
-[View Execution Evidence](n8n/business-opportunity-system/screenshots/business-opportunity-results.png)
-
-AI-generated scores and recommendations are exploratory assessments, not verified business outcomes.
-
-### 5. Autonomous Job Sourcing & Application Drafting
-
-**Status:** Portfolio implementation; no verified end-to-end production deployment claimed.
-
-[View Project](autonomous-job-sourcing-ai)
-
-Developed an AI-assisted job research pipeline for discovering opportunities, analyzing job requirements, evaluating candidate fit, and preparing application drafts for human review.
-
-**Technical highlights:**
-- Job discovery through a JobSpy API
-- Airtable-backed duplicate detection
-- AI-assisted job analysis
-- Weighted candidate-job scoring
-- APPLY / CONSIDER / SKIP routing
-- AI-generated application drafts
-- Human review before submission
-
-**Workflow complexity:** 28 nodes in the published workflow export.
-
-[View Workflow Screenshot](autonomous-job-sourcing-ai/screenshots/autonomous-job-sourcing-workflow.png)
-
-The system supports application preparation but does not automatically submit applications.
-
----
-
-## Technical Skills
-
-| Area | Technologies and Capabilities |
-|---|---|
-| Workflow Automation | n8n, Zapier, workflow orchestration |
-| AI Integration | AI Agents, OpenRouter, Gemini, structured AI outputs |
-| API Integration | REST APIs, webhooks, HTTP requests |
-| Programming | JavaScript, JSON, data transformation |
-| Business Applications | Google Sheets, Gmail, Airtable |
-| Web Research | Apify, Firecrawl, Crawl4AI |
-| Infrastructure | Self-hosted n8n, local automation environments |
-| Workflow Engineering | Conditional routing, duplicate detection, scoring, escalation, human review |
-
-## Engineering Approach
-
-I approach automation projects by:
-
-1. Understanding the business process and identifying repetitive tasks.
-2. Mapping the workflow, data inputs, outputs, and decision points.
-3. Connecting APIs, AI services, and business applications.
-4. Implementing data validation, routing, and structured outputs.
-5. Incorporating human review where decisions require oversight.
-6. Testing workflow behavior and identifying reliability improvements.
-7. Documenting architecture, setup requirements, and limitations.
-
-## Deployment and Evidence
-
-This portfolio distinguishes between:
-
-- **Live deployment:** AI Lead Qualification integrated with awtomateai.com.
-- **Real-world execution:** Business Opportunity Finder tested using real business research data.
-- **Portfolio implementations:** Other workflows developed to demonstrate automation architecture and integration capabilities.
-
-Screenshots and sanitized workflow exports are included where available.
-
-Portfolio implementations should not be interpreted as paid client deployments or continuously running production services.
-
-No unverified uptime, revenue, customer conversion, or return-on-investment claims are made.
-
-## Contact and Links
+## Find me
 
 - **GitHub:** https://github.com/sanau0716
-- **Portfolio:** https://github.com/sanau0716/ai-automation-portfolio
-- **Business Website:** https://awtomateai.com
+- **AwtomateAI:** https://awtomateai.com

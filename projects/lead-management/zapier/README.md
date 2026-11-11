@@ -63,7 +63,7 @@ The repository also contains a separate n8n follow-up monitoring workflow develo
 
 These are related implementations and extensions of the same lead-management project, not unrelated client deploymentss.
 
-[View the n8n Lead Management System](../../n8n/lead-management-system/README.md)
+[View the n8n Lead Management System](../n8n/README.md)
 
 ## Technologies
 
