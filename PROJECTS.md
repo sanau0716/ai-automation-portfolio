@@ -47,7 +47,7 @@ Use this directory to locate each project by **business problem, technology, dep
 
 ### PropertyFix AI 2.0 — Maintenance Intelligence
 
-**[Preview PR #2](../../pull/2)** — *pending review; its folder does not yet exist on `main`*
+**[Preview PR #2](https://github.com/sanau0716/ai-automation-portfolio/pull/2)** — *pending review; its folder does not yet exist on `main`*
 
 - **Purpose:** Structured maintenance intake, AI triage, deterministic safety elevation, manager review, and a persistent case ledger.
 - **Stack:** n8n, OpenRouter, JavaScript, Gmail, Slack, n8n Data Tables.
@@ -69,7 +69,7 @@ Use this directory to locate each project by **business problem, technology, dep
 
 ### Smart Scheduler V1
 
-**[Preview PR #1](../../pull/1)** — *pending review; its folder does not yet exist on `main`*
+**[Preview PR #1](https://github.com/sanau0716/ai-automation-portfolio/pull/1)** — *pending review; its folder does not yet exist on `main`*
 
 - **Purpose:** Convert selected confirmed appointment emails into Google Calendar events after explicit approval.
 - **Stack:** n8n, Gmail, Google Calendar, OpenRouter, Data Tables.
