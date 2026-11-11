@@ -1,5 +1,11 @@
 # AI Lead Management System
 
+![Lead Management workflow overview](assets/workflow-overview.svg)
+
+*Simplified diagram of the lead-handling workflow. The deployed lead qualification and prototype follow-up work are distinguished below.*
+
+**Deployment:** The current AI lead qualification workflow is active in n8n and connected to my business website. The separate follow-up monitor in this repository is a prototype, not a claim of live deployment.
+
 An n8n-based AI automation project for lead qualification, personalized responses, scheduled follow-ups, and manual review escalation.
 
 ## Project Overview
