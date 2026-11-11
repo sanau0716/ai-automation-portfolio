@@ -23,19 +23,19 @@ These projects are documented on separate branches and are **not yet on the `mai
 
 | Project | Category | Status | Preview |
 | --- | --- | --- | --- |
-| **Smart Scheduler V1** | Scheduling / Gmail / Google Calendar | Activated for my own account; sustained production polling not verified | [PR #1](../../pull/1) |
-| **PropertyFix AI 2.0** | Property management / maintenance | Unpublished n8n prototype; synthetic tests | [PR #2](../../pull/2) |
+| **Smart Scheduler V1** | Scheduling / Gmail / Google Calendar | Activated for my own account; sustained production polling not verified | [PR #1](https://github.com/sanau0716/ai-automation-portfolio/pull/1) |
+| **PropertyFix AI 2.0** | Property management / maintenance | Unpublished n8n prototype; synthetic tests | [PR #2](https://github.com/sanau0716/ai-automation-portfolio/pull/2) |
 
 ## Choose by what you want to evaluate
 
 | Interested in… | Start here |
 | --- | --- |
 | A live website-integrated automation | [Lead Management](n8n/lead-management-system) |
-| AI classification, escalation, and human review | [Customer Engagement](n8n/customer-engagement-system) or [PropertyFix AI 2.0 PR](../../pull/2) |
+| AI classification, escalation, and human review | [Customer Engagement](n8n/customer-engagement-system) or [PropertyFix AI 2.0 PR](https://github.com/sanau0716/ai-automation-portfolio/pull/2) |
 | Research pipelines and website analysis | [Business Opportunity Finder](n8n/business-opportunity-system) |
 | Multi-workflow architecture | [Business Automation Auditor](n8n/business-audit-system/business-automation-auditor) |
 | Job research and human-reviewed drafting | [Autonomous Job Sourcing](autonomous-job-sourcing-ai) |
-| Calendar scheduling with explicit approval | [Smart Scheduler V1 PR](../../pull/1) |
+| Calendar scheduling with explicit approval | [Smart Scheduler V1 PR](https://github.com/sanau0716/ai-automation-portfolio/pull/1) |
 
 ## Technical skills
 
