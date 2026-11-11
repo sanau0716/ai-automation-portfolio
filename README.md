@@ -1,64 +1,59 @@
 # AI Automation Portfolio
 
-**AI Automation Developer & Workflow Engineer**  
-n8n · AI-assisted workflows · APIs · Webhooks · JavaScript · Human-in-the-loop systems
+### Hi, I'm an automation builder who enjoys turning repetitive work into simpler processes.
 
-I build AI-assisted automations that connect business tools, organize incoming information, and support operational decisions. This portfolio includes my own live business integration, tested automation prototypes, and documented workflow designs.
+I work with **n8n, AI tools, APIs, and JavaScript** to connect systems and make everyday business tasks easier to manage.
 
-**[Browse all projects](PROJECTS.md)** · **[n8n workflows](n8n/README.md)** · **[Zapier work](zapier/README.md)** · **[GitHub profile](https://github.com/sanau0716)** · **[AwtomateAI website](https://awtomateai.com)**
+I started building these projects to solve practical problems: following up with leads, understanding customer messages, researching potential clients, and keeping track of requests that would otherwise get lost in an inbox. Some are running in my own business; others are working prototypes that I've built and tested as I develop my skills.
 
-## Find a project quickly
+You can explore the projects below, look through the workflows, and see what I've actually tested.
 
-| Project | Category | Status | Explore |
-| --- | --- | --- | --- |
-| **AI Lead Management & Qualification** | Sales / lead operations | Live lead intake for my own business; follow-up is portfolio work | [Project](n8n/lead-management-system) · [Zapier origin](zapier/leadflow-ai) |
-| **Customer Engagement System** | Customer success | Portfolio implementation | [Project](n8n/customer-engagement-system) |
-| **Business Automation Auditor** | Business analysis | Portfolio implementation | [Project](n8n/business-audit-system/business-automation-auditor) |
-| **Business Opportunity Finder** | Research / prospecting | Tested on real-world business data | [Project](n8n/business-opportunity-system) |
-| **Autonomous Job Sourcing & Application Drafting** | Recruitment / productivity | Portfolio implementation | [Project](autonomous-job-sourcing-ai) |
+**[See all projects](PROJECTS.md)** · **[n8n workflows](n8n/README.md)** · **[Zapier projects](zapier/README.md)** · **[My website](https://awtomateai.com)**
 
-### New projects awaiting review
+## My projects at a glance
 
-These projects are documented on separate branches and are **not yet on the `main` branch**. Follow the pull requests to preview the work.
+| Project | What I built | Where it stands |
+| --- | --- | --- |
+| **[AI Lead Management](n8n/lead-management-system)** | A lead intake and qualification system connected to my business website. I first built it in [Zapier](zapier/leadflow-ai), then rebuilt it in n8n. | Lead qualification is live on my own website; follow-up monitoring is a prototype |
+| **[Customer Engagement System](n8n/customer-engagement-system)** | Workflows to flag customer concerns and help organize responses. | Portfolio prototype |
+| **[Business Automation Auditor](n8n/business-audit-system/business-automation-auditor)** | An AI-assisted way to review businesses and find tasks worth automating. | Portfolio prototype |
+| **[Business Opportunity Finder](n8n/business-opportunity-system)** | A research workflow that finds businesses and looks for automation opportunities. | Tested with real business research data |
+| **[Autonomous Job Sourcing](autonomous-job-sourcing-ai)** | A tool to research jobs, compare requirements, and prepare application drafts for me to review. | Portfolio prototype |
 
-| Project | Category | Status | Preview |
-| --- | --- | --- | --- |
-| **Smart Scheduler V1** | Scheduling / Gmail / Google Calendar | Activated for my own account; sustained production polling not verified | [PR #1](https://github.com/sanau0716/ai-automation-portfolio/pull/1) |
-| **PropertyFix AI 2.0** | Property management / maintenance | Unpublished n8n prototype; synthetic tests | [PR #2](https://github.com/sanau0716/ai-automation-portfolio/pull/2) |
+### More projects I'm working on
 
-## Choose by what you want to evaluate
+These are currently documented in pull requests, so their folders aren't on the main branch yet.
 
-| Interested in… | Start here |
-| --- | --- |
-| A live website-integrated automation | [Lead Management](n8n/lead-management-system) |
-| AI classification, escalation, and human review | [Customer Engagement](n8n/customer-engagement-system) or [PropertyFix AI 2.0 PR](https://github.com/sanau0716/ai-automation-portfolio/pull/2) |
-| Research pipelines and website analysis | [Business Opportunity Finder](n8n/business-opportunity-system) |
-| Multi-workflow architecture | [Business Automation Auditor](n8n/business-audit-system/business-automation-auditor) |
-| Job research and human-reviewed drafting | [Autonomous Job Sourcing](autonomous-job-sourcing-ai) |
-| Calendar scheduling with explicit approval | [Smart Scheduler V1 PR](https://github.com/sanau0716/ai-automation-portfolio/pull/1) |
+| Project | What it does | Where to see it |
+| --- | --- | --- |
+| **Smart Scheduler V1** | Reviews appointment emails and creates calendar events after approval. | [Project PR #1](https://github.com/sanau0716/ai-automation-portfolio/pull/1) |
+| **PropertyFix AI 2.0** | Sorts maintenance requests by urgency and sends them to a manager for review. | [Project PR #2](https://github.com/sanau0716/ai-automation-portfolio/pull/2) |
 
-## Technical skills
+**[Browse the full project directory →](PROJECTS.md)** for the tools used, workflow details, test evidence, and current limitations.
 
-| Focus | Technologies and practices |
-| --- | --- |
-| Workflow automation | n8n, Zapier, workflow orchestration |
-| AI integration | AI agents, OpenRouter, Gemini, structured outputs |
-| Integration | REST APIs, webhooks, HTTP requests, Gmail, Google Sheets, Airtable |
-| Engineering | JavaScript, JSON, validation, decision routing, deduplication, retries |
-| Research | Apify, Firecrawl, Crawl4AI |
-| Infrastructure | Self-hosted n8n, local development environments |
-| Safeguards | Human approvals, error handling, audit trails, uncertainty management |
+## How I work
 
-## How to review the work
+I usually begin with the part of a process that's taking too much time or creating confusion. Then I sketch out the steps, connect the tools, add the logic, and test what happens when the information isn't as clean as expected.
 
-1. Choose a project from the [project directory](PROJECTS.md).
-2. Open its README to see the purpose, architecture, workflow files, and limitations.
-3. Review screenshots and sanitized n8n/Zapier exports **where available**.
-4. Treat workflow demonstrations as prototypes unless explicitly marked as deployed.
+I'm especially interested in the point where **AI helps make sense of information, but a person still makes the important decision**. You'll see that approach in projects that involve customer replies, scheduling, and maintenance requests.
 
-**Evidence policy:** Real deployments, successful tests, and unverified capabilities are distinguished. These are independently built projects, **not paid-client case studies**. I do not claim unverified revenue, uptime, conversion improvements, or time savings.
+### Tools I've worked with
 
-## Contact
+**Automation:** n8n, Zapier, webhooks, REST APIs  
+**AI:** OpenRouter, Gemini, structured AI responses  
+**Code and data:** JavaScript, JSON, Google Sheets, Airtable  
+**Other integrations:** Gmail, Slack, Google Calendar, Apify, Firecrawl, Crawl4AI  
+**Infrastructure:** Self-hosted n8n and local development setups
+
+## A quick note about the projects
+
+I want the portfolio to show the work as it is, not make it sound bigger than it is.
+
+The lead qualification workflow is connected to my own live website and has received actual inquiries. The Business Opportunity Finder has been tested on real research data. The other projects are demonstrations or works in progress unless their README says otherwise. **These are not paid-client case studies**, and I don't claim results like revenue increases or hours saved without evidence.
+
+If you're reviewing my work for a role or a project, I'd be glad for you to look at the workflow structure, decisions, and safeguards—not just the screenshots.
+
+## Find me
 
 - **GitHub:** https://github.com/sanau0716
-- **Business website:** https://awtomateai.com
+- **AwtomateAI:** https://awtomateai.com
