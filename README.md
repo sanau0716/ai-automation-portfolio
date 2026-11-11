@@ -36,6 +36,26 @@ Developed an AI-assisted lead intake, qualification, and response system integra
 
 The live qualification workflow has processed real website inquiries. No verified customer conversions or revenue improvements are claimed.
 
+### PropertyFix AI 2.0 — Maintenance Intelligence
+
+**Status:** Unpublished n8n proof of concept; tested with synthetic maintenance reports.
+
+[View Project](n8n/propertyfix-ai-2)
+
+Created an AI-assisted maintenance intake and triage workflow for property managers, with persistent case records, hazard escalation, response targets, and human review of suggested actions.
+
+**Technical highlights:**
+- Authenticated intake form and durable original-request storage
+- OpenRouter-assisted priority, trade, and issue summary extraction
+- Deterministic hazard escalation and low-confidence fallback
+- Illustrative response targets, risk scoring, and manager review queues
+- Gmail-based approve/reject triage-plan checkpoint
+- Auditable case status and manager decisions
+
+**Workflow complexity:** 15 n8n nodes, plus a dedicated Data Table.
+
+**Verified:** Synthetic routine and electrical-emergency cases were processed and saved; a negated-hazard false positive was identified, corrected, and re-tested. Notifications and approval responses were simulated, not live-sent. No contractors were automatically dispatched.
+
 ### 2. AI Customer Engagement System
 
 **Status:** Portfolio implementation; not deployed live.
