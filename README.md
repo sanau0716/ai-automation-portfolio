@@ -10,19 +10,41 @@ You can explore the projects below, look through the workflows, and see what I'v
 
 **[See all projects](PROJECTS.md)** · **[Project folders](projects/README.md)** · **[My website](https://awtomateai.com)**
 
-## My projects at a glance
+## Start with these projects
 
-| Project | What I built | Where it stands |
+If you're looking at my work for an automation or AI role, these three show different sides of what I can build.
+
+### 1. [AI Lead Management — a workflow running on my website](projects/lead-management/n8n)
+
+I built this to handle inquiries coming through [AwtomateAI](https://awtomateai.com). A new lead enters through the website, goes through AI-assisted qualification, and moves into the response workflow. I first tried the idea in Zapier, then rebuilt it in self-hosted n8n.
+
+**Why it's worth a look:** It connects a real website to automation and has already handled genuine inquiries. It's my clearest example of building something I actually use. The follow-up workflow is still a prototype, and I don't claim closed client deals from it.
+
+### 2. [Smart Scheduler V1 — Gmail to Calendar, with approval](projects/smart-scheduler)
+
+I wanted a scheduling assistant that could read appointment emails without creating events based on guesses. It extracts the details, checks the calendar, asks for approval, and only then creates the event.
+
+**Why it's worth a look:** I verified an actual Gmail-to-Google-Calendar event creation and saved the result in a ledger. The workflow is activated for my account, although longer-term unattended polling still needs verification.
+
+### 3. [PropertyFix AI 2.0 — maintenance triage with human oversight](projects/propertyfix-ai)
+
+I built this around a practical property-management problem: how to separate a routine repair request from something that needs immediate attention. It saves each request, suggests a priority and trade, applies safety rules, and sends the case for a manager's decision.
+
+**Why it's worth a look:** It brings together AI classification, JavaScript safety checks, persistent records, Gmail approval, and Slack alert routing. I've tested routine and emergency examples with synthetic data. It's an unpublished prototype, not a tenant-facing emergency service.
+
+## All seven projects
+
+| Project | What it helps with | Current stage |
 | --- | --- | --- |
-| **[AI Lead Management](projects/lead-management/n8n)** | A lead intake and qualification system connected to my business website. I first built it in [Zapier](projects/lead-management/zapier), then rebuilt it in n8n. | Lead qualification is live on my own website; follow-up monitoring is a prototype |
-| **[Customer Engagement System](projects/customer-engagement)** | Workflows to flag customer concerns and help organize responses. | Portfolio prototype |
-| **[Business Automation Auditor](projects/business-automation-auditor)** | An AI-assisted way to review businesses and find tasks worth automating. | Portfolio prototype |
-| **[Business Opportunity Finder](projects/business-opportunity-finder)** | A research workflow that finds businesses and looks for automation opportunities. | Tested with real business research data |
-| **[Autonomous Job Sourcing](projects/autonomous-job-sourcing)** | A tool to research jobs, compare requirements, and prepare application drafts for me to review. | Portfolio prototype |
-| **[Smart Scheduler V1](projects/smart-scheduler)** | A scheduling helper that reads appointment confirmations and asks me before adding events to Google Calendar. | Activated for my own account; recurring runs need longer-term verification |
-| **[PropertyFix AI 2.0](projects/propertyfix-ai)** | A maintenance request triage prototype with safety checks, case records, Slack alerts and manager approval. | Unpublished prototype tested with synthetic cases |
+| **[AI Lead Management](projects/lead-management/n8n)** | Captures and qualifies inquiries from my business website; includes an earlier [Zapier version](projects/lead-management/zapier). | Live qualification for my own business |
+| **[Smart Scheduler V1](projects/smart-scheduler)** | Turns confirmed appointment emails into calendar events after approval and conflict checks. | Real event creation verified; ongoing polling not yet established |
+| **[PropertyFix AI 2.0](projects/propertyfix-ai)** | Helps managers triage maintenance issues, spot safety concerns, and track review decisions. | Unpublished; synthetic tests completed |
+| **[Business Opportunity Finder](projects/business-opportunity-finder)** | Researches businesses and identifies possible automation opportunities. | Tested with real research data |
+| **[Customer Engagement System](projects/customer-engagement)** | Helps monitor customer concerns and organize responses. | Portfolio prototype |
+| **[Business Automation Auditor](projects/business-automation-auditor)** | Reviews websites and suggests where process automation may help. | Portfolio prototype |
+| **[Autonomous Job Sourcing](projects/autonomous-job-sourcing)** | Finds relevant jobs, compares requirements, and drafts applications for review. | Portfolio prototype |
 
-**[Browse the full project directory →](PROJECTS.md)** for the tools used, workflow details, test evidence, and current limitations.
+[**Explore the full project stories and evidence →**](PROJECTS.md) · [Browse project folders](projects/README.md)
 
 ## How I work
 
