@@ -1,6 +1,10 @@
 # Smart Scheduler V1 — AI-Assisted Email-to-Calendar Automation
 
-**Status:** Activated on November 11, 2026 for my own Gmail / Google Calendar account. The first recurring production poll had **not yet been independently observed** at the time this documentation was written.
+![Smart Scheduler V1 workflow overview](assets/workflow-overview.svg)
+
+*Simplified visual of the email-to-calendar workflow. Human approval is required before event creation.*
+
+**Status:** Live and active in my self-hosted n8n instance as of November 11, 2026 for my own Gmail / Google Calendar account. Real calendar event creation has been tested; sustained recurring production polling has not yet been independently verified.
 
 **Stack:** Self-hosted n8n · Gmail OAuth2 · Google Calendar OAuth2 · OpenRouter LLM · JavaScript · n8n Data Tables
 
