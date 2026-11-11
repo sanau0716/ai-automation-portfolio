@@ -54,7 +54,7 @@ The goal was to make it easier to notice when a message deserves attention, whil
 
 ### PropertyFix AI 2.0
 
-[**Preview the project in PR #2**](https://github.com/sanau0716/ai-automation-portfolio/pull/2) *(not yet merged into the main branch)*
+[**Explore the project**](projects/propertyfix-ai)
 
 Maintenance requests don't always arrive with a clear priority. I built PropertyFix AI to collect the details, suggest a category and urgency level, and help a manager decide what to review first.
 
@@ -78,7 +78,7 @@ The important part is that **a person reviews the draft before applying**. It do
 
 ### Smart Scheduler V1
 
-[**Preview the project in PR #1**](https://github.com/sanau0716/ai-automation-portfolio/pull/1) *(not yet merged into the main branch)*
+[**Explore the project**](projects/smart-scheduler)
 
 I built Smart Scheduler to make it easier to turn confirmed appointments in Gmail into calendar events—without blindly booking everything that shows up in an email.
 

@@ -20,14 +20,8 @@ You can explore the projects below, look through the workflows, and see what I'v
 | **[Business Opportunity Finder](projects/business-opportunity-finder)** | A research workflow that finds businesses and looks for automation opportunities. | Tested with real business research data |
 | **[Autonomous Job Sourcing](projects/autonomous-job-sourcing)** | A tool to research jobs, compare requirements, and prepare application drafts for me to review. | Portfolio prototype |
 
-### More projects I'm working on
-
-These are currently documented in pull requests, so their folders aren't on the main branch yet.
-
-| Project | What it does | Where to see it |
-| --- | --- | --- |
-| **Smart Scheduler V1** | Reviews appointment emails and creates calendar events after approval. | [Project PR #1](https://github.com/sanau0716/ai-automation-portfolio/pull/1) |
-| **PropertyFix AI 2.0** | Sorts maintenance requests by urgency and sends them to a manager for review. | [Project PR #2](https://github.com/sanau0716/ai-automation-portfolio/pull/2) |
+| **[Smart Scheduler V1](projects/smart-scheduler)** | A scheduling helper that reads appointment confirmations and asks me before adding events to Google Calendar. | Activated for my own account; recurring runs need longer-term verification |
+| **[PropertyFix AI 2.0](projects/propertyfix-ai)** | A maintenance request triage prototype with safety checks, case records, Slack alerts and manager approval. | Unpublished prototype tested with synthetic cases |
 
 **[Browse the full project directory →](PROJECTS.md)** for the tools used, workflow details, test evidence, and current limitations.
 
@@ -49,7 +43,7 @@ I'm especially interested in the point where **AI helps make sense of informatio
 
 I want the portfolio to show the work as it is, not make it sound bigger than it is.
 
-The lead qualification workflow is connected to my own live website and has received actual inquiries. The Business Opportunity Finder has been tested on real research data. The other projects are demonstrations or works in progress unless their README says otherwise. **These are not paid-client case studies**, and I don't claim results like revenue increases or hours saved without evidence.
+The lead qualification workflow is connected to my own live website and has received actual inquiries. The Business Opportunity Finder has been tested on real research data. Smart Scheduler is activated for my own account but still needs longer-term monitoring. PropertyFix and the other projects are demonstrations or works in progress unless their README says otherwise. **These are not paid-client case studies**, and I don't claim results like revenue increases or hours saved without evidence.
 
 If you're reviewing my work for a role or a project, I'd be glad for you to look at the workflow structure, decisions, and safeguards—not just the screenshots.
 
