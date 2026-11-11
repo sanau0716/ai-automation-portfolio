@@ -61,7 +61,7 @@ Maintenance requests don't always arrive with a clear priority. I built Property
 It also checks for warning signs such as smoke or dangerous wiring, keeps a case record, and supports Gmail approval and Slack alerts. I designed it to **assist a manager, not send contractors or make safety decisions on its own**.
 
 **Built with:** n8n, OpenRouter, JavaScript, Gmail, Slack, n8n Data Tables.  
-**What I've tested:** Simulated routine and emergency scenarios, including manager decisions. The workflow is unpublished; Slack delivery within PropertyFix was simulated, though the Slack bot connection was tested separately with a real message. This is **not** a live emergency-response system.
+**What I've tested:** Simulated routine and emergency scenarios, including manager decisions. The workflow is now active in n8n. The documented PropertyFix-specific Slack tests were simulated, though the Slack bot connection was separately tested with a real message. This is **not** a verified emergency-response or contractor-dispatch service.
 
 ## Personal productivity
 
@@ -85,7 +85,7 @@ I built Smart Scheduler to make it easier to turn confirmed appointments in Gmai
 The workflow reads appointment details, prepares an event, and asks for approval first. I tested real approved event creation and the record-keeping that prevents obvious repeat handling.
 
 **Built with:** n8n, Gmail, Google Calendar, OpenRouter, Data Tables.  
-**Current stage:** Activated for my own account, but I haven't verified sustained production polling or every possible error case.
+**Current stage:** Live in my n8n instance for my own Gmail and Calendar; real event creation verified. Sustained polling and every possible failure case have not been independently verified.
 
 ---
 
