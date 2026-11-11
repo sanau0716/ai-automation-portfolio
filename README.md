@@ -118,6 +118,27 @@ Developed an AI-assisted job research pipeline for discovering opportunities, an
 
 The system supports application preparation but does not automatically submit applications.
 
+### 6. Smart Scheduler V1 — AI Email-to-Calendar Assistant
+
+**Status:** Activated for my own Gmail and Google Calendar account on November 11, 2026. Production polling and long-term reliability have not yet been independently observed.
+
+[View Project](n8n/smart-scheduler-v1)
+
+Designed and activated an AI-assisted scheduling automation that reviews likely appointment emails, extracts structured event details, validates dates and time zones, checks Google Calendar availability, and asks for explicit approval before creating an event.
+
+**Technical highlights:**
+- Gmail polling with conservative appointment-email screening
+- OpenRouter-based structured event extraction with strict source-date verification
+- Human-in-the-loop approval using Gmail
+- Calendar overlap checking before and after approval
+- Persistent n8n Data Table ledger for previously scheduled emails
+- Calendar-side deterministic event IDs for same-message idempotency
+- Conflict notifications, read-only retries, and error-alert email delivery
+
+**Workflow complexity:** 30 nodes in a self-hosted n8n workflow.
+
+**Verified:** Real approval-to-calendar creation and persistent ledger writing (execution #395); separate live Gmail alert delivery (execution #398). Concurrent booking protection and automatic failure-trigger execution have not been production-tested.
+
 ---
 
 ## Technical Skills
@@ -128,7 +149,7 @@ The system supports application preparation but does not automatically submit ap
 | AI Integration | AI Agents, OpenRouter, Gemini, structured AI outputs |
 | API Integration | REST APIs, webhooks, HTTP requests |
 | Programming | JavaScript, JSON, data transformation |
-| Business Applications | Google Sheets, Gmail, Airtable |
+| Business Applications | Google Sheets, Gmail, Google Calendar, Airtable |
 | Web Research | Apify, Firecrawl, Crawl4AI |
 | Infrastructure | Self-hosted n8n, local automation environments |
 | Workflow Engineering | Conditional routing, duplicate detection, scoring, escalation, human review |
@@ -149,7 +170,7 @@ I approach automation projects by:
 
 This portfolio distinguishes between:
 
-- **Live deployment:** AI Lead Qualification integrated with awtomateai.com.
+- **Live deployment:** AI Lead Qualification integrated with awtomateai.com; Smart Scheduler V1 activated for personal Gmail and Google Calendar (ongoing production behavior not yet verified).
 - **Real-world execution:** Business Opportunity Finder tested using real business research data.
 - **Portfolio implementations:** Other workflows developed to demonstrate automation architecture and integration capabilities.
 
