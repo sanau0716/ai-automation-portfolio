@@ -1,25 +1,25 @@
-# n8n Projects
+# My n8n Projects
 
-[← Portfolio home](../README.md) · [Full project directory](../PROJECTS.md)
+[← Portfolio home](../README.md) · [Read about every project](../PROJECTS.md)
 
-## Browse by use case
+n8n is where I build most of my automations now. I like being able to see the steps, connect different services, add my own JavaScript when needed, and troubleshoot how data moves through a workflow.
 
-| Project | Category | Current status | Folder |
-| --- | --- | --- | --- |
-| AI Lead Management & Qualification | Sales | Website lead intake live for own business | [lead-management-system](lead-management-system) |
-| AI Customer Engagement System | Customer success | Portfolio implementation | [customer-engagement-system](customer-engagement-system) |
-| Business Automation Auditor | Research / auditing | Portfolio implementation | [business-audit-system/business-automation-auditor](business-audit-system/business-automation-auditor) |
-| Business Opportunity Finder | Prospecting | Tested with real business data | [business-opportunity-system](business-opportunity-system) |
+Here's where to find the projects already in this repository:
 
-### Upcoming additions
+| Project | What I was trying to solve | Status |
+| --- | --- | --- |
+| [Lead Management](lead-management-system) | Make website inquiries easier to capture, qualify, and follow up on | Lead qualification live for my business; follow-up prototype |
+| [Customer Engagement](customer-engagement-system) | Spot customer concerns and organize responses | Prototype |
+| [Business Automation Auditor](business-audit-system/business-automation-auditor) | Make the early stages of a business audit less manual | Prototype |
+| [Business Opportunity Finder](business-opportunity-system) | Research businesses and possible automation needs | Tested with real business data |
 
-- [Smart Scheduler V1 — PR #1](https://github.com/sanau0716/ai-automation-portfolio/pull/1): Gmail-to-Calendar scheduling with explicit human approval.
-- [PropertyFix AI 2.0 — PR #2](https://github.com/sanau0716/ai-automation-portfolio/pull/2): Maintenance case triage, safety escalation, and manager review.
+### Projects I'm adding
 
-These upcoming folders are not available on `main` until their pull requests are merged.
+- **[Smart Scheduler V1](https://github.com/sanau0716/ai-automation-portfolio/pull/1):** Turning appointment emails into calendar events, with approval before booking.
+- **[PropertyFix AI 2.0](https://github.com/sanau0716/ai-automation-portfolio/pull/2):** Helping managers sort and review maintenance requests.
 
-## Using the workflows
+Those two projects are still in pull requests, so their folders are not on `main` yet.
 
-Each existing project directory contains a README with its architecture, required integrations, and available exports. Importing a workflow does **not** automatically configure credentials, permissions, webhooks, or business-specific settings. Inspect and sanitize any automation before enabling real actions.
+Each project folder has a README explaining what I built and what you can inspect. Some also include workflow JSON exports and screenshots. If you import one of these workflows into your own n8n instance, you'll still need to set up your own credentials and check the actions before turning it on.
 
-[↑ Back to portfolio](../README.md)
+[← Back to the portfolio](../README.md)
