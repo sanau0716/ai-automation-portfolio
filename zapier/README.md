@@ -1,11 +1,13 @@
-# Zapier Projects
+# My Zapier Project
 
 [← Portfolio home](../README.md) · [All projects](../PROJECTS.md)
 
-| Project | Description | Link |
-| --- | --- | --- |
-| LeadFlow AI | Original Zapier implementation of the lead qualification system later rebuilt in self-hosted n8n | [leadflow-ai](leadflow-ai) |
+### [LeadFlow AI](leadflow-ai)
 
-This Zapier project and the [n8n Lead Management System](../n8n/lead-management-system) are **two implementations of one project**, not independent client deliveries.
+This was my original version of the lead qualification workflow. I started with Zapier because it gave me a quick way to connect the pieces and test the idea.
 
-[↑ Back to portfolio](../README.md)
+When the trial ended, I rebuilt the system in self-hosted n8n so I could keep developing it and have more control over the workflow.
+
+You can compare this version with the newer [n8n Lead Management project](../n8n/lead-management-system). They're **two versions of the same project**, not two different customer deliveries.
+
+[← Back to the portfolio](../README.md)
