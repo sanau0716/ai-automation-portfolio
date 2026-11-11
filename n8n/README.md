@@ -13,8 +13,8 @@
 
 ### Upcoming additions
 
-- [Smart Scheduler V1 — PR #1](../../../pull/1): Gmail-to-Calendar scheduling with explicit human approval.
-- [PropertyFix AI 2.0 — PR #2](../../../pull/2): Maintenance case triage, safety escalation, and manager review.
+- [Smart Scheduler V1 — PR #1](https://github.com/sanau0716/ai-automation-portfolio/pull/1): Gmail-to-Calendar scheduling with explicit human approval.
+- [PropertyFix AI 2.0 — PR #2](https://github.com/sanau0716/ai-automation-portfolio/pull/2): Maintenance case triage, safety escalation, and manager review.
 
 These upcoming folders are not available on `main` until their pull requests are merged.
 
