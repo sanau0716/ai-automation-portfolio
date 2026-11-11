@@ -2,17 +2,18 @@
 
 [← Portfolio home](../README.md) · [Read the project stories](../PROJECTS.md)
 
-I keep each project in its own folder so you can open the README, browse the workflow files, and find screenshots without digging through platform-specific directories.
+Each project has its own folder with an explanation of what I built, plus workflow files, screenshots, or documentation where available. I put the projects that best demonstrate real use and tested engineering first.
 
-| Folder | What you'll find | Stage |
+| Project | Why you might open it | Stage |
 | --- | --- | --- |
-| [Lead Management](lead-management) | Live website lead qualification in [n8n](lead-management/n8n), plus the [earlier Zapier version](lead-management/zapier) of the same project | n8n lead qualification live for my own business |
-| [Customer Engagement](customer-engagement) | Customer monitoring and response-management workflows | Portfolio prototype |
-| [Business Automation Auditor](business-automation-auditor) | Website and workflow opportunity audits | Portfolio prototype |
-| [Business Opportunity Finder](business-opportunity-finder) | Business research, AI scoring, and sample results | Tested with real research data |
-| [Autonomous Job Sourcing](autonomous-job-sourcing) | Job research workflow, prompts, screenshots, and supporting documentation | Portfolio prototype |
+| **[Lead Management](lead-management)** | See a website-connected n8n workflow and its original Zapier version together | Lead qualification live for my own business |
+| **[Smart Scheduler V1](smart-scheduler)** | See human-approved Gmail-to-Calendar automation with a real event-creation test | Activated for my account; ongoing verification |
+| **[PropertyFix AI 2.0](propertyfix-ai)** | Explore AI maintenance triage, safety rules, manager approvals, and Slack routing | Unpublished prototype; synthetic tests |
+| **[Business Opportunity Finder](business-opportunity-finder)** | Review research and AI-assisted opportunity scoring on real-world data | Tested prototype |
+| **[Customer Engagement](customer-engagement)** | Explore customer monitoring and response-management workflows | Portfolio prototype |
+| **[Business Automation Auditor](business-automation-auditor)** | Inspect website auditing and automation opportunity workflows | Portfolio prototype |
+| **[Autonomous Job Sourcing](autonomous-job-sourcing)** | Explore job research, scoring, drafting, and human review | Portfolio prototype |
 
-| [Smart Scheduler V1](smart-scheduler) | Gmail appointment scheduling with explicit approval before calendar booking | Activated for my own account; ongoing verification |
-| [PropertyFix AI 2.0](propertyfix-ai) | Maintenance intake, AI triage, safety rules, persistent cases, and manager review | Unpublished prototype; synthetic tests |
+**A note on Lead Management:** The [n8n implementation](lead-management/n8n) and [original Zapier version](lead-management/zapier) are part of the same project, not two separate client implementations.
 
-The workflow files are demonstrations. You'll need your own credentials and configuration before importing or running them.
+These projects are independently built examples, not paid-client case studies. Importing any workflow requires your own credentials and a careful review before enabling real actions.
