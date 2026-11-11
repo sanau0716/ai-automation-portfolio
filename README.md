@@ -19,7 +19,6 @@ You can explore the projects below, look through the workflows, and see what I'v
 | **[Business Automation Auditor](projects/business-automation-auditor)** | An AI-assisted way to review businesses and find tasks worth automating. | Portfolio prototype |
 | **[Business Opportunity Finder](projects/business-opportunity-finder)** | A research workflow that finds businesses and looks for automation opportunities. | Tested with real business research data |
 | **[Autonomous Job Sourcing](projects/autonomous-job-sourcing)** | A tool to research jobs, compare requirements, and prepare application drafts for me to review. | Portfolio prototype |
-
 | **[Smart Scheduler V1](projects/smart-scheduler)** | A scheduling helper that reads appointment confirmations and asks me before adding events to Google Calendar. | Activated for my own account; recurring runs need longer-term verification |
 | **[PropertyFix AI 2.0](projects/propertyfix-ai)** | A maintenance request triage prototype with safety checks, case records, Slack alerts and manager approval. | Unpublished prototype tested with synthetic cases |
 
