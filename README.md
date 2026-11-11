@@ -50,9 +50,10 @@ Created an AI-assisted maintenance intake and triage workflow for property manag
 - Deterministic hazard escalation and low-confidence fallback
 - Illustrative response targets, risk scoring, and manager review queues
 - Gmail-based approve/reject triage-plan checkpoint
+- Slack emergency and standard notifications with resident contact details omitted
 - Auditable case status and manager decisions
 
-**Workflow complexity:** 15 n8n nodes, plus a dedicated Data Table.
+**Workflow complexity:** 17 n8n nodes, plus a dedicated Data Table and Slack notification branches.
 
 **Verified:** Synthetic routine and electrical-emergency cases were processed and saved; a negated-hazard false positive was identified, corrected, and re-tested. Notifications and approval responses were simulated, not live-sent. No contractors were automatically dispatched.
 
