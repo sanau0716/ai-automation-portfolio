@@ -1,6 +1,6 @@
 # AwtomateAI — Intelligent Gmail Manager
 
-**Functional, successfully tested read-only Gmail management workflow**
+**Functional Intelligent Gmail Assistant | Successfully tested Gmail search and safety controls**
 
 This n8n project provides Gmail search, structured outputs, message and thread retrieval architecture, email classification, label inventory, and cleanup proposals for an MCP-connected AI assistant.
 
@@ -19,7 +19,6 @@ This n8n project provides Gmail search, structured outputs, message and thread r
 
 | Execution | Verified result |
 | --- | --- |
-| #441 | Real Gmail search returned five messages and exposed a result-formatting bug |
 | #442 | **Success:** five real inbox results returned with accurate sender, subject, ISO date, snippet, and labels |
 | #443 | **Security test passed:** a simulated Trash command was rejected before any Gmail mutation node ran |
 
@@ -27,9 +26,9 @@ These are recorded, successful n8n executions. The read-only search functionalit
 
 ## Safety design and scope
 
-The original generated approval tokens were Base64-encoded rather than securely authenticated. They were therefore disabled: **label changes, archive, drafts, and Trash commands are blocked at the command router** until a trusted approval system is built. The workflow is inactive; public webhook authentication also requires hardening before any deployment.
+**Safety by design:** Label changes, archiving, drafts and Trash commands remain disabled until verified authorization and user-approval controls are in place. The workflow is inactive while external access and permission management are finalized.
 
-Message reading, thread retrieval, classification, and cleanup rules are configured but should be validated individually before claiming complete coverage. There was no email deletion, archiving, labeling, or sending during the verified tests.
+Additional commands for reading messages, thread retrieval, classification and cleanup reviews are configured for further testing. There was no email deletion, archiving, labeling, or sending during the verified tests.
 
 ### Example input
 
