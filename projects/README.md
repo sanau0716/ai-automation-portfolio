@@ -18,4 +18,4 @@ Each project has its own folder with an explanation of what I built, plus workfl
 
 **A note on Lead Management:** The [n8n implementation](lead-management/n8n) and [original Zapier version](lead-management/zapier) are part of the same project, not two separate client implementations.
 
-These projects are independently built examples, not paid-client case studies. Importing any workflow requires your own credentials and a careful review before enabling real actions.
+These projects demonstrate independently engineered automations. Importing a workflow requires your own credentials and review before enabling external actions.
