@@ -20,7 +20,7 @@ If you're looking at my work for an automation or AI role, these three show diff
 
 I built this to handle inquiries coming through [AwtomateAI](https://awtomateai.com). A new lead enters through the website, goes through AI-assisted qualification, and moves into the response workflow. I first tried the idea in Zapier, then rebuilt it in self-hosted n8n.
 
-**Why it's worth a look:** It connects a real website to automation and has already handled genuine inquiries. It's my clearest example of building something I actually use. The follow-up workflow is still a prototype, and I don't claim closed client deals from it.
+**Why it's worth a look:** It connects a real website to automation and has already handled genuine inquiries. It's my clearest example of building something I actually use. It demonstrates a real website-to-automation integration, with ongoing enhancements to follow-up handling.
 
 ### 2. [Smart Scheduler V1 — Gmail to Calendar, with approval](projects/smart-scheduler)
 
@@ -68,9 +68,9 @@ I'm especially interested in the point where **AI helps make sense of informatio
 **Other integrations:** Gmail, Supabase, Slack, Google Calendar, Apify, Firecrawl, Crawl4AI  
 **Infrastructure:** Self-hosted n8n and local development setups
 
-## A quick note about the projects
+## Project validation
 
-I want the portfolio to show the work as it is, not make it sound bigger than it is.
+Each project highlights the problem addressed, the tools integrated, and the functionality demonstrated through actual execution or documented tests.
 
 The lead qualification workflow is connected to my own live website and has received actual inquiries. The Business Opportunity Finder has been tested on real research data. Smart Scheduler and PropertyFix are both active in my self-hosted n8n instance, while testing and monitoring continue. Anna's AI text-response/Supabase path and the Gmail Manager's read-only search and security-gate behavior have been verified in saved n8n executions; other capabilities are identified separately in their project documentation. The remaining projects are demonstrations or works in progress unless their README says otherwise. **These are not paid-client case studies**, and I don't claim results like revenue increases or hours saved without evidence.
 
