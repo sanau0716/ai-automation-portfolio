@@ -12,23 +12,23 @@ You can explore the projects below, look through the workflows, and see what I'v
 
 ## Start with these projects
 
-If you're looking at my work for an automation or AI role, these three show different sides of what I can build.
+If you're evaluating my work for an AI automation role, start with these three practical, tested systems.
 
-### 1. [AI Lead Management — a workflow running on my website](projects/lead-management/n8n)
+### 1. [Anna AI — Intelligent Front Desk & Business Operations Agent](projects/anna-omnichannel-receptionist)
+
+[![Anna AI receptionist flagship project](projects/anna-omnichannel-receptionist/assets/anna-hero.svg)](projects/anna-omnichannel-receptionist)
+
+I built Anna to connect AI customer conversations with meaningful business workflows. The working n8n pipeline handles incoming text inquiries, generates Groq-powered answers, maintains session context, and logs records in Supabase.
+
+**Why it's worth a look:** A genuine end-to-end AI-and-database execution has been successfully tested, with an expansion path to live voice calls, appointment bookings, CRM integrations, and service workflows.
+
+### 2. [AI Lead Management — a workflow running on my website](projects/lead-management/n8n)
 
 [![Lead Management workflow](projects/lead-management/n8n/assets/workflow-overview.svg)](projects/lead-management/n8n)
 
 I built this to handle inquiries coming through [AwtomateAI](https://awtomateai.com). A new lead enters through the website, goes through AI-assisted qualification, and moves into the response workflow. I first tried the idea in Zapier, then rebuilt it in self-hosted n8n.
 
 **Why it's worth a look:** It connects a real website to automation and has already handled genuine inquiries. It's my clearest example of building something I actually use. It demonstrates a real website-to-automation integration, with ongoing enhancements to follow-up handling.
-
-### 2. [Smart Scheduler V1 — Gmail to Calendar, with approval](projects/smart-scheduler)
-
-[![Smart Scheduler workflow](projects/smart-scheduler/assets/workflow-overview.svg)](projects/smart-scheduler)
-
-I wanted a scheduling assistant that could read appointment emails without creating events based on guesses. It extracts the details, checks the calendar, asks for approval, and only then creates the event.
-
-**Why it's worth a look:** I verified an actual Gmail-to-Google-Calendar event creation and saved the result in a ledger. The workflow is live in n8n and has created a real calendar event during testing. Longer-term unattended polling still needs verification.
 
 ### 3. [PropertyFix AI 2.0 — maintenance triage with human oversight](projects/propertyfix-ai)
 
@@ -42,7 +42,7 @@ I built this around a practical property-management problem: how to separate a r
 
 | Project | What it helps with | Current stage |
 | --- | --- | --- |
-| **[Anna Omnichannel Receptionist](projects/anna-omnichannel-receptionist)** | Groq-powered AI receptionist: validated text intake, generated answers, session context, and Supabase logging. | **Functional AI receptionist**; verified end-to-end AI responses and Supabase logging |
+| **[Anna AI — Front Desk & Operations Agent](projects/anna-omnichannel-receptionist)** | Groq-powered conversations, context management, structured responses and Supabase logging. | **Flagship project**; tested end-to-end AI inquiry handling |
 | **[Intelligent Gmail Manager](projects/intelligent-gmail-manager)** | MCP-oriented Gmail search, formatting, classification design and safe cleanup previews. | **Functional Gmail assistant**; live search and security tests passed |
 | **[AI Lead Management](projects/lead-management/n8n)** | Captures and qualifies inquiries from my business website; includes an earlier [Zapier version](projects/lead-management/zapier). | Live qualification for my own business |
 | **[Smart Scheduler V1](projects/smart-scheduler)** | Turns confirmed appointment emails into calendar events after approval and conflict checks. | **Live in n8n**; event creation verified in testing |
