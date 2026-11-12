@@ -42,8 +42,8 @@ I built this around a practical property-management problem: how to separate a r
 
 | Project | What it helps with | Current stage |
 | --- | --- | --- |
-| **[Anna Omnichannel Receptionist](projects/anna-omnichannel-receptionist)** | Groq-powered AI receptionist: validated text intake, generated answers, session context, and Supabase logging. | **Functional; extensively tested** across 18 recorded runs, including 8 successes |
-| **[Intelligent Gmail Manager](projects/intelligent-gmail-manager)** | MCP-oriented Gmail search, formatting, classification design and safe cleanup previews. | **Functional read-only MVP**; live search and rejection tests passed |
+| **[Anna Omnichannel Receptionist](projects/anna-omnichannel-receptionist)** | Groq-powered AI receptionist: validated text intake, generated answers, session context, and Supabase logging. | **Functional AI receptionist**; verified end-to-end AI responses and Supabase logging |
+| **[Intelligent Gmail Manager](projects/intelligent-gmail-manager)** | MCP-oriented Gmail search, formatting, classification design and safe cleanup previews. | **Functional Gmail assistant**; live search and security tests passed |
 | **[AI Lead Management](projects/lead-management/n8n)** | Captures and qualifies inquiries from my business website; includes an earlier [Zapier version](projects/lead-management/zapier). | Live qualification for my own business |
 | **[Smart Scheduler V1](projects/smart-scheduler)** | Turns confirmed appointment emails into calendar events after approval and conflict checks. | **Live in n8n**; event creation verified in testing |
 | **[PropertyFix AI 2.0](projects/propertyfix-ai)** | Helps managers triage maintenance issues, spot safety concerns, and track review decisions. | **Live in n8n**; safety and notification verification ongoing |
