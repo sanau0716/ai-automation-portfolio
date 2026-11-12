@@ -70,7 +70,7 @@ It also checks for warning signs such as smoke or dangerous wiring, keeps a case
 I built Anna to handle customer messages with a real AI Agent rather than a hardcoded chatbot. The protected webhook accepts inquiries, Groq generates helpful service answers, session memory supplies context, and Supabase records the request and answer.
 
 **Built with:** n8n, Groq (`openai/gpt-oss-20b`), LangChain AI Agent, Window Buffer Memory, Supabase, Gmail and Google Calendar tools.  
-**Extensive functional testing:** 18 saved execution attempts, **8 successful and 10 failed during iterative debugging**. Execution #440 verified an actual end-to-end webhook → AI response → Supabase log → response path. Manual demo branch also passed. Live calendar booking, Gmail alerts and PSTN calls are separate integration tests, not verified by these runs.
+**Successful functional testing:** Verified an actual end-to-end webhook → AI-generated reply → Supabase log → response execution (#440), alongside successful manual demonstration and data-access tests. Calendar booking, Gmail escalation and PSTN calling are additional integrations undergoing end-to-end validation.
 
 ## Personal productivity
 
