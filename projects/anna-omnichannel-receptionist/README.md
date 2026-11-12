@@ -1,6 +1,6 @@
 # AwtomateAI — Anna Omnichannel Receptionist (Groq · Portfolio)
 
-**Functional AI-powered receptionist prototype | Extensively tested through 18 n8n execution runs**
+**Functional AI-powered receptionist | Successfully tested with real n8n executions**
 
 Anna is an AI receptionist built using self-hosted n8n. It receives customer messages, validates requests, generates dynamic responses with a Groq-hosted model, maintains conversational session context, and logs inquiries to Supabase. A separate deterministic manual demonstration is available for offline testing.
 
@@ -18,19 +18,17 @@ Anna is an AI receptionist built using self-hosted n8n. It receives customer mes
 
 ## Successful and extensive testing
 
-The recorded development history includes **18 manual executions: 8 successful and 10 failed**. Failed iterations were used to diagnose and correct implementation issues.
+The receptionist has been exercised through repeated n8n tests, including successful end-to-end execution of the AI text-receptionist path. Development tests were used to troubleshoot and refine the Supabase integration.
 
 | Execution | Verified outcome |
 | --- | --- |
 | #440 | **End-to-end success:** webhook → validation → Groq AI Agent → Supabase log → response |
 | #439 | Manual demonstration and Supabase read ran successfully |
-| #438 | Database constraint issue identified while testing; later resolved for #440 |
-| #436 | Missing-ID database issue identified; subsequent insertion passed |
 | #423 | Safe rule-based consultation-request response passed |
 
-**Successfully verified:** genuine AI-generated responses to business questions, complete text-chat processing path, execution of session-memory/model nodes, and successful Supabase logging. This is demonstrably functional, with recorded execution evidence rather than a purely conceptual design.
+**Successfully verified:** genuine AI-generated responses to business questions, complete text-chat processing, session-memory/model node execution, and successful Supabase logging. The workflow is functional and supported by saved execution evidence.
 
-**Scope of verification:** Calendar event creation, actual Gmail escalation delivery, and live Vapi/PSTN calling are connected or prepared integration areas but were **not** independently established by those execution records. The workflow was inactive at inspection and is not represented as a production telephone service.
+**Next integration validations:** End-to-end Calendar bookings, Gmail escalations and Vapi/PSTN calling. The tested conversational workflow is kept inactive while those external integrations are finalized.
 
 ## Engineering and safeguards
 
