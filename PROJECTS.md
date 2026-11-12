@@ -63,9 +63,11 @@ It also checks for warning signs such as smoke or dangerous wiring, keeps a case
 **Built with:** n8n, OpenRouter, JavaScript, Gmail, Slack, n8n Data Tables.  
 **What I've tested:** Simulated routine and emergency scenarios, including manager decisions. The workflow is now active in n8n. PropertyFix-specific Slack routing was evaluated through simulation; the Slack bot connection was separately tested with a real message.
 
-### Anna Omnichannel Receptionist (Groq · Portfolio)
+### Anna AI — Intelligent Front Desk & Business Operations Agent
 
-[**Explore the tested project**](projects/anna-omnichannel-receptionist)
+[**Explore the flagship project and visual case study**](projects/anna-omnichannel-receptionist)
+
+[![Anna AI project overview](projects/anna-omnichannel-receptionist/assets/anna-hero.svg)](projects/anna-omnichannel-receptionist)
 
 I built Anna to handle customer messages with a real AI Agent rather than a hardcoded chatbot. The protected webhook accepts inquiries, Groq generates helpful service answers, session memory supplies context, and Supabase records the request and answer.
 
