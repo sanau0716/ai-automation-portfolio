@@ -63,7 +63,25 @@ It also checks for warning signs such as smoke or dangerous wiring, keeps a case
 **Built with:** n8n, OpenRouter, JavaScript, Gmail, Slack, n8n Data Tables.  
 **What I've tested:** Simulated routine and emergency scenarios, including manager decisions. The workflow is now active in n8n. The documented PropertyFix-specific Slack tests were simulated, though the Slack bot connection was separately tested with a real message. This is **not** a verified emergency-response or contractor-dispatch service.
 
+### Anna Omnichannel Receptionist (Groq · Portfolio)
+
+[**Explore the tested project**](projects/anna-omnichannel-receptionist)
+
+I built Anna to handle customer messages with a real AI Agent rather than a hardcoded chatbot. The protected webhook accepts inquiries, Groq generates helpful service answers, session memory supplies context, and Supabase records the request and answer.
+
+**Built with:** n8n, Groq (`openai/gpt-oss-20b`), LangChain AI Agent, Window Buffer Memory, Supabase, Gmail and Google Calendar tools.  
+**Extensive functional testing:** 18 saved execution attempts, **8 successful and 10 failed during iterative debugging**. Execution #440 verified an actual end-to-end webhook → AI response → Supabase log → response path. Manual demo branch also passed. Live calendar booking, Gmail alerts and PSTN calls are separate integration tests, not verified by these runs.
+
 ## Personal productivity
+
+### Intelligent Gmail Manager
+
+[**Explore the tested project**](projects/intelligent-gmail-manager)
+
+I built a command-driven Gmail management workflow so an MCP-connected AI assistant can search and inspect emails, organize cleanup proposals, and preserve control over mailbox changes. Gmail OAuth and an n8n command router supply the core integration.
+
+**Built with:** n8n, Gmail OAuth/API, JavaScript, webhooks and MCP-assisted engineering.  
+**Functional testing:** Live inbox search successfully returned five real messages (#441); after fixing formatting, #442 returned correct sender, subject, timestamp, snippet and labels. A simulated unauthorized Trash command was safely rejected (#443). **Mailbox modifications are deliberately disabled** until a secure approval mechanism and webhook authentication are completed.
 
 ### Autonomous Job Sourcing & Application Drafting
 
