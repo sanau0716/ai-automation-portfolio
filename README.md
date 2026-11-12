@@ -38,10 +38,12 @@ I built this around a practical property-management problem: how to separate a r
 
 **Why it's worth a look:** It brings together AI classification, JavaScript safety checks, persistent records, Gmail approval, and Slack alert routing. The workflow is active in n8n, and I've tested routine and emergency cases using synthetic data. It is not a verified tenant-facing emergency service.
 
-## All seven projects
+## All nine projects
 
 | Project | What it helps with | Current stage |
 | --- | --- | --- |
+| **[Anna Omnichannel Receptionist](projects/anna-omnichannel-receptionist)** | Groq-powered AI receptionist: validated text intake, generated answers, session context, and Supabase logging. | **Functional; extensively tested** across 18 recorded runs, including 8 successes |
+| **[Intelligent Gmail Manager](projects/intelligent-gmail-manager)** | MCP-oriented Gmail search, formatting, classification design and safe cleanup previews. | **Functional read-only MVP**; live search and rejection tests passed |
 | **[AI Lead Management](projects/lead-management/n8n)** | Captures and qualifies inquiries from my business website; includes an earlier [Zapier version](projects/lead-management/zapier). | Live qualification for my own business |
 | **[Smart Scheduler V1](projects/smart-scheduler)** | Turns confirmed appointment emails into calendar events after approval and conflict checks. | **Live in n8n**; event creation verified in testing |
 | **[PropertyFix AI 2.0](projects/propertyfix-ai)** | Helps managers triage maintenance issues, spot safety concerns, and track review decisions. | **Live in n8n**; safety and notification verification ongoing |
@@ -61,16 +63,16 @@ I'm especially interested in the point where **AI helps make sense of informatio
 ### Tools I've worked with
 
 **Automation:** n8n, Zapier, webhooks, REST APIs  
-**AI:** OpenRouter, Gemini, structured AI responses  
+**AI:** Groq, OpenRouter, Gemini, LangChain AI Agent, AI-assisted development with Antigravity CLI and MCP, structured AI responses  
 **Code and data:** JavaScript, JSON, Google Sheets, Airtable  
-**Other integrations:** Gmail, Slack, Google Calendar, Apify, Firecrawl, Crawl4AI  
+**Other integrations:** Gmail, Supabase, Slack, Google Calendar, Apify, Firecrawl, Crawl4AI  
 **Infrastructure:** Self-hosted n8n and local development setups
 
 ## A quick note about the projects
 
 I want the portfolio to show the work as it is, not make it sound bigger than it is.
 
-The lead qualification workflow is connected to my own live website and has received actual inquiries. The Business Opportunity Finder has been tested on real research data. Smart Scheduler and PropertyFix are both active in my self-hosted n8n instance, while testing and monitoring continue. The other projects are demonstrations or works in progress unless their README says otherwise. **These are not paid-client case studies**, and I don't claim results like revenue increases or hours saved without evidence.
+The lead qualification workflow is connected to my own live website and has received actual inquiries. The Business Opportunity Finder has been tested on real research data. Smart Scheduler and PropertyFix are both active in my self-hosted n8n instance, while testing and monitoring continue. Anna's AI text-response/Supabase path and the Gmail Manager's read-only search and security-gate behavior have been verified in saved n8n executions; other capabilities are identified separately in their project documentation. The remaining projects are demonstrations or works in progress unless their README says otherwise. **These are not paid-client case studies**, and I don't claim results like revenue increases or hours saved without evidence.
 
 If you're reviewing my work for a role or a project, I'd be glad for you to look at the workflow structure, decisions, and safeguards—not just the screenshots.
 
