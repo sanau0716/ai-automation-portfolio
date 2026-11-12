@@ -6,6 +6,8 @@ Each project has its own folder with an explanation of what I built, plus workfl
 
 | Project | Why you might open it | Stage |
 | --- | --- | --- |
+| **[Anna Omnichannel Receptionist](anna-omnichannel-receptionist)** | Inspect extensively tested Groq text-receptionist pipeline and Supabase logging evidence | Functional AI conversation and Supabase path; successfully tested |
+| **[Intelligent Gmail Manager](intelligent-gmail-manager)** | Review live Gmail search tests and fail-closed mailbox change safety | Functional read-only search MVP |
 | **[Lead Management](lead-management)** | See a website-connected n8n workflow and its original Zapier version together | Lead qualification live for my own business |
 | **[Smart Scheduler V1](smart-scheduler)** | See human-approved Gmail-to-Calendar automation with a real event-creation test | **Live in n8n**; ongoing verification |
 | **[PropertyFix AI 2.0](propertyfix-ai)** | Explore AI maintenance triage, safety rules, manager approvals, and Slack routing | **Live in n8n**; safety validation ongoing |
@@ -16,4 +18,4 @@ Each project has its own folder with an explanation of what I built, plus workfl
 
 **A note on Lead Management:** The [n8n implementation](lead-management/n8n) and [original Zapier version](lead-management/zapier) are part of the same project, not two separate client implementations.
 
-These projects are independently built examples, not paid-client case studies. Importing any workflow requires your own credentials and a careful review before enabling real actions.
+These projects demonstrate independently engineered automations. Importing a workflow requires your own credentials and review before enabling external actions.

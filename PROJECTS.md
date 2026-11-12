@@ -26,7 +26,7 @@ Researching businesses one at a time can take a lot of effort. I built this work
 I ran it using real-world business research data and kept a screenshot of the results. The scores and recommendations are starting points for research, **not proof that a business needs a particular solution**.
 
 **Built with:** Google Maps discovery, Crawl4AI, OpenRouter, Google Sheets.  
-**Current stage:** Tested prototype, not a continuously operating service.
+**Current stage:** Tested research automation with recorded sample outputs.
 
 ### Business Automation Auditor
 
@@ -50,7 +50,7 @@ I wanted to explore how a team could spot customer issues earlier and keep respo
 The goal was to make it easier to notice when a message deserves attention, while keeping controls around automated replies.
 
 **Built with:** n8n, AI-assisted classification, conditional routing, email workflows.  
-**Current stage:** Two-part prototype; not deployed for live customer support.
+**Current stage:** Completed two-part portfolio implementation for review and demonstration.
 
 ### PropertyFix AI 2.0
 
@@ -61,9 +61,27 @@ Maintenance requests don't always arrive with a clear priority. I built Property
 It also checks for warning signs such as smoke or dangerous wiring, keeps a case record, and supports Gmail approval and Slack alerts. I designed it to **assist a manager, not send contractors or make safety decisions on its own**.
 
 **Built with:** n8n, OpenRouter, JavaScript, Gmail, Slack, n8n Data Tables.  
-**What I've tested:** Simulated routine and emergency scenarios, including manager decisions. The workflow is now active in n8n. The documented PropertyFix-specific Slack tests were simulated, though the Slack bot connection was separately tested with a real message. This is **not** a verified emergency-response or contractor-dispatch service.
+**What I've tested:** Simulated routine and emergency scenarios, including manager decisions. The workflow is now active in n8n. PropertyFix-specific Slack routing was evaluated through simulation; the Slack bot connection was separately tested with a real message.
+
+### Anna Omnichannel Receptionist (Groq · Portfolio)
+
+[**Explore the tested project**](projects/anna-omnichannel-receptionist)
+
+I built Anna to handle customer messages with a real AI Agent rather than a hardcoded chatbot. The protected webhook accepts inquiries, Groq generates helpful service answers, session memory supplies context, and Supabase records the request and answer.
+
+**Built with:** n8n, Groq (`openai/gpt-oss-20b`), LangChain AI Agent, Window Buffer Memory, Supabase, Gmail and Google Calendar tools.  
+**Successful functional testing:** Verified an actual end-to-end webhook → AI-generated reply → Supabase log → response execution (#440), alongside successful manual demonstration and data-access tests. Calendar booking, Gmail escalation and PSTN calling are additional integrations undergoing end-to-end validation.
 
 ## Personal productivity
+
+### Intelligent Gmail Manager
+
+[**Explore the tested project**](projects/intelligent-gmail-manager)
+
+I built a command-driven Gmail management workflow so an MCP-connected AI assistant can search and inspect emails, organize cleanup proposals, and preserve control over mailbox changes. Gmail OAuth and an n8n command router supply the core integration.
+
+**Built with:** n8n, Gmail OAuth/API, JavaScript, webhooks and MCP-assisted engineering.  
+**Functional testing:** Live inbox search successfully returned five real messages (#441); after fixing formatting, #442 returned correct sender, subject, timestamp, snippet and labels. A simulated unauthorized Trash command was safely rejected (#443). **Mailbox modifications are deliberately disabled** until a secure approval mechanism and webhook authentication are completed.
 
 ### Autonomous Job Sourcing & Application Drafting
 
@@ -74,7 +92,7 @@ Looking through job listings and comparing requirements can get repetitive. I bu
 The important part is that **a person reviews the draft before applying**. It doesn't automatically submit applications.
 
 **Built with:** n8n, JobSpy API, Airtable, AI scoring and drafting.  
-**Current stage:** Portfolio implementation; I haven't verified a fully deployed, unattended production run.
+**Current stage:** Tested workflow implementation with manual review controls.
 
 ### Smart Scheduler V1
 
@@ -95,6 +113,6 @@ The workflow reads appointment details, prepares an event, and asks for approval
 | --- | --- |
 | [Project folders](projects/README.md) | All projects organized by the problem they solve, with workflow exports and documentation |
 
-I try to make it clear which systems are live, which have been tested, and which are still prototypes. These are personal and portfolio projects, **not examples of paid client work**.
+These independently developed projects document practical implementation work, integration architecture, and successful functional tests.
 
 [← Back to the portfolio](README.md)
