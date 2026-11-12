@@ -6,6 +6,8 @@ Each project has its own folder with an explanation of what I built, plus workfl
 
 | Project | Why you might open it | Stage |
 | --- | --- | --- |
+| **[Anna Omnichannel Receptionist](anna-omnichannel-receptionist)** | Inspect extensively tested Groq text-receptionist pipeline and Supabase logging evidence | Functional AI text path; 18 recorded executions |
+| **[Intelligent Gmail Manager](intelligent-gmail-manager)** | Review live Gmail search tests and fail-closed mailbox change safety | Functional read-only search MVP |
 | **[Lead Management](lead-management)** | See a website-connected n8n workflow and its original Zapier version together | Lead qualification live for my own business |
 | **[Smart Scheduler V1](smart-scheduler)** | See human-approved Gmail-to-Calendar automation with a real event-creation test | **Live in n8n**; ongoing verification |
 | **[PropertyFix AI 2.0](propertyfix-ai)** | Explore AI maintenance triage, safety rules, manager approvals, and Slack routing | **Live in n8n**; safety validation ongoing |
