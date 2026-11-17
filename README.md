@@ -38,7 +38,11 @@ I built this around a practical property-management problem: how to separate a r
 
 **Why it's worth a look:** It brings together AI classification, JavaScript safety checks, persistent records, Gmail approval, and Slack alert routing. The workflow is active in n8n, and I've tested routine and emergency cases using synthetic data. It is not a verified tenant-facing emergency service.
 
-## All nine projects
+## Latest project
+
+**[Campaign Research & Drafting Agent](projects/campaign-research-agent)** — a form-driven n8n system that discovers business websites with Serper, researches them with native Python Crawl4AI, and prepares evidence-checked outreach drafts with local Ollama. A persistent review queue keeps contact history and follow-up flags. The supplied-website path has passed a real end-to-end test; Serper discovery has passed simulation and still needs a live acceptance test.
+
+## All ten projects
 
 | Project | What it helps with | Current stage |
 | --- | --- | --- |
@@ -47,6 +51,7 @@ I built this around a practical property-management problem: how to separate a r
 | **[AI Lead Management](projects/lead-management/n8n)** | Captures and qualifies inquiries from my business website; includes an earlier [Zapier version](projects/lead-management/zapier). | Live qualification for my own business |
 | **[Smart Scheduler V1](projects/smart-scheduler)** | Turns confirmed appointment emails into calendar events after approval and conflict checks. | **Live in n8n**; event creation verified in testing |
 | **[PropertyFix AI 2.0](projects/propertyfix-ai)** | Helps managers triage maintenance issues, spot safety concerns, and track review decisions. | **Live in n8n**; safety and notification verification ongoing |
+| **[Campaign Research & Drafting Agent](projects/campaign-research-agent)** | Business discovery, local website research, evidence-checked drafts and a persistent review queue. | Supplied-website path tested live; Serper discovery simulated |
 | **[Business Opportunity Finder](projects/business-opportunity-finder)** | Researches businesses and identifies possible automation opportunities. | Tested with real research data |
 | **[Customer Engagement System](projects/customer-engagement)** | Helps monitor customer concerns and organize responses. | Portfolio prototype |
 | **[Business Automation Auditor](projects/business-automation-auditor)** | Reviews websites and suggests where process automation may help. | Portfolio prototype |
@@ -63,9 +68,9 @@ I'm especially interested in the point where **AI helps make sense of informatio
 ### Tools I've worked with
 
 **Automation:** n8n, Zapier, webhooks, REST APIs  
-**AI:** Groq, OpenRouter, Gemini, LangChain AI Agent, AI-assisted development with Antigravity CLI and MCP, structured AI responses  
-**Code and data:** JavaScript, JSON, Google Sheets, Airtable  
-**Other integrations:** Gmail, Supabase, Slack, Google Calendar, Apify, Firecrawl, Crawl4AI  
+**AI:** Groq, OpenRouter, Gemini, LangChain AI Agent, AI-assisted development with Antigravity CLI and MCP, structured AI responses, local Ollama (`hermes3:3b`)\
+**Code and data:** JavaScript, Python, PowerShell, JSON, n8n Data Tables, Google Sheets, Airtable\
+**Other integrations:** Gmail, Supabase, Slack, Google Calendar, Apify, Firecrawl, Crawl4AI, Serper\
 **Infrastructure:** Self-hosted n8n and local development setups
 
 ## Project validation
