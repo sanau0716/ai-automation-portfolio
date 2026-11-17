@@ -1,5 +1,7 @@
 # AI Business Opportunity Finder
 
+![Business Opportunity Finder workflow overview](assets/workflow-overview.svg)
+
 **Status:** Tested with real-world business data; independently developed and used for business opportunity research.
 
 A 17-node n8n automation workflow that discovers businesses within a configured geographic search area, crawls their websites, and uses AI to identify potential opportunities for business process automation.
