@@ -17,6 +17,17 @@ I first made this in Zapier, then recreated it in my self-hosted n8n setup. **It
 **Built with:** n8n, webhooks, Gmail, Google Sheets, JavaScript, AI analysis.  
 **What I've verified:** Live website lead intake and qualification. I haven't closed a paying automation client from these inquiries, so I don't present conversion or revenue results.
 
+### Campaign Research & Drafting Agent
+
+[**Explore the latest project**](projects/campaign-research-agent) · [Setup](projects/campaign-research-agent/docs/setup.md) · [Validation evidence](projects/campaign-research-agent/docs/validation.md)
+
+I built this to prepare outreach for my automation business without requiring a separate campaign dashboard or a paid cloud language model. A client-friendly n8n form accepts a business category, city and offer. Serper can discover company websites; native Python Crawl4AI reads their pages; local Ollama prepares messages supported by source quotations.
+
+The implementation checks business type and service area before accepting drafts, skips domains already in the queue, and records outcomes for human review. A second workflow calculates follow-up flags from manually recorded contact dates. Neither workflow sends messages.
+
+**Built with:** n8n Forms, HTTP Request, JavaScript, Serper, Crawl4AI, Python, PowerShell, Ollama (`hermes3:3b`) and n8n Data Tables.\
+**What I've verified:** A real supplied-website run completed website research, local AI drafting and queue persistence. Simulated tests covered blank-input discovery, bounded retries, blocked sources and Serper response parsing. A live public-search run correctly reported blocked sources; live Serper discovery remains to be verified. This is an internal research tool, with no claimed client conversion or revenue results.
+
 ### Business Opportunity Finder
 
 [**Explore the project**](projects/business-opportunity-finder) · [See sample results](projects/business-opportunity-finder/screenshots/business-opportunity-results.png)
