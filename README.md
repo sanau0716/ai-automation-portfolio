@@ -40,7 +40,49 @@ I built this around a practical property-management problem: how to separate a r
 
 ## Latest project
 
-**[Campaign Research & Drafting Agent](projects/campaign-research-agent)** — a form-driven n8n system that discovers business websites with Serper, researches them with native Python Crawl4AI, and prepares evidence-checked outreach drafts with local Ollama. A persistent review queue keeps contact history and follow-up flags. The supplied-website path has passed a real end-to-end test; Serper discovery has passed simulation and still needs a live acceptance test.
+### [Campaign Research & Drafting Agent](projects/campaign-research-agent)
+
+[![Campaign Research and Drafting workflow overview](projects/campaign-research-agent/assets/workflow-overview.svg)](projects/campaign-research-agent)
+
+A form-driven n8n system that discovers business websites with Serper, researches them with native Python Crawl4AI, and prepares evidence-checked outreach drafts with local Ollama. A persistent review queue keeps contact history and follow-up flags. The supplied-website path has passed a real end-to-end test; Serper discovery has passed simulation and still needs a live acceptance test.
+
+## More workflow overviews
+
+### [Intelligent Gmail Manager](projects/intelligent-gmail-manager)
+
+[![Intelligent Gmail Manager workflow overview](projects/intelligent-gmail-manager/assets/workflow-overview.svg)](projects/intelligent-gmail-manager)
+
+Live Gmail search and formatting tested; mailbox modifications remain disabled.
+
+### [Smart Scheduler V1](projects/smart-scheduler)
+
+[![Smart Scheduler V1 workflow overview](projects/smart-scheduler/assets/workflow-overview.svg)](projects/smart-scheduler)
+
+Gmail-to-Calendar automation with approval and a verified event-creation test.
+
+### [Business Opportunity Finder](projects/business-opportunity-finder)
+
+[![Business Opportunity Finder workflow overview](projects/business-opportunity-finder/assets/workflow-overview.svg)](projects/business-opportunity-finder)
+
+Website research and AI opportunity assessments tested with real business data.
+
+### [Customer Engagement System](projects/customer-engagement)
+
+[![Customer Engagement System workflow overview](projects/customer-engagement/assets/workflow-overview.svg)](projects/customer-engagement)
+
+Two-workflow portfolio implementation for customer risk and response routing.
+
+### [Business Automation Auditor](projects/business-automation-auditor)
+
+[![Business Automation Auditor workflow overview](projects/business-automation-auditor/assets/workflow-overview.svg)](projects/business-automation-auditor)
+
+Portfolio design for business discovery, website auditing, scoring and reporting.
+
+### [Autonomous Job Sourcing](projects/autonomous-job-sourcing)
+
+[![Autonomous Job Sourcing workflow overview](projects/autonomous-job-sourcing/assets/workflow-overview.svg)](projects/autonomous-job-sourcing)
+
+Job discovery, scoring and application drafts; final submissions remain manual.
 
 ## All ten projects
 

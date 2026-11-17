@@ -1,5 +1,7 @@
 # AI Customer Engagement System
 
+![Customer Engagement System workflow overview](assets/workflow-overview.svg)
+
 **Status:** Runnable portfolio implementation  not deployed in a live business environment.
 
 An AI-powered customer engagement and email response system developed with n8n.

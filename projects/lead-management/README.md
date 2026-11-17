@@ -1,5 +1,7 @@
 # Lead Management — n8n and Zapier
 
+![Lead Management workflow overview](n8n/assets/workflow-overview.svg)
+
 [← All projects](../README.md) · [Portfolio home](../../README.md)
 
 This is one project that I built twice: I started with Zapier to test lead qualification, then rebuilt it with self-hosted n8n so I could keep improving it after the Zapier trial ended.

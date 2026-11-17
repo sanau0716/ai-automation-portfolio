@@ -1,5 +1,7 @@
 # Autonomous Job Sourcing & Application Drafting Pipeline
 
+![Job Sourcing & Application Drafts workflow overview](assets/workflow-overview.svg)
+
 An n8n-based AI job sourcing pipeline that finds job listings, normalizes and de-duplicates them, analyzes requirements, scores candidate fit, routes the result, and generates an application draft for roles that meet the configured threshold.
 
 ## What this demonstrates

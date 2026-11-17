@@ -1,5 +1,7 @@
 # AwtomateAI — Intelligent Gmail Manager
 
+![Intelligent Gmail Manager workflow overview](assets/workflow-overview.svg)
+
 **Functional Intelligent Gmail Assistant | Successfully tested Gmail search and safety controls**
 
 This n8n project provides Gmail search, structured outputs, message and thread retrieval architecture, email classification, label inventory, and cleanup proposals for an MCP-connected AI assistant.
