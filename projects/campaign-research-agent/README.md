@@ -1,5 +1,7 @@
 # Campaign Research & Drafting Agent
 
+![Campaign Research and Drafting workflow overview](assets/workflow-overview.svg)
+
 [← Portfolio](../../README.md) · [Setup](docs/setup.md) · [Validation](docs/validation.md)
 
 **Status:** Internal research prototype. Real end-to-end research and drafting verified with a supplied business website. Serper discovery tested with simulated responses; a live Serper acceptance test remains outstanding. Both exported workflows are inactive.
