@@ -46,6 +46,14 @@ I built this around a practical property-management problem: how to separate a r
 
 A form-driven n8n system that discovers business websites with Serper, researches them with native Python Crawl4AI, and prepares evidence-checked outreach drafts with local Ollama. A persistent review queue keeps contact history and follow-up flags. The supplied-website path has passed a real end-to-end test; Serper discovery has passed simulation and still needs a live acceptance test.
 
+## Voice inquiry and support
+
+### [Automated Voice Inquiry & Support Dispatcher](projects/voice-inquiry-dispatcher)
+
+[![Voice Inquiry and Support Dispatcher workflow overview](projects/voice-inquiry-dispatcher/assets/workflow-overview.svg)](projects/voice-inquiry-dispatcher)
+
+An authenticated audio pipeline connecting local Whisper transcription, an OpenRouter-powered AI Agent with session memory, and local Piper speech synthesis. Historical webhook successes are recorded; the current snapshot needs fresh audio testing. The portfolio export disables its optional email tool pending stronger authorization controls.
+
 ## More workflow overviews
 
 ### [Intelligent Gmail Manager](projects/intelligent-gmail-manager)
@@ -84,7 +92,7 @@ Portfolio design for business discovery, website auditing, scoring and reporting
 
 Job discovery, scoring and application drafts; final submissions remain manual.
 
-## All ten projects
+## All eleven projects
 
 | Project | What it helps with | Current stage |
 | --- | --- | --- |
@@ -93,6 +101,7 @@ Job discovery, scoring and application drafts; final submissions remain manual.
 | **[AI Lead Management](projects/lead-management/n8n)** | Captures and qualifies inquiries from my business website; includes an earlier [Zapier version](projects/lead-management/zapier). | Live qualification for my own business |
 | **[Smart Scheduler V1](projects/smart-scheduler)** | Turns confirmed appointment emails into calendar events after approval and conflict checks. | **Live in n8n**; event creation verified in testing |
 | **[PropertyFix AI 2.0](projects/propertyfix-ai)** | Helps managers triage maintenance issues, spot safety concerns, and track review decisions. | **Live in n8n**; safety and notification verification ongoing |
+| **[Voice Inquiry & Support Dispatcher](projects/voice-inquiry-dispatcher)** | Uploaded audio → transcription → AI conversation → spoken response. | Source active; historical webhook successes; latest snapshot needs retesting |
 | **[Campaign Research & Drafting Agent](projects/campaign-research-agent)** | Business discovery, local website research, evidence-checked drafts and a persistent review queue. | Supplied-website path tested live; Serper discovery simulated |
 | **[Business Opportunity Finder](projects/business-opportunity-finder)** | Researches businesses and identifies possible automation opportunities. | Tested with real research data |
 | **[Customer Engagement System](projects/customer-engagement)** | Helps monitor customer concerns and organize responses. | Portfolio prototype |
@@ -109,7 +118,7 @@ I'm especially interested in the point where **AI helps make sense of informatio
 
 ### Tools I've worked with
 
-**Automation:** n8n, Zapier, webhooks, REST APIs  
+**Automation:** n8n, Zapier, webhooks, REST APIs\
 **AI:** Groq, OpenRouter, Gemini, LangChain AI Agent, AI-assisted development with Antigravity CLI and MCP, structured AI responses, local Ollama (`hermes3:3b`)\
 **Code and data:** JavaScript, Python, PowerShell, JSON, n8n Data Tables, Google Sheets, Airtable\
 **Other integrations:** Gmail, Supabase, Slack, Google Calendar, Apify, Firecrawl, Crawl4AI, Serper\
