@@ -1,5 +1,7 @@
 # AI Business Automation Auditor
 
+![Business Automation Auditor workflow overview](assets/workflow-overview.svg)
+
 An n8n-based automation project that combines business discovery, website analysis, AI-assisted opportunity identification, audit scoring, and reporting.
 
 ## Project Status
