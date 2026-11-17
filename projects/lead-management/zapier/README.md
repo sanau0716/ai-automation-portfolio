@@ -1,5 +1,7 @@
 # LeadFlow AI
 
+![LeadFlow AI — Zapier workflow overview](assets/workflow-overview.svg)
+
 **Status:** Original Zapier implementation; subsequently rebuilt in self-hosted n8n.
 
 LeadFlow AI is an AI-assisted lead qualification and response automation project originally developed using Zapier.
