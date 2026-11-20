@@ -6,7 +6,7 @@ An n8n-based automation project that combines business discovery, website analys
 
 ## Project Status
 
-Portfolio automation project. The repository contains workflow definitions demonstrating the system architecture. Production reliability, commercial deployment, and measured business outcomes are not claimed.
+Both connected n8n workflows are active in the development automation workspace. In the November 1–20, 2026 execution-history window, the parent Business Automation Auditor recorded 23 successes, 2 errors and 1 cancellation; the Website Auditor Engine recorded 39 successes and 7 errors. These runs demonstrate real workflow execution and also expose provider/source failure cases. Production reliability, commercial deployment, and measured business outcomes are not claimed.
 
 ## Business Problem
 
@@ -121,3 +121,5 @@ The repository documents workflow design and implementation. It does not indepen
 ## Intended Use
 
 Technical portfolio demonstration of AI-assisted business auditing and workflow automation.
+
+**Current-state note (November 20, 2026):** The parent and engine are active in n8n, but their execution histories include failed runs. The project is therefore presented as a tested research prototype rather than a production service.
