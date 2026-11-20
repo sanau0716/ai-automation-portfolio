@@ -1,138 +1,125 @@
 # AI Automation Portfolio
 
-### Hi, I'm an automation builder who enjoys turning repetitive work into simpler processes.
+### AI Automation Specialist | n8n Workflow Engineering | LLM Agents | API Integrations | JavaScript & Python
 
-I work with **n8n, AI tools, APIs, and JavaScript** to connect systems and make everyday business tasks easier to manage.
+I design and build practical AI-powered automations that connect language models, business processes, APIs, and operational tools.
 
-I started building these projects to solve practical problems: following up with leads, understanding customer messages, researching potential clients, and keeping track of requests that would otherwise get lost in an inbox. Some are running in my own business; others are working prototypes that I've built and tested as I develop my skills.
+My work goes beyond connecting nodes. I build complete workflows with input validation, structured AI outputs, deterministic business rules, human approval where needed, persistent records, error handling, and monitoring.
 
-You can explore the projects below, look through the workflows, and see what I've actually tested.
+**Current focus:** CommercePilot — a Shopify AI shopping assistant combining a Shopify app, n8n orchestration, Groq, Redis security controls, catalog synchronization, and live availability checks.
 
-**[See all projects](PROJECTS.md)** · **[Project folders](projects/README.md)** · **[My website](https://awtomateai.com)**
+[**Explore all projects**](PROJECTS.md) · [**Review the n8n workflow audit**](N8N_WORKFLOW_AUDIT.md) · [**Browse project folders**](projects/README.md) · [**AwtomateAI**](https://awtomateai.com)
 
-## Start with these projects
+---
 
-If you're evaluating my work for an AI automation role, start with these three practical, tested systems.
+## Featured projects
 
-### 1. [Anna AI — Intelligent Front Desk & Business Operations Agent](projects/anna-omnichannel-receptionist)
+### 1. [CommercePilot — Shopify AI Shopping Assistant](projects/commercepilot)
 
-[![Anna AI receptionist flagship project](projects/anna-omnichannel-receptionist/assets/anna-hero.svg)](projects/anna-omnichannel-receptionist)
+**Flagship platform build · Preview deployment ready · Development-store validation**
 
-I built Anna to connect AI customer conversations with meaningful business workflows. The working n8n pipeline handles incoming text inquiries, generates Groq-powered answers, maintains session context, and logs records in Supabase.
+A Shopify-native shopping assistant designed to answer product questions using the merchant's own catalog, match relevant products, check live variant availability, maintain store-scoped conversation context, and log conversations. The wider implementation includes Shopify App Proxy verification, Redis replay/rate controls, catalog synchronization, location-level inventory work, and health monitoring.
 
-**Why it's worth a look:** A genuine end-to-end AI-and-database execution has been successfully tested, with an expansion path to live voice calls, appointment bookings, CRM integrations, and service workflows.
+**Stack:** Shopify Admin GraphQL · Shopify App Proxy · n8n · Groq · Upstash Redis · Supabase/PostgreSQL · Prisma · TypeScript · Vercel.
 
-### 2. [AI Lead Management — a workflow running on my website](projects/lead-management/n8n)
+**Evidence:** 44 successful storefront-assistant executions in the November 1–20, 2026 history window; 26 successful catalog-sync runs out of 27 recorded runs. The Shopify app Preview deployment is marked READY. This is still a development-store project, not a paid-merchant deployment. The current assistant draft and published version differ; see the [case study](projects/commercepilot) for the exact release boundary.
 
-[![Lead Management workflow](projects/lead-management/n8n/assets/workflow-overview.svg)](projects/lead-management/n8n)
+### 2. [AI Lead Qualification & Response](projects/lead-management/n8n)
 
-I built this to handle inquiries coming through [AwtomateAI](https://awtomateai.com). A new lead enters through the website, goes through AI-assisted qualification, and moves into the response workflow. I first tried the idea in Zapier, then rebuilt it in self-hosted n8n.
+An active n8n workflow connected to the AwtomateAI website. It receives inquiries, uses an AI agent to qualify leads, routes them by business rules, and connects Gmail and Google Sheets for follow-up and records.
 
-**Why it's worth a look:** It connects a real website to automation and has already handled genuine inquiries. It's my clearest example of building something I actually use. It demonstrates a real website-to-automation integration, with ongoing enhancements to follow-up handling.
+**Stack:** n8n · Webhooks · OpenRouter · JavaScript · Gmail · Google Sheets.
 
-### 3. [PropertyFix AI 2.0 — maintenance triage with human oversight](projects/propertyfix-ai)
+**Evidence:** 18 successful executions recorded in the November 1–20, 2026 history window. The repository also contains older workflow snapshots; the current active workflow is documented separately from those exports.
 
-[![PropertyFix AI workflow](projects/propertyfix-ai/assets/workflow-overview.svg)](projects/propertyfix-ai)
+### 3. [PropertyFix AI 2.0 — Maintenance Intelligence](projects/propertyfix-ai)
 
-I built this around a practical property-management problem: how to separate a routine repair request from something that needs immediate attention. It saves each request, suggests a priority and trade, applies safety rules, and sends the case for a manager's decision.
+A human-supervised maintenance intake and triage proof of concept. It preserves the original request, uses AI to suggest a category and priority, applies deterministic safety overrides, and routes a manager decision to a persistent case ledger.
 
-**Why it's worth a look:** It brings together AI classification, JavaScript safety checks, persistent records, Gmail approval, and Slack alert routing. The workflow is active in n8n, and I've tested routine and emergency cases using synthetic data. It is not a verified tenant-facing emergency service.
+**Stack:** n8n · OpenRouter · JavaScript · Data Tables · Gmail · Slack.
 
-## Latest project
+**Evidence:** 10 successful recorded executions in the November 1–20, 2026 window, using synthetic test data. It does not dispatch contractors or provide emergency response.
 
-### [Campaign Research & Drafting Agent](projects/campaign-research-agent)
+### 4. [Smart Scheduler V1](projects/smart-scheduler)
 
-[![Campaign Research and Drafting workflow overview](projects/campaign-research-agent/assets/workflow-overview.svg)](projects/campaign-research-agent)
+An AI-assisted Gmail-to-Google-Calendar workflow with structured event extraction, date/time validation, duplicate screening, calendar conflict checks, explicit approval, and a final recheck before creating an event.
 
-A form-driven n8n system that discovers business websites with Serper, researches them with native Python Crawl4AI, and prepares evidence-checked outreach drafts with local Ollama. A persistent review queue keeps contact history and follow-up flags. The supplied-website path has passed a real end-to-end test; Serper discovery has passed simulation and still needs a live acceptance test.
+**Stack:** n8n · Gmail · Google Calendar · OpenRouter · JavaScript · Data Tables.
 
-## Voice inquiry and support
+**Evidence:** 20 successful recorded executions in the November 1–20, 2026 window. Real event creation was verified; load testing and sustained production polling remain unverified.
 
-### [Automated Voice Inquiry & Support Dispatcher](projects/voice-inquiry-dispatcher)
+### 5. [AI Business Automation Auditor](projects/business-automation-auditor)
 
-[![Voice Inquiry and Support Dispatcher workflow overview](projects/voice-inquiry-dispatcher/assets/workflow-overview.svg)](projects/voice-inquiry-dispatcher)
+A multi-workflow research system that discovers businesses, gathers website content, uses AI to identify possible automation opportunities, calculates a score, and prepares a report for human review.
 
-An authenticated audio pipeline connecting local Whisper transcription, an OpenRouter-powered AI Agent with session memory, and local Piper speech synthesis. Historical webhook successes are recorded; the current snapshot needs fresh audio testing. The portfolio export disables its optional email tool pending stronger authorization controls.
+**Stack:** n8n · Apify · Firecrawl · OpenRouter · Groq · Ollama · JavaScript · Google Sheets.
 
-## More workflow overviews
+**Evidence:** The parent workflow has 23 successful runs, 2 errors, and 1 cancellation; the website-audit engine has 39 successful runs and 7 errors in the November 1–20 history window. It remains a research prototype, not a validated commercial audit service.
 
-### [Intelligent Gmail Manager](projects/intelligent-gmail-manager)
+### 6. [Campaign Research & Drafting Agent](projects/campaign-research-agent)
 
-[![Intelligent Gmail Manager workflow overview](projects/intelligent-gmail-manager/assets/workflow-overview.svg)](projects/intelligent-gmail-manager)
+A form-driven research workflow that uses Crawl4AI and local Ollama to investigate supplied business websites, validate supporting evidence, prepare outreach drafts, and store them in a persistent review queue.
 
-Live Gmail search and formatting tested; mailbox modifications remain disabled.
+**Stack:** n8n · Python · Crawl4AI · Serper · Ollama · JavaScript · Data Tables.
 
-### [Smart Scheduler V1](projects/smart-scheduler)
+**Evidence:** 16 successful recorded executions in the November 1–20 window. The workflows are currently inactive and do not send outreach.
 
-[![Smart Scheduler V1 workflow overview](projects/smart-scheduler/assets/workflow-overview.svg)](projects/smart-scheduler)
+---
 
-Gmail-to-Calendar automation with approval and a verified event-creation test.
+## More projects
 
-### [Business Opportunity Finder](projects/business-opportunity-finder)
+| Project | What it demonstrates | Current state |
+|---|---|---|
+| [Automated Voice Inquiry & Support Dispatcher](projects/voice-inquiry-dispatcher) | Audio intake, Whisper transcription, AI conversation, session memory, Piper speech synthesis | Active source; fresh audio acceptance test required |
+| [Anna AI — Intelligent Front Desk](projects/anna-omnichannel-receptionist) | Groq AI Agent, session memory, structured customer response, Supabase logging | Portfolio workflow inactive; historical tests documented |
+| [Intelligent Gmail Manager](projects/intelligent-gmail-manager) | Gmail search, message/thread retrieval, classification design, fail-closed mutation controls | Inactive; read-only tests verified |
+| [Business Opportunity Finder](projects/business-opportunity-finder) | Google Maps discovery, website crawling, AI opportunity assessment, Sheets reporting | Inactive; current n8n version differs from repository snapshot |
+| [Customer Engagement System](projects/customer-engagement) | Customer monitoring and response-management workflow patterns | Portfolio prototypes |
+| [Autonomous Job Sourcing](projects/autonomous-job-sourcing) | Job discovery, match scoring, application drafting, manual review | Prototype; no automatic submissions |
 
-[![Business Opportunity Finder workflow overview](projects/business-opportunity-finder/assets/workflow-overview.svg)](projects/business-opportunity-finder)
+[**See all project details →**](PROJECTS.md)
 
-Website research and AI opportunity assessments tested with real business data.
+---
 
-### [Customer Engagement System](projects/customer-engagement)
+## Core engineering capabilities
 
-[![Customer Engagement System workflow overview](projects/customer-engagement/assets/workflow-overview.svg)](projects/customer-engagement)
+- **Workflow engineering:** n8n, Zapier, triggers, webhooks, subworkflows, scheduling, branching, batching, retries, and error workflows.
+- **AI orchestration:** LLM agents, prompt design, structured output parsing, session memory, model routing, and local inference.
+- **API integration:** REST and GraphQL APIs, request normalization, HMAC verification, authenticated webhooks, and third-party service integration.
+- **Business logic:** JavaScript and Python transformations, validation, deterministic rules, deduplication, idempotency, and human-in-the-loop approvals.
+- **Data and persistence:** Supabase/PostgreSQL, n8n Data Tables, Google Sheets, Redis/Upstash, and structured audit records.
+- **Reliability:** health checks, latency monitoring, alert routing, failure handling, safe fallbacks, and execution-history review.
+- **Commerce automation:** Shopify Admin GraphQL, App Proxy, catalog synchronization, product discovery, and inventory availability.
 
-Two-workflow portfolio implementation for customer risk and response routing.
+## Tools and technologies
 
-### [Business Automation Auditor](projects/business-automation-auditor)
+**Automation:** n8n, Zapier, webhooks, subworkflows  
+**AI:** Groq, OpenRouter, Ollama, Gemini, LangChain AI Agent, structured output parsers  
+**Development:** JavaScript, TypeScript, Python, JSON, PowerShell  
+**Data:** Supabase, PostgreSQL, Redis/Upstash, n8n Data Tables, Google Sheets, Airtable  
+**Integrations:** Shopify, Gmail, Google Calendar, Slack, Apify, Firecrawl, Crawl4AI, Serper  
+**Deployment and operations:** Vercel, self-hosted n8n, local AI services, health monitoring
 
-[![Business Automation Auditor workflow overview](projects/business-automation-auditor/assets/workflow-overview.svg)](projects/business-automation-auditor)
+## How I approach automation
 
-Portfolio design for business discovery, website auditing, scoring and reporting.
+1. Understand the actual business process and the failure cases.
+2. Normalize and validate inputs before sending them to an AI model.
+3. Use AI for interpretation and drafting—not as the only source of truth.
+4. Apply deterministic rules for permissions, safety, routing, and state changes.
+5. Require human approval for consequential actions where appropriate.
+6. Persist useful records and make failures observable.
+7. Test the workflow and document what is verified, simulated, pending, or intentionally disabled.
 
-### [Autonomous Job Sourcing](projects/autonomous-job-sourcing)
+## Evidence and transparency
 
-[![Autonomous Job Sourcing workflow overview](projects/autonomous-job-sourcing/assets/workflow-overview.svg)](projects/autonomous-job-sourcing)
+This repository distinguishes active workflows, inactive prototypes, historical exports, and preview deployments. Execution counts are n8n history snapshots, not uptime guarantees or customer outcome metrics. Synthetic tests are identified as synthetic. No paid-client results, revenue gains, conversion lifts, or time-saved figures are claimed without evidence.
 
-Job discovery, scoring and application drafts; final submissions remain manual.
+See the [n8n-to-GitHub alignment audit](N8N_WORKFLOW_AUDIT.md) for the 36-workflow inventory and known version differences.
 
-## All eleven projects
+## Contact and opportunities
 
-| Project | What it helps with | Current stage |
-| --- | --- | --- |
-| **[Anna AI — Front Desk & Operations Agent](projects/anna-omnichannel-receptionist)** | Groq-powered conversations, context management, structured responses and Supabase logging. | **Flagship project**; tested end-to-end AI inquiry handling |
-| **[Intelligent Gmail Manager](projects/intelligent-gmail-manager)** | MCP-oriented Gmail search, formatting, classification design and safe cleanup previews. | **Functional Gmail assistant**; live search and security tests passed |
-| **[AI Lead Management](projects/lead-management/n8n)** | Captures and qualifies inquiries from my business website; includes an earlier [Zapier version](projects/lead-management/zapier). | Live qualification for my own business |
-| **[Smart Scheduler V1](projects/smart-scheduler)** | Turns confirmed appointment emails into calendar events after approval and conflict checks. | **Live in n8n**; event creation verified in testing |
-| **[PropertyFix AI 2.0](projects/propertyfix-ai)** | Helps managers triage maintenance issues, spot safety concerns, and track review decisions. | **Live in n8n**; safety and notification verification ongoing |
-| **[Voice Inquiry & Support Dispatcher](projects/voice-inquiry-dispatcher)** | Uploaded audio → transcription → AI conversation → spoken response. | Source active; historical webhook successes; latest snapshot needs retesting |
-| **[Campaign Research & Drafting Agent](projects/campaign-research-agent)** | Business discovery, local website research, evidence-checked drafts and a persistent review queue. | Supplied-website path tested live; Serper discovery simulated |
-| **[Business Opportunity Finder](projects/business-opportunity-finder)** | Researches businesses and identifies possible automation opportunities. | Tested with real research data |
-| **[Customer Engagement System](projects/customer-engagement)** | Helps monitor customer concerns and organize responses. | Portfolio prototype |
-| **[Business Automation Auditor](projects/business-automation-auditor)** | Reviews websites and suggests where process automation may help. | Portfolio prototype |
-| **[Autonomous Job Sourcing](projects/autonomous-job-sourcing)** | Finds relevant jobs, compares requirements, and drafts applications for review. | Portfolio prototype |
-
-[**Explore the full project stories and evidence →**](PROJECTS.md) · [Browse project folders](projects/README.md)
-
-## How I work
-
-I usually begin with the part of a process that's taking too much time or creating confusion. Then I sketch out the steps, connect the tools, add the logic, and test what happens when the information isn't as clean as expected.
-
-I'm especially interested in the point where **AI helps make sense of information, but a person still makes the important decision**. You'll see that approach in projects that involve customer replies, scheduling, and maintenance requests.
-
-### Tools I've worked with
-
-**Automation:** n8n, Zapier, webhooks, REST APIs\
-**AI:** Groq, OpenRouter, Gemini, LangChain AI Agent, AI-assisted development with Antigravity CLI and MCP, structured AI responses, local Ollama (`hermes3:3b`)\
-**Code and data:** JavaScript, Python, PowerShell, JSON, n8n Data Tables, Google Sheets, Airtable\
-**Other integrations:** Gmail, Supabase, Slack, Google Calendar, Apify, Firecrawl, Crawl4AI, Serper\
-**Infrastructure:** Self-hosted n8n and local development setups
-
-## Project validation
-
-Each project highlights the problem addressed, the tools integrated, and the functionality demonstrated through actual execution or documented tests.
-
-The lead qualification workflow is connected to my own live website and has received actual inquiries. The Business Opportunity Finder has been tested on real research data. Smart Scheduler and PropertyFix are both active in my self-hosted n8n instance, while testing and monitoring continue. Anna's AI text-response/Supabase path and the Gmail Manager's read-only search and security-gate behavior have been verified in saved n8n executions; other capabilities are identified separately in their project documentation. The remaining projects are demonstrations or works in progress unless their README says otherwise. **These are not paid-client case studies**, and I don't claim results like revenue increases or hours saved without evidence.
-
-If you're reviewing my work for a role or a project, I'd be glad for you to look at the workflow structure, decisions, and safeguards—not just the screenshots.
-
-## Find me
+I am interested in **AI Automation Specialist, n8n Automation Developer, Workflow Automation Engineer, and AI Integration Developer** opportunities, as well as practical automation projects.
 
 - **GitHub:** https://github.com/sanau0716
+- **Portfolio:** https://github.com/sanau0716/ai-automation-portfolio
 - **AwtomateAI:** https://awtomateai.com

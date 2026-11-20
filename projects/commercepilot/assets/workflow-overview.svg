@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
+  <title id="title">CommercePilot architecture</title>
+  <desc id="desc">Shopify storefront requests flow through a protected app proxy and Redis security checks to n8n, catalog retrieval, a Groq AI assistant, live availability checks, conversation logging and monitoring.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10182b"/><stop offset="1" stop-color="#182747"/></linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#54d6c7"/><stop offset="1" stop-color="#66a8ff"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity=".22"/></filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#77c9dc"/></marker>
+    <style>
+      .heading{font:700 32px Inter,Arial,sans-serif;fill:#f5f8ff}
+      .sub{font:400 15px Inter,Arial,sans-serif;fill:#aebdd6}
+      .label{font:700 17px Inter,Arial,sans-serif;fill:#f5f8ff}
+      .small{font:400 13px Inter,Arial,sans-serif;fill:#b8c7df}
+      .tiny{font:600 11px Inter,Arial,sans-serif;fill:#7fe0d1;letter-spacing:1px}
+      .card{fill:#223454;stroke:#476187;stroke-width:1.2}
+      .line{fill:none;stroke:#77c9dc;stroke-width:3;marker-end:url(#arrow)}
+    </style>
+  </defs>
+  <rect width="1200" height="720" rx="28" fill="url(#bg)"/>
+  <circle cx="1080" cy="90" r="160" fill="#294b7a" opacity=".18"/>
+  <circle cx="80" cy="650" r="210" fill="#2d8e93" opacity=".12"/>
+  <text x="64" y="72" class="tiny">SHOPIFY AI COMMERCE PLATFORM</text>
+  <text x="64" y="116" class="heading">CommercePilot — system architecture</text>
+  <text x="64" y="145" class="sub">Catalog-grounded conversations · protected requests · live availability · observable workflows</text>
+  <g filter="url(#shadow)">
+    <rect class="card" x="55" y="220" width="205" height="112" rx="16"/>
+    <text x="78" y="254" class="tiny">STOREFRONT</text><text x="78" y="284" class="label">Shopify Chat</text><text x="78" y="309" class="small">Theme App Embed</text>
+    <rect class="card" x="325" y="220" width="220" height="112" rx="16"/>
+    <text x="348" y="254" class="tiny">TRUST BOUNDARY</text><text x="348" y="284" class="label">App Proxy</text><text x="348" y="309" class="small">HMAC + request checks</text>
+    <rect class="card" x="610" y="220" width="220" height="112" rx="16"/>
+    <text x="633" y="254" class="tiny">ORCHESTRATION</text><text x="633" y="284" class="label">n8n Workflow</text><text x="633" y="309" class="small">Store + Redis controls</text>
+    <rect class="card" x="895" y="220" width="250" height="112" rx="16"/>
+    <text x="918" y="254" class="tiny">AI REASONING</text><text x="918" y="284" class="label">Groq AI Assistant</text><text x="918" y="309" class="small">Product-grounded response</text>
+    <rect class="card" x="150" y="445" width="250" height="118" rx="16"/>
+    <text x="174" y="480" class="tiny">CATALOG DATA</text><text x="174" y="510" class="label">Shopify GraphQL</text><text x="174" y="536" class="small">Products · variants · stock</text>
+    <rect class="card" x="475" y="445" width="250" height="118" rx="16"/>
+    <text x="499" y="480" class="tiny">LIVE AVAILABILITY</text><text x="499" y="510" class="label">Variant Checks</text><text x="499" y="536" class="small">On-demand stock questions</text>
+    <rect class="card" x="800" y="445" width="250" height="118" rx="16"/>
+    <text x="824" y="480" class="tiny">PERSISTENCE</text><text x="824" y="510" class="label">Conversation Logs</text><text x="824" y="536" class="small">Store-scoped records</text>
+  </g>
+  <path class="line" d="M260 276 H315"/><path class="line" d="M545 276 H600"/><path class="line" d="M830 276 H885"/>
+  <path class="line" d="M720 332 V390 H600 V435"/><path class="line" d="M725 504 H790"/><path class="line" d="M475 504 H410"/><path class="line" d="M270 445 V380 H720 V342"/>
+  <rect x="64" y="625" width="1072" height="48" rx="12" fill="#1b2a46" stroke="#3e5a7e"/>
+  <text x="88" y="655" class="small">Operations: 5-minute health checks · latency alerts · workflow error notifications · preview deployment validation</text>
+  <rect x="1035" y="60" width="100" height="34" rx="17" fill="url(#accent)"/>
+  <text x="1085" y="82" text-anchor="middle" style="font:700 12px Inter,Arial,sans-serif;fill:#10243a">PREVIEW</text>
+</svg>

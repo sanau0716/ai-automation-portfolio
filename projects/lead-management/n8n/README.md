@@ -4,13 +4,13 @@
 
 *Simplified diagram of the lead-handling workflow. The deployed lead qualification and prototype follow-up work are distinguished below.*
 
-**Deployment:** The current AI lead qualification workflow is active in n8n and connected to my business website. The separate follow-up monitor in this repository is a prototype, not a claim of live deployment.
+**Deployment:** The current website-connected workflow, named **AI Lead Qualification & Automation Platform**, is active in n8n and recorded 18 successful executions in the November 1–20, 2026 history window. It is an 18-node workflow. It is not the same workflow as the older exported Phase 3 JSON in this folder.
 
 An n8n-based AI automation project for lead qualification, personalized responses, scheduled follow-ups, and manual review escalation.
 
 ## Project Overview
 
-This project contains two complementary workflows with 29 nodes in total.
+This folder contains two historical workflow exports with 29 nodes in total (14-node qualification snapshot and 15-node follow-up snapshot). The current active website-connected lead qualification workflow is a separate 18-node n8n workflow. The current follow-up monitor is inactive and has 16 nodes, so its repository export is also an older snapshot.
 
 The workflows demonstrate how AI and business automation can support lead intake, qualification, communication, and follow-up management.
 
@@ -162,6 +162,12 @@ Potential improvements include:
 
 ## Project Status
 
+### Current website-connected workflow
+
+The active **AI Lead Qualification & Automation Platform** has 18 nodes and 18 successful executions recorded in the November 1–20, 2026 history window. It is connected to AwtomateAI website inquiries. The 14-node JSON included here is an older inactive Phase 3 variant, not a current export of that active workflow.
+
+The current AI Lead Follow-Up Monitor is inactive and contains 16 nodes; the public 15-node JSON is a historical snapshot.
+
 ### Live Business Deployment
 
 The AI Lead Qualification and Response workflow is deployed on **awtomateai.com**, where website inquiries trigger a self-hosted n8n automation.
@@ -189,3 +195,5 @@ No claims are made regarding paying clients, conversion rates, measured ROI, or 
 - Scheduled follow-up orchestration
 - Google Sheets integration
 - Human review escalation
+
+**Portfolio alignment note (November 20, 2026):** The current active website-connected workflow is separate from the historical JSON export. The follow-up monitor is inactive. These distinctions are deliberate so the public repository does not overstate which snapshot is currently running.

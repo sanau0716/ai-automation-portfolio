@@ -191,13 +191,12 @@
     {
       "parameters": {
         "operation": "append",
-        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
-          "cachedResultName": "Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+          "cachedResultName": "Leads"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -365,13 +364,12 @@
     {
       "parameters": {
         "operation": "update",
-        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
-          "cachedResultName": "Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+          "cachedResultName": "Leads"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -531,13 +529,12 @@
     {
       "parameters": {
         "operation": "update",
-        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
-          "cachedResultName": "Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+          "cachedResultName": "Leads"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -697,13 +694,12 @@
     {
       "parameters": {
         "operation": "update",
-        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
-          "cachedResultName": "Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+          "cachedResultName": "Leads"
         },
         "columns": {
           "mappingMode": "defineBelow",

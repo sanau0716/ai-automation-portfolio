@@ -4,7 +4,7 @@
 
 *Simplified visual of the live n8n workflow. Approval is for the triage plan only; no vendor dispatch or emergency response is automated.*
 
-**Status:** Live and active in my self-hosted n8n instance as of November 11, 2026. It remains a developing proof of concept, **not** a verified tenant-facing emergency-response or contractor-dispatch service.
+**Status:** Active in my self-hosted n8n instance as of November 20, 2026. Ten executions were recorded in the November 1–20 window, all successful. It remains a developing proof of concept using synthetic test data, **not** a verified tenant-facing emergency-response or contractor-dispatch service.
 
 **Stack:** Self-hosted n8n · n8n Form Trigger · n8n Data Tables · OpenRouter LLM · JavaScript · Gmail · Slack
 

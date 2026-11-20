@@ -22,13 +22,12 @@
     },
     {
       "parameters": {
-        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
-          "cachedResultName": "Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+          "cachedResultName": "Leads"
         },
         "options": {}
       },
@@ -148,13 +147,12 @@
     {
       "parameters": {
         "operation": "update",
-        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
-          "cachedResultName": "Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+          "cachedResultName": "Leads"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -342,13 +340,12 @@
     {
       "parameters": {
         "operation": "update",
-        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
-          "cachedResultName": "Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+          "cachedResultName": "Leads"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -508,13 +505,12 @@
     {
       "parameters": {
         "operation": "append",
-        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
         "sheetName": {
           "__rl": true,
           "value": 559892092,
           "mode": "list",
-          "cachedResultName": "Follow-Up Activity Log",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+          "cachedResultName": "Follow-Up Activity Log"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -624,13 +620,12 @@
     {
       "parameters": {
         "operation": "update",
-        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
-          "cachedResultName": "Leads",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+          "cachedResultName": "Leads"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -936,7 +931,7 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"

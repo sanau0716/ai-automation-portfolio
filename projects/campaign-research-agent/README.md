@@ -62,3 +62,6 @@ Import both [workflow exports](workflows), reconnect your own Crawl4AI and Serpe
 Start with one business on a modest computer. Local inference still uses CPU/RAM and can take several minutes. Search API calls consume query credits; Crawl4AI page reads and Ollama drafting do not consume Serper credits. Public search may be blocked by robots rules or CAPTCHA, which the workflow reports explicitly rather than claiming no businesses exist.
 
 Credential bindings, webhook identifiers, execution data and pinned samples are excluded. Form paths and sender defaults are reset for import. The workflow logic and node versions otherwise reflect the source snapshot of November 17, 2026. See [validation evidence and limitations](docs/validation.md).
+
+
+**Execution-history note (November 20, 2026):** 16 successful executions were recorded in the November 1–20 window. Both workflows remain inactive, and the system does not send outreach.

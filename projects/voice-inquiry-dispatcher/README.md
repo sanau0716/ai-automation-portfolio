@@ -4,7 +4,7 @@
 
 [← Portfolio](../../README.md) · [Sanitized n8n workflow](workflow.json)
 
-**Status:** The source workflow is active in the development n8n instance. Historical webhook runs completed successfully; those runs predate the latest source edit. This exported snapshot is inactive and needs a fresh end-to-end audio acceptance test after configuration.
+**Status:** The source workflow is active in the development n8n instance. In the November 1–20, 2026 history window, the 50 most recent retrieved execution records contained 35 successes and 15 errors (68 matching records existed in the full window). This exported snapshot is inactive and needs a fresh end-to-end audio acceptance test after configuration.
 
 ## Overview
 
@@ -64,3 +64,6 @@ For this reason the **portfolio copy disables the SMTP tool** and replaces the s
 - The export is checked for valid JSON, connection targets, unique node identities, JavaScript syntax and removal of credential references and live webhook paths. The overview SVG is rendered and checked before publication.
 
 No new audio requests, phone calls or email actions were executed for this update. Current audio playback quality, email delivery, live telephony, production uptime and commercial outcomes are not established here. This project is distinct from the separately documented Anna Omnichannel Receptionist text/Supabase workflow.
+
+
+**Current execution-history note (November 20, 2026):** Active status should not be interpreted as a successful current-version acceptance test. The recent execution history is mixed, and a fresh audio upload → transcription → AI response → WAV playback test is required before describing the workflow as stable.

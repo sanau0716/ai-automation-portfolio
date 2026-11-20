@@ -2,9 +2,9 @@
 
 ![Business Opportunity Finder workflow overview](assets/workflow-overview.svg)
 
-**Status:** Tested with real-world business data; independently developed and used for business opportunity research.
+**Status:** Historical research prototype. The current 19-node n8n workflow is inactive and recorded one error in the November 1–20, 2026 history window. The 17-node JSON in this repository is an earlier snapshot.
 
-A 17-node n8n automation workflow that discovers businesses within a configured geographic search area, crawls their websites, and uses AI to identify potential opportunities for business process automation.
+A 17-node historical n8n export that discovers businesses within a configured geographic search area, crawls their websites, and uses AI to identify potential opportunities for business process automation.
 
 ## Real-World Application
 
@@ -103,3 +103,7 @@ It is not presented as a continuously operating production service.
 AI-generated opportunities are research suggestions that require human verification. The project does not claim verified business savings, customer acquisition, or commercial revenue.
 
 Before wider deployment, additional review of API reliability, retry limits, error handling, data quality, and scraping-service terms would be appropriate.
+
+## Current n8n alignment
+
+The connected n8n workspace contains a 19-node workflow named **Crawl4AI - AI Business Opportunity Finder**. It is inactive as of November 20, 2026. Its recent November history contains one recorded error, so the older successful research outputs described above should be treated as historical examples, not evidence of a currently operating service. The public JSON remains a 17-node historical snapshot and is marked inactive for safe import.
