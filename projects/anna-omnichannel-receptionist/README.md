@@ -2,7 +2,7 @@
 
 ![Anna AI — AwtomateAI flagship AI receptionist](assets/anna-hero.svg)
 
-**AwtomateAI flagship project · Functional AI receptionist · Successfully tested with actual n8n executions**
+**AwtomateAI portfolio prototype · Groq-powered text receptionist · Historical end-to-end test documented**
 
 Anna is a conversational AI and workflow orchestration system built to reduce repetitive front-desk work: answering inquiries, collecting lead information, preparing business actions and preserving an auditable record of customer conversations. It combines **self-hosted n8n, a Groq-powered AI Agent, session memory and Supabase**, with connected Google Calendar and Gmail tools.
 
@@ -37,7 +37,7 @@ The project includes recorded n8n execution results, including repeated test and
 | **#439** | Successful manual demonstration and database-reading test |
 | **#423** | Successful rule-based fallback demonstration |
 
-This demonstrates functioning AI responses and persisted records, not just a workflow mockup. The workflow is currently inactive, preventing unreviewed live business transactions.
+This demonstrates a historically successful AI response and persisted record, not a currently running customer service. The workflow is inactive. In the November 1–20, 2026 execution-history window, 9 of 19 recorded executions succeeded; the mixed history should be reviewed before another live test.
 
 ## Portfolio demonstration script
 
@@ -83,3 +83,6 @@ These are customization scenarios, not claims that all industry-specific workflo
 **Portfolio scope:** Independently engineered and tested AwtomateAI demonstration, with verified text conversation and Supabase persistence.
 
 [View the other projects](../../PROJECTS.md) · [AwtomateAI website](https://awtomateai.com)
+
+
+**Current-state note (November 20, 2026):** The portfolio workflow is inactive. The verified execution #440 remains valid evidence of a successful historical text/Supabase path, but the recent 9-success / 10-error history means the system is not presented as a stable live receptionist.
