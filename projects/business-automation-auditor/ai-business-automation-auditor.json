@@ -64,8 +64,7 @@
         -640
       ],
       "id": "2f8320d3-eb01-4a90-bca9-c392c0fba6e8",
-      "name": "Business Finder Request",
-      "webhookId": "5edb1bef-5150-4932-8ad3-c310c70c601c"
+      "name": "Business Finder Request"
     },
     {
       "parameters": {
@@ -74,8 +73,7 @@
           "__rl": true,
           "value": "nwua9Gu5YrADL7ZDj",
           "mode": "list",
-          "cachedResultName": "Google Maps Scraper (compass/crawler-google-places)",
-          "cachedResultUrl": "https://console.apify.com/actors/nwua9Gu5YrADL7ZDj/input"
+          "cachedResultName": "Google Maps Scraper (compass/crawler-google-places)"
         },
         "customBody": "={{ JSON.stringify({\n  searchStringsArray: [$json.body.business_type],\n  locationQuery: $json.body.location,\n  maxCrawledPlacesPerSearch: $json.body.limit,\n  language: \"en\",\n  website: \"withWebsite\"\n}) }}",
         "timeout": {},
@@ -109,7 +107,6 @@
           "__rl": true,
           "value": "t3Y9UiiCI2lK4k81",
           "mode": "list",
-          "cachedResultUrl": "/workflow/t3Y9UiiCI2lK4k81",
           "cachedResultName": "Website Auditor Engine"
         },
         "workflowInputs": {
