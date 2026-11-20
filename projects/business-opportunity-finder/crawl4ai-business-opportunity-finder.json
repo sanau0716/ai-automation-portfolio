@@ -232,13 +232,12 @@
     {
       "parameters": {
         "operation": "appendOrUpdate",
-        "documentId": "<YOUR_GOOGLE_SHEET_ID>",
+        "documentId": "YOUR_GOOGLE_SHEET_ID",
         "sheetName": {
           "__rl": true,
           "value": "gid=0",
           "mode": "list",
-          "cachedResultName": "Sheet1",
-          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/<YOUR_GOOGLE_SHEET_ID>"
+          "cachedResultName": "Sheet1"
         },
         "columns": {
           "mappingMode": "defineBelow",
