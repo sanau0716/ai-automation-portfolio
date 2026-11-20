@@ -1,23 +1,22 @@
 # Project folders
 
-[← Portfolio home](../README.md) · [Read the project stories](../PROJECTS.md)
+[← Portfolio home](../README.md) · [Read the project stories](../PROJECTS.md) · [n8n workflow audit](../N8N_WORKFLOW_AUDIT.md)
 
-Each project has its own folder with an explanation of what I built, plus workflow files, screenshots, or documentation where available. I put the projects that best demonstrate real use and tested engineering first.
+The projects below are organized by the business problem they address. Each README identifies the implementation stage and the evidence available.
 
 | Project | Why you might open it | Stage |
-| --- | --- | --- |
-| **[Anna Omnichannel Receptionist](anna-omnichannel-receptionist)** | Inspect extensively tested Groq text-receptionist pipeline and Supabase logging evidence | Functional AI conversation and Supabase path; successfully tested |
-| **[Intelligent Gmail Manager](intelligent-gmail-manager)** | Review live Gmail search tests and fail-closed mailbox change safety | Functional read-only search MVP |
-| **[Lead Management](lead-management)** | See a website-connected n8n workflow and its original Zapier version together | Lead qualification live for my own business |
-| **[Smart Scheduler V1](smart-scheduler)** | See human-approved Gmail-to-Calendar automation with a real event-creation test | **Live in n8n**; ongoing verification |
-| **[PropertyFix AI 2.0](propertyfix-ai)** | Explore AI maintenance triage, safety rules, manager approvals, and Slack routing | **Live in n8n**; safety validation ongoing |
-| **[Voice Inquiry & Support Dispatcher](voice-inquiry-dispatcher)** | Inspect audio intake, local speech services, AI conversation and binary voice response | Source active; historical runs recorded; latest audio snapshot needs retesting |
-| **[Campaign Research & Drafting Agent](campaign-research-agent)** | Inspect local AI research, source validation, bounded discovery retries and persistent review | Supplied-website path tested live; Serper path simulated |
-| **[Business Opportunity Finder](business-opportunity-finder)** | Review research and AI-assisted opportunity scoring on real-world data | Tested prototype |
-| **[Customer Engagement](customer-engagement)** | Explore customer monitoring and response-management workflows | Portfolio prototype |
-| **[Business Automation Auditor](business-automation-auditor)** | Inspect website auditing and automation opportunity workflows | Portfolio prototype |
-| **[Autonomous Job Sourcing](autonomous-job-sourcing)** | Explore job research, scoring, drafting, and human review | Portfolio prototype |
+|---|---|---|
+| **[CommercePilot — Shopify AI Shopping Assistant](commercepilot)** | Shopify app + n8n orchestration, catalog-grounded AI, App Proxy security, Redis controls, monitoring and inventory-by-location work | **Flagship development project**; Vercel Preview READY; development-store validation |
+| **[AI Lead Management](lead-management)** | Website-connected AI lead qualification plus earlier Zapier/n8n workflow snapshots | Current 18-node website workflow active; 18 successful recent executions |
+| **[PropertyFix AI 2.0](propertyfix-ai)** | AI maintenance triage, deterministic safety rules, persistent case records and manager approval | Active proof of concept; 10 successful recent executions using synthetic data |
+| **[Smart Scheduler V1](smart-scheduler)** | Human-approved Gmail-to-Calendar automation with duplicate and conflict checks | Active in personal n8n; 20 successful recent executions |
+| **[AI Business Automation Auditor](business-automation-auditor)** | Business discovery, website analysis, AI opportunity identification and scoring | Active workflows; execution history includes provider/source errors |
+| **[Campaign Research & Drafting Agent](campaign-research-agent)** | Crawl4AI research, local Ollama drafting, source checks and persistent review queue | Inactive; 16 successful recent executions; no outbound sending |
+| **[Voice Inquiry & Support Dispatcher](voice-inquiry-dispatcher)** | Audio intake, transcription, AI conversation, memory and speech synthesis | Active source; 35 successes / 15 errors in 50 most recent retrieved records; retest required |
+| **[Anna Omnichannel Receptionist](anna-omnichannel-receptionist)** | Groq text receptionist, session memory and Supabase logging | Inactive portfolio workflow; historical tests documented |
+| **[Intelligent Gmail Manager](intelligent-gmail-manager)** | Read-only Gmail search and fail-closed mailbox mutation controls | Inactive; three successful tests |
+| **[Business Opportunity Finder](business-opportunity-finder)** | Google Maps discovery, website crawling and AI opportunity assessment | Inactive; 19-node n8n version differs from 17-node repository snapshot |
+| **[Customer Engagement](customer-engagement)** | Customer monitoring and response-management workflow patterns | Portfolio prototypes |
+| **[Autonomous Job Sourcing](autonomous-job-sourcing)** | Job research, scoring, application drafting and human review | Prototype; no automatic submissions |
 
-**A note on Lead Management:** The [n8n implementation](lead-management/n8n) and [original Zapier version](lead-management/zapier) are part of the same project, not two separate client implementations.
-
-These projects demonstrate independently engineered automations. Importing a workflow requires your own credentials and review before enabling external actions.
+**Important:** The portfolio contains sanitized historical exports as well as current architecture documentation. Where an export differs from the current n8n workflow, the project README says so explicitly. Importing an export requires your own credentials and review before enabling external actions.
