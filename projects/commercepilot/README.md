@@ -19,20 +19,21 @@ CommercePilot is designed to ground shopping conversations in the connected Shop
 ~~~mermaid
 flowchart TD
     A[Shopify storefront chat embed] --> B[Shopify App Proxy]
-    B --> C[App Proxy authentication and HMAC validation]
+    B --> C[App Proxy envelope + HMAC verification]
     C --> D[Request normalization and validation]
     D --> E[Redis replay and rate-limit checks]
-    E --> F[Registered store and catalog lookup]
+    E --> F[Registered store and catalog context]
     F --> G[Product matching]
-    G --> H[Groq AI shopping assistant]
-    H --> I[Store-scoped session memory]
-    H --> J{Stock or availability question?}
-    J -- Yes --> K[Live Shopify variant availability]
-    J -- No --> L[Build catalog-grounded response]
-    K --> L
-    L --> M[Conversation logging]
-    M --> N[Return response to storefront]
-    O[Health and latency monitor] -.-> H
+    G --> H{Stock or availability question?}
+    H -- Yes --> I[Live Shopify variant availability]
+    H -- No --> J[Continue with catalog context]
+    I --> K[Groq AI shopping assistant]
+    J --> K
+    M[Store-scoped session memory] -.-> K
+    K --> L[Build catalog-grounded response]
+    L --> N[Save conversation]
+    N --> P[Return response to storefront]
+    O[Health and latency monitor] -.-> K
     O -.-> E
     O -.-> B
 ~~~
