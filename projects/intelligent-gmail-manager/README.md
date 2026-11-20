@@ -41,3 +41,6 @@ Additional commands for reading messages, thread retrieval, classification and c
 **Portfolio context:** Independently engineered and tested for personal productivity; not a paid-client deployment.
 
 [Browse all projects](../../PROJECTS.md)
+
+
+**Execution-history note (November 20, 2026):** Three successful executions were recorded in the November 1–20 window. The workflow remains inactive, and mailbox-changing operations remain disabled.
