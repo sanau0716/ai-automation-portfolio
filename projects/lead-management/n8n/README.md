@@ -4,7 +4,7 @@
 
 *Simplified diagram of the lead-handling workflow. The deployed lead qualification and prototype follow-up work are distinguished below.*
 
-**Deployment:** The current website-connected workflow, named **AI Lead Qualification & Automation Platform**, is active in n8n and recorded 18 successful executions in the November 1–20, 2026 history window. It is an 18-node workflow. It is not the same workflow as the older exported Phase 3 JSON in this folder.
+**Deployment:** The current website-connected workflow, named **AI Lead Qualification & Automation Platform**, is active in n8n and recorded 18 successful execution records in the November 1–21, 2026 history snapshot. It is an 18-node workflow whose published active version matches the current draft. It is not the same workflow as the older exported Phase 3 JSON in this folder.
 
 An n8n-based AI automation project for lead qualification, personalized responses, scheduled follow-ups, and manual review escalation.
 
@@ -69,6 +69,14 @@ The workflows demonstrate how AI and business automation can support lead intake
 - Manual review escalation
 - Activity logging
 - Email failure status handling
+
+
+
+## Current connected workflow and visual evidence
+
+The updated [workflow visual](assets/workflow-overview.svg) reflects the current active 18-node graph: webhook intake, lead normalization, OpenRouter qualification, structured-result parsing, Google Sheets recording, high-value and qualified routing, Gmail follow-up, and lead-status updates.
+
+The diagram is a simplified map generated from connected n8n workflow metadata; it is not a screenshot of the n8n editor canvas. The 18 successful execution records are history evidence, not a conversion or revenue metric.
 
 ## Technology Stack
 
@@ -174,7 +182,7 @@ The AI Lead Qualification and Response workflow is deployed on **awtomateai.com*
 
 The website has received real inquiries. This is an operational deployment for the developer's own business, not a paid client implementation.
 
-The live workflow uses AI-assisted qualification, conditional lead routing, Gmail communication, and Google Sheets integration as represented in the exported workflow.
+The current active 18-node workflow uses AI-assisted qualification, conditional lead routing, Gmail communication, and Google Sheets integration as verified from the connected n8n graph. The older public export is a historical snapshot and does not represent the current active node graph.
 
 ### Portfolio Implementation
 
@@ -196,4 +204,4 @@ No claims are made regarding paying clients, conversion rates, measured ROI, or 
 - Google Sheets integration
 - Human review escalation
 
-**Portfolio alignment note (November 20, 2026):** The current active website-connected workflow is separate from the historical JSON export. The follow-up monitor is inactive. These distinctions are deliberate so the public repository does not overstate which snapshot is currently running.
+**Portfolio alignment note (November 21, 2026):** The current active website-connected workflow is separate from the historical JSON export. The follow-up monitor is inactive. These distinctions are deliberate so the public repository does not overstate which snapshot is currently running.

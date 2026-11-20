@@ -1,22 +1,37 @@
 # Project folders
 
-[← Portfolio home](../README.md) · [Read the project stories](../PROJECTS.md) · [n8n workflow audit](../N8N_WORKFLOW_AUDIT.md)
+[← Portfolio home](../README.md) · [Technical case studies](../PROJECTS.md) · [Visual proof gallery](../VISUAL_PROOFS.md) · [n8n workflow audit](../N8N_WORKFLOW_AUDIT.md)
 
-The projects below are organized by the business problem they address. Each README identifies the implementation stage and the evidence available.
+Open a project by the business problem it addresses. Each project README explains its implementation stage, technical approach, evidence, and limitations.
 
-| Project | Why you might open it | Stage |
+## Featured systems
+
+| Project | Engineering focus | Current stage and evidence |
 |---|---|---|
-| **[CommercePilot — Shopify AI Shopping Assistant](commercepilot)** | Shopify app + n8n orchestration, catalog-grounded AI, App Proxy security, Redis controls, monitoring and inventory-by-location work | **Flagship development project**; Vercel Preview READY; development-store validation |
-| **[AI Lead Management](lead-management)** | Website-connected AI lead qualification plus earlier Zapier/n8n workflow snapshots | Current 18-node website workflow active; 18 successful recent executions |
-| **[PropertyFix AI 2.0](propertyfix-ai)** | AI maintenance triage, deterministic safety rules, persistent case records and manager approval | Active proof of concept; 10 successful recent executions using synthetic data |
-| **[Smart Scheduler V1](smart-scheduler)** | Human-approved Gmail-to-Calendar automation with duplicate and conflict checks | Active in personal n8n; 20 successful recent executions |
-| **[AI Business Automation Auditor](business-automation-auditor)** | Business discovery, website analysis, AI opportunity identification and scoring | Active workflows; execution history includes provider/source errors |
-| **[Campaign Research & Drafting Agent](campaign-research-agent)** | Crawl4AI research, local Ollama drafting, source checks and persistent review queue | Inactive; 16 successful recent executions; no outbound sending |
-| **[Voice Inquiry & Support Dispatcher](voice-inquiry-dispatcher)** | Audio intake, transcription, AI conversation, memory and speech synthesis | Active source; 35 successes / 15 errors in 50 most recent retrieved records; retest required |
-| **[Anna Omnichannel Receptionist](anna-omnichannel-receptionist)** | Groq text receptionist, session memory and Supabase logging | Inactive portfolio workflow; historical tests documented |
-| **[Intelligent Gmail Manager](intelligent-gmail-manager)** | Read-only Gmail search and fail-closed mailbox mutation controls | Inactive; three successful tests |
-| **[Business Opportunity Finder](business-opportunity-finder)** | Google Maps discovery, website crawling and AI opportunity assessment | Inactive; 19-node n8n version differs from 17-node repository snapshot |
-| **[Customer Engagement](customer-engagement)** | Customer monitoring and response-management workflow patterns | Portfolio prototypes |
-| **[Autonomous Job Sourcing](autonomous-job-sourcing)** | Job research, scoring, application drafting and human review | Prototype; no automatic submissions |
+| **[CommercePilot — Shopify AI Shopping Assistant](commercepilot)** | Shopify app + n8n orchestration, catalog-grounded AI, App Proxy HMAC, Redis controls, variant availability, monitoring | Preview / development store; 44 successful assistant execution records; 42-node draft vs 37-node published version |
+| **[AI Lead Management](lead-management)** | Website-connected lead intake, OpenRouter qualification, JavaScript parsing, conditional Gmail routing, Google Sheets | Active 18-node workflow; 18 successful execution records; current workflow differs from historical exports |
+| **[PropertyFix AI 2.0](propertyfix-ai)** | Maintenance intake, AI triage, deterministic safety rules, persistent case records, manager approval | Active 17-node internal POC; 10 successful synthetic test runs; notifications/approval pinned or simulated |
+| **[Smart Scheduler V1](smart-scheduler)** | Gmail/Calendar integration, event extraction, validation, deduplication, approval, final conflict recheck | Active 30-node workflow; 20 successful execution records; real event creation verified |
 
-**Important:** The portfolio contains sanitized historical exports as well as current architecture documentation. Where an export differs from the current n8n workflow, the project README says so explicitly. Importing an export requires your own credentials and review before enabling external actions.
+## Supporting projects
+
+| Project | Why open it | Stage |
+|---|---|---|
+| [AI Business Automation Auditor](business-automation-auditor) | Business discovery, website research, AI opportunity analysis, scoring, and Sheets reporting | Research prototype; source/provider errors documented |
+| [Campaign Research & Drafting Agent](campaign-research-agent) | Crawl4AI research, local Ollama drafting, evidence checks, persistent review queue | Inactive; no outbound sending |
+| [Voice Inquiry & Support Dispatcher](voice-inquiry-dispatcher) | Audio intake, transcription, AI conversation, memory, and speech synthesis | Fresh end-to-end audio acceptance test required |
+| [Anna Omnichannel Receptionist](anna-omnichannel-receptionist) | Groq text receptionist, session memory, and Supabase logging | Inactive portfolio prototype |
+| [Intelligent Gmail Manager](intelligent-gmail-manager) | Read-only Gmail search, thread retrieval, and fail-closed mutation controls | Inactive; mailbox mutations disabled |
+| [Business Opportunity Finder](business-opportunity-finder) | Business discovery, website crawling, AI research assessment, and Sheets output | Inactive current workflow; historical JSON snapshot |
+| [Customer Engagement](customer-engagement) | Customer monitoring and response-management workflow patterns | Portfolio prototypes |
+| [Autonomous Job Sourcing](autonomous-job-sourcing) | Job research, fit scoring, application drafting, and human review | Prototype; no automatic submissions |
+
+## How to review these projects
+
+1. Start with the case study to understand the business problem and scope.
+2. Open the architecture visual to see the simplified system flow.
+3. Read the verification section for dated execution evidence and test cases.
+4. Check the limitations before interpreting the project as a production service.
+5. Treat public workflow exports as sanitized historical/inspection artifacts; configure and review credentials, nodes, and external actions before any import or activation.
+
+The [visual proof gallery](../VISUAL_PROOFS.md) collects the four flagship diagrams and clearly labels the existing historical output screenshot and CommercePilot promotional artwork.

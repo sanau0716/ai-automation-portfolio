@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="620" viewBox="0 0 1440 620" role="img" aria-labelledby="title desc">
+<title id="title">AI Automation Engineering Portfolio</title><desc id="desc">Four flagship systems across commerce, sales, operations and productivity, built with a repeatable engineering pattern from trigger through validation, AI interpretation, deterministic controls, human review, action and audit.</desc>
+<defs>
+ <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071525"/><stop offset=".55" stop-color="#111d35"/><stop offset="1" stop-color="#171c3b"/></linearGradient>
+ <linearGradient id="cyan" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#49dce8"/><stop offset="1" stop-color="#8b7bff"/></linearGradient>
+ <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#000" flood-opacity=".22"/></filter>
+ <style>
+ .eyebrow{font:700 14px Arial,sans-serif;letter-spacing:2.5px;fill:#62dce9}.h1{font:750 43px Arial,sans-serif;fill:#f7fbff}.sub{font:18px Arial,sans-serif;fill:#a8bfd8}.cardtitle{font:700 20px Arial,sans-serif;fill:#f5f8ff}.body{font:15px Arial,sans-serif;fill:#b9cbe0}.metric{font:700 26px Arial,sans-serif;fill:#fff}.small{font:13px Arial,sans-serif;fill:#8ea5bf}.step{font:700 13px Arial,sans-serif;letter-spacing:1px;fill:#d9f7fb}
+ </style>
+</defs>
+<rect width="1440" height="620" rx="26" fill="url(#bg)"/>
+<circle cx="1300" cy="20" r="230" fill="#5148a8" opacity=".13"/><circle cx="85" cy="600" r="190" fill="#12a8b4" opacity=".09"/>
+<text x="64" y="66" class="eyebrow">AI AUTOMATION ENGINEERING · PORTFOLIO OVERVIEW</text>
+<text x="64" y="124" class="h1">Build reliable AI-enabled business systems.</text>
+<text x="64" y="160" class="sub">Workflow orchestration, application integrations, decision controls and observable outcomes.</text>
+<g filter="url(#shadow)">
+ <rect x="64" y="208" width="310" height="190" rx="20" fill="#122940" stroke="#42d9e8" stroke-width="1.5"/>
+ <rect x="394" y="208" width="310" height="190" rx="20" fill="#182744" stroke="#5c9eea" stroke-width="1.5"/>
+ <rect x="724" y="208" width="310" height="190" rx="20" fill="#202642" stroke="#b08aff" stroke-width="1.5"/>
+ <rect x="1054" y="208" width="322" height="190" rx="20" fill="#1b2840" stroke="#74d8b5" stroke-width="1.5"/>
+</g>
+<g>
+ <text x="90" y="250" class="eyebrow">01 · COMMERCE</text><text x="90" y="291" class="cardtitle">CommercePilot</text><text x="90" y="324" class="body">Catalog-grounded shopping</text><text x="90" y="348" class="body">assistant with secure requests</text><text x="90" y="378" class="small">44 successful execution records</text>
+ <text x="420" y="250" class="eyebrow" style="fill:#83b7ff">02 · SALES</text><text x="420" y="291" class="cardtitle">AI Lead Qualification</text><text x="420" y="324" class="body">Structured lead assessment,</text><text x="420" y="348" class="body">routing and follow-up</text><text x="420" y="378" class="small">18 successful execution records</text>
+ <text x="750" y="250" class="eyebrow" style="fill:#c2a0ff">03 · OPERATIONS</text><text x="750" y="291" class="cardtitle">PropertyFix AI 2.0</text><text x="750" y="324" class="body">Safety-aware triage with</text><text x="750" y="348" class="body">manager decision checkpoints</text><text x="750" y="378" class="small">10 successful synthetic test runs</text>
+ <text x="1080" y="250" class="eyebrow" style="fill:#80e2bd">04 · PRODUCTIVITY</text><text x="1080" y="291" class="cardtitle">Smart Scheduler V1</text><text x="1080" y="324" class="body">Email-to-calendar automation</text><text x="1080" y="348" class="body">with approval and rechecks</text><text x="1080" y="378" class="small">20 successful execution records</text>
+</g>
+<text x="64" y="452" class="eyebrow">REPEATABLE ENGINEERING PATTERN</text>
+<g>
+ <rect x="64" y="474" width="180" height="54" rx="12" fill="#162d43" stroke="#31516c"/><rect x="254" y="474" width="180" height="54" rx="12" fill="#162d43" stroke="#31516c"/><rect x="444" y="474" width="180" height="54" rx="12" fill="#162d43" stroke="#31516c"/><rect x="634" y="474" width="180" height="54" rx="12" fill="#162d43" stroke="#31516c"/><rect x="824" y="474" width="180" height="54" rx="12" fill="#162d43" stroke="#31516c"/><rect x="1014" y="474" width="180" height="54" rx="12" fill="#162d43" stroke="#31516c"/><rect x="1204" y="474" width="172" height="54" rx="12" fill="#162d43" stroke="#31516c"/>
+ <g stroke="url(#cyan)" stroke-width="3" fill="none" stroke-linecap="round"><path d="M244 501h8l-4 -5m4 5l-4 5"/><path d="M434 501h8l-4 -5m4 5l-4 5"/><path d="M624 501h8l-4 -5m4 5l-4 5"/><path d="M814 501h8l-4 -5m4 5l-4 5"/><path d="M1004 501h8l-4 -5m4 5l-4 5"/><path d="M1194 501h8l-4 -5m4 5l-4 5"/></g>
+ <text x="154" y="507" text-anchor="middle" class="step">TRIGGER</text><text x="344" y="507" text-anchor="middle" class="step">VALIDATE</text><text x="534" y="507" text-anchor="middle" class="step">AI INTERPRET</text><text x="724" y="507" text-anchor="middle" class="step">RULES + HUMAN GATE</text><text x="914" y="507" text-anchor="middle" class="step">ACTION</text><text x="1104" y="507" text-anchor="middle" class="step">PERSIST</text><text x="1290" y="507" text-anchor="middle" class="step">OBSERVE</text>
+</g>
+<text x="64" y="574" class="small">92 successful execution records across these four workflows · November 1–21, 2026 history snapshot</text>
+<text x="1376" y="574" text-anchor="end" class="small">Counts are test/history evidence, not uptime or business-outcome claims.</text>
+</svg>

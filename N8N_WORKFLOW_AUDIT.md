@@ -111,3 +111,34 @@ Execution counts below are n8n history records in the November 1–20, 2026 sear
 - ACME Coordinator Dispatch Approval
 
 The categories above are practical groupings, not mutually exclusive business domains. The inventory is intentionally broader than the public project list: training, rollback, duplicate, and unvalidated experiments are not automatically promoted into the hiring portfolio.
+
+
+---
+
+## Focused follow-up verification — November 21, 2026
+
+A read-only follow-up was performed against the connected n8n workspace on November 21, 2026. This section supplements (and does not silently rewrite) the November 20, 36-workflow inventory above.
+
+| Featured workflow | Current n8n state | Current graph | Execution records, Nov 1–21 | Important boundary |
+|---|---|---:|---:|---|
+| CommercePilot — Storefront Shopping Assistant API (Groq) | Active | 42-node draft / 37-node published version; graphs differ | 44 success / 44 records | Development-store project; draft-only changes are not published |
+| CommercePilot — Shopify Catalog Sync | Active | Current workflow inspected | 26 success / 1 error / 27 records | Protected sync is configured for the development store only |
+| CommercePilot — Health & Latency Monitor | Active | Current workflow inspected | 277 total records; 200 most recent retrieved were successful | The remaining 77 records were not individually retrieved in this query; this is not an uptime SLA |
+| CommercePilot — Error Alert Handler | Active | Error-handler workflow; no trigger nodes reported | 1 successful manual test | This does not prove a real production error-trigger event was handled |
+| AI Lead Qualification & Automation Platform | Active | 18 nodes; active version matches draft | 18 success / 18 records | Website-connected workflow for the developer's own business |
+| PropertyFix AI 2.0 — Maintenance Intelligence | Active | 17 nodes; active version matches draft | 10 success / 10 records | Synthetic test data; Gmail/Slack notifications and approval responses were pinned/simulated in documented tests |
+| AwtomateAI — Smart Scheduler V1 | Active | 30 nodes; active version matches draft | 20 success / 20 records | Own Gmail/Calendar account; sustained polling and load testing remain unverified |
+
+### Version and publication boundaries
+
+- **CommercePilot:** The current draft contains 42 nodes and the published active version contains 37. The two graphs are not identical. The current draft uses newer store/catalog API retrieval and conversation load/save nodes; the published graph contains different registered-store, active-product, conversation-log, and session-recommendation nodes. Do not describe draft-only changes as published behavior.
+- **Lead Qualification:** The active website-connected workflow is the current 18-node implementation and uses OpenRouter model nodes. The public 14-node Phase 3 qualification JSON is an older inactive variant; the older export's model configuration must not be attributed to the current workflow.
+- **Lead Follow-Up Monitor:** The separate monitor is inactive and has 16 nodes; the public JSON is a 15-node historical snapshot.
+- **PropertyFix:** The 17-node workflow is an internal proof of concept. The successful execution records use synthetic data. Tests #405 and #406 cover a negated-hazard routine case and a positive sparks/smoke emergency case. Gmail/Slack notifications and approval responses were pinned/simulated; the separate Slack credential delivery test #407 does not prove delivery through the PropertyFix notification nodes.
+- **Smart Scheduler:** The 30-node active workflow matches its current draft. Execution #395 verified a real calendar event creation and ledger write; #385 stopped on rejected approval; #390 simulated a new conflict after approval; #398 verified the alert email node, not a real Error Trigger firing.
+
+### Evidence interpretation
+
+All counts above are n8n execution-history records for the stated workflow IDs and time window. A successful execution is not proof of business impact, uptime, or paid-client deployment. "Active" describes the n8n workflow state; it does not by itself mean a workflow is externally offered as a production service.
+
+[← Portfolio home](README.md) · [Visual proof gallery](VISUAL_PROOFS.md)

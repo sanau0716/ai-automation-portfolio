@@ -4,7 +4,7 @@
 
 *Simplified visual of the live n8n workflow. Approval is for the triage plan only; no vendor dispatch or emergency response is automated.*
 
-**Status:** Active in my self-hosted n8n instance as of November 20, 2026. Ten executions were recorded in the November 1–20 window, all successful. It remains a developing proof of concept using synthetic test data, **not** a verified tenant-facing emergency-response or contractor-dispatch service.
+**Status:** Active in my self-hosted n8n instance as of November 21, 2026. Ten successful execution records were returned for the November 1–21 history snapshot. It remains a developing proof of concept using synthetic test data, **not** a verified tenant-facing emergency-response or contractor-dispatch service.
 
 **Stack:** Self-hosted n8n · n8n Form Trigger · n8n Data Tables · OpenRouter LLM · JavaScript · Gmail · Slack
 
@@ -61,6 +61,14 @@ flowchart TD
 | Guardrails | No autonomous contractor assignment, emergency-service call, or tenant promise is made |
 
 **Response targets are demonstration configuration values, not contracted SLAs.** A property manager must configure real service policies, staffed coverage, and local emergency procedures before using them operationally.
+
+
+
+## Current workflow and visual evidence
+
+The connected n8n workflow has 17 nodes and its active version matches the current draft. The updated [architecture and test visual](assets/workflow-overview.svg) summarizes the current intake, raw-request persistence, AI classification, deterministic safety review, escalation, manager approval, and decision logging path.
+
+The visual includes two documented synthetic regression cases: execution #405 (negated hazards remain routine) and #406 (positive sparks/smoke remain emergency). It is a simplified workflow map, not a screenshot of the n8n canvas. Notifications and approval responses remain pinned/simulated in the documented tests; see the test limitations below.
 
 ## Verified proof-of-concept executions
 

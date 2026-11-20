@@ -4,7 +4,7 @@
 
 *Simplified visual of the email-to-calendar workflow. Human approval is required before event creation.*
 
-**Status:** Active in my self-hosted n8n instance as of November 20, 2026 for my own Gmail / Google Calendar account. Twenty executions were recorded in the November 1–20 window, all successful. Real calendar event creation has been tested; sustained recurring production polling has not yet been independently verified.
+**Status:** Active in my self-hosted n8n instance as of November 21, 2026 for my own Gmail / Google Calendar account. Twenty successful execution records were returned for the November 1–21 history snapshot. Real calendar event creation has been tested; sustained recurring production polling has not yet been independently verified.
 
 **Stack:** Self-hosted n8n · Gmail OAuth2 · Google Calendar OAuth2 · OpenRouter LLM · JavaScript · n8n Data Tables
 
@@ -49,6 +49,14 @@ flowchart TD
     V --> W[Check Google Calendar confirmation]
     W --> X[Persist created event in ledger]
 ```
+
+
+
+## Current workflow and visual evidence
+
+The connected n8n workflow has 30 nodes and its active version matches the current draft. The updated [architecture and test visual](assets/workflow-overview.svg) summarizes Gmail screening, message-ledger deduplication, structured AI extraction, date/time validation, calendar conflict checks, explicit approval, final rechecks, event creation, and ledger persistence.
+
+The visual highlights recorded test evidence: #395 real event creation and ledger persistence, #385 rejection before writing, #390 simulated conflict blocking, and #398 alert-node delivery. The latter did not fire the actual n8n Error Trigger. This is a simplified workflow map, not a screenshot of the n8n editor canvas.
 
 ## Capabilities
 

@@ -1,48 +1,26 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720" role="img" aria-labelledby="title desc">
-  <title id="title">CommercePilot architecture</title>
-  <desc id="desc">Shopify storefront requests flow through a protected app proxy and Redis security checks to n8n, catalog retrieval, a Groq AI assistant, live availability checks, conversation logging and monitoring.</desc>
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#10182b"/><stop offset="1" stop-color="#182747"/></linearGradient>
-    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#54d6c7"/><stop offset="1" stop-color="#66a8ff"/></linearGradient>
-    <filter id="shadow" x="-20%" y="-20%" width="140%" height="150%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#000000" flood-opacity=".22"/></filter>
-    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M0 0 L10 5 L0 10 Z" fill="#77c9dc"/></marker>
-    <style>
-      .heading{font:700 32px Inter,Arial,sans-serif;fill:#f5f8ff}
-      .sub{font:400 15px Inter,Arial,sans-serif;fill:#aebdd6}
-      .label{font:700 17px Inter,Arial,sans-serif;fill:#f5f8ff}
-      .small{font:400 13px Inter,Arial,sans-serif;fill:#b8c7df}
-      .tiny{font:600 11px Inter,Arial,sans-serif;fill:#7fe0d1;letter-spacing:1px}
-      .card{fill:#223454;stroke:#476187;stroke-width:1.2}
-      .line{fill:none;stroke:#77c9dc;stroke-width:3;marker-end:url(#arrow)}
-    </style>
-  </defs>
-  <rect width="1200" height="720" rx="28" fill="url(#bg)"/>
-  <circle cx="1080" cy="90" r="160" fill="#294b7a" opacity=".18"/>
-  <circle cx="80" cy="650" r="210" fill="#2d8e93" opacity=".12"/>
-  <text x="64" y="72" class="tiny">SHOPIFY AI COMMERCE PLATFORM</text>
-  <text x="64" y="116" class="heading">CommercePilot — system architecture</text>
-  <text x="64" y="145" class="sub">Catalog-grounded conversations · protected requests · live availability · observable workflows</text>
-  <g filter="url(#shadow)">
-    <rect class="card" x="55" y="220" width="205" height="112" rx="16"/>
-    <text x="78" y="254" class="tiny">STOREFRONT</text><text x="78" y="284" class="label">Shopify Chat</text><text x="78" y="309" class="small">Theme App Embed</text>
-    <rect class="card" x="325" y="220" width="220" height="112" rx="16"/>
-    <text x="348" y="254" class="tiny">TRUST BOUNDARY</text><text x="348" y="284" class="label">App Proxy</text><text x="348" y="309" class="small">HMAC + request checks</text>
-    <rect class="card" x="610" y="220" width="220" height="112" rx="16"/>
-    <text x="633" y="254" class="tiny">ORCHESTRATION</text><text x="633" y="284" class="label">n8n Workflow</text><text x="633" y="309" class="small">Store + Redis controls</text>
-    <rect class="card" x="895" y="220" width="250" height="112" rx="16"/>
-    <text x="918" y="254" class="tiny">AI REASONING</text><text x="918" y="284" class="label">Groq AI Assistant</text><text x="918" y="309" class="small">Product-grounded response</text>
-    <rect class="card" x="150" y="445" width="250" height="118" rx="16"/>
-    <text x="174" y="480" class="tiny">CATALOG DATA</text><text x="174" y="510" class="label">Shopify GraphQL</text><text x="174" y="536" class="small">Products · variants · stock</text>
-    <rect class="card" x="475" y="445" width="250" height="118" rx="16"/>
-    <text x="499" y="480" class="tiny">LIVE AVAILABILITY</text><text x="499" y="510" class="label">Variant Checks</text><text x="499" y="536" class="small">On-demand stock questions</text>
-    <rect class="card" x="800" y="445" width="250" height="118" rx="16"/>
-    <text x="824" y="480" class="tiny">PERSISTENCE</text><text x="824" y="510" class="label">Conversation Logs</text><text x="824" y="536" class="small">Store-scoped records</text>
-  </g>
-  <path class="line" d="M260 276 H315"/><path class="line" d="M545 276 H600"/><path class="line" d="M830 276 H885"/>
-  <path class="line" d="M720 332 V390 H600 V435"/><path class="line" d="M725 504 H790"/><path class="line" d="M475 504 H410"/><path class="line" d="M270 445 V380 H720 V342"/>
-  <rect x="64" y="625" width="1072" height="48" rx="12" fill="#1b2a46" stroke="#3e5a7e"/>
-  <text x="88" y="655" class="small">Operations: 5-minute health checks · latency alerts · workflow error notifications · preview deployment validation</text>
-  <rect x="1035" y="60" width="100" height="34" rx="17" fill="url(#accent)"/>
-  <text x="1085" y="82" text-anchor="middle" style="font:700 12px Inter,Arial,sans-serif;fill:#10243a">PREVIEW</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="920" viewBox="0 0 1440 920" role="img" aria-labelledby="title desc">
+<title id="title">CommercePilot architecture and verification snapshot</title><desc id="desc">Shopify storefront requests pass through App Proxy HMAC verification, request validation and Redis security, then store and catalog context, product matching and a stock-question decision. Live Shopify variant availability is checked when needed before the Groq assistant builds a grounded answer, logs the conversation and responds. Includes release boundary and execution evidence.</desc>
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#071525"/><stop offset=".58" stop-color="#101d35"/><stop offset="1" stop-color="#171d3c"/></linearGradient><linearGradient id="line" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#48dce8"/><stop offset="1" stop-color="#8b7bff"/></linearGradient><filter id="shadow"><feDropShadow dx="0" dy="9" stdDeviation="9" flood-color="#000" flood-opacity=".22"/></filter><style>.ey{font:700 14px Arial,sans-serif;letter-spacing:2px;fill:#62dce9}.h{font:750 38px Arial,sans-serif;fill:#f7fbff}.sub{font:17px Arial,sans-serif;fill:#a8bfd8}.ct{font:700 17px Arial,sans-serif;fill:#f5f8ff}.bd{font:14px Arial,sans-serif;fill:#b8c9df}.sm{font:12px Arial,sans-serif;fill:#8ea5bf}.pill{font:700 12px Arial,sans-serif;letter-spacing:1px;fill:#e6f7ff}.num{font:700 25px Arial,sans-serif;fill:#fff}.line{fill:none;stroke:url(#line);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}</style></defs>
+<rect width="1440" height="920" rx="24" fill="url(#bg)"/><circle cx="1340" cy="55" r="210" fill="#5947a8" opacity=".13"/>
+<text x="60" y="62" class="ey">SHOPIFY AI COMMERCE · CURRENT CONNECTED WORKFLOW</text><text x="60" y="112" class="h">CommercePilot — request to grounded answer</text><text x="60" y="145" class="sub">Secure storefront intake · catalog context · conditional live availability · AI response · conversation record</text>
+<rect x="1090" y="54" width="290" height="42" rx="21" fill="#302a58" stroke="#8377e8"/><text x="1235" y="80" text-anchor="middle" class="pill">42-NODE DRAFT · 37-NODE PUBLISHED</text>
+<g filter="url(#shadow)">
+ <rect x="55" y="210" width="205" height="126" rx="17" fill="#122940" stroke="#42d9e8"/><rect x="295" y="210" width="205" height="126" rx="17" fill="#122940" stroke="#42d9e8"/><rect x="535" y="210" width="205" height="126" rx="17" fill="#122940" stroke="#42d9e8"/><rect x="775" y="210" width="205" height="126" rx="17" fill="#122940" stroke="#42d9e8"/><rect x="1015" y="210" width="205" height="126" rx="17" fill="#122940" stroke="#42d9e8"/><rect x="1255" y="210" width="130" height="126" rx="17" fill="#202744" stroke="#a18cff" stroke-width="1.5"/>
+</g>
+<text x="78" y="244" class="ey">01 · ENTRY</text><text x="78" y="280" class="ct">Shopify chat</text><text x="78" y="307" class="bd">Theme app embed</text>
+<text x="318" y="244" class="ey">02 · TRUST</text><text x="318" y="280" class="ct">App Proxy</text><text x="318" y="307" class="bd">Envelope + HMAC</text>
+<text x="558" y="244" class="ey">03 · GATE</text><text x="558" y="280" class="ct">Validate request</text><text x="558" y="307" class="bd">Redis replay / rate</text>
+<text x="798" y="244" class="ey">04 · CONTEXT</text><text x="798" y="280" class="ct">Store + catalog</text><text x="798" y="307" class="bd">Registered shop data</text>
+<text x="1038" y="244" class="ey">05 · MATCH</text><text x="1038" y="280" class="ct">Product match</text><text x="1038" y="307" class="bd">Session context</text>
+<text x="1278" y="244" class="ey" style="fill:#b9a6ff">06 · DECIDE</text><text x="1278" y="280" class="ct">Stock?</text><text x="1278" y="307" class="bd">Question branch</text>
+<g class="line"><path d="M260 273h28"/><path d="M500 273h28"/><path d="M740 273h28"/><path d="M980 273h28"/><path d="M1220 273h28"/></g>
+<rect x="70" y="500" width="270" height="118" rx="16" fill="#172d42" stroke="#4fd6b2" stroke-width="1.5"/><text x="96" y="536" class="ey" style="fill:#82e8c6">YES · LIVE LOOKUP</text><text x="96" y="572" class="ct">Shopify variant check</text><text x="96" y="598" class="bd">Fetch current availability</text>
+<rect x="385" y="500" width="270" height="118" rx="16" fill="#172d42" stroke="#49698a" stroke-width="1.5"/><text x="411" y="536" class="ey">NO · CATALOG PATH</text><text x="411" y="572" class="ct">Use matched context</text><text x="411" y="598" class="bd">No unverified stock claim</text>
+<rect x="700" y="500" width="260" height="118" rx="16" fill="#172d42" stroke="#8b7bff" stroke-width="1.5"/><text x="726" y="536" class="ey" style="fill:#b9a6ff">07 · REASON</text><text x="726" y="572" class="ct">Groq AI assistant</text><text x="726" y="598" class="bd">Store-scoped memory</text>
+<rect x="1005" y="500" width="180" height="118" rx="16" fill="#172d42" stroke="#42d9e8" stroke-width="1.5"/><text x="1029" y="536" class="ey">08 · BUILD</text><text x="1029" y="572" class="ct">Response</text><text x="1029" y="598" class="bd">Grounded answer</text>
+<rect x="1230" y="500" width="155" height="118" rx="16" fill="#172d42" stroke="#42d9e8" stroke-width="1.5"/><text x="1252" y="536" class="ey">09 · LOG</text><text x="1252" y="572" class="ct">Save + reply</text><text x="1252" y="598" class="bd">Conversation</text>
+<g class="line"><path d="M1320 336v92H205v62"/><path d="M1320 336v92H520v62"/><path d="M340 559h350"/><path d="M655 559h35"/><path d="M960 559h35"/><path d="M1185 559h35"/></g>
+<rect x="60" y="690" width="610" height="126" rx="16" fill="#251f3e" stroke="#a28bff" stroke-width="1.2"/><text x="86" y="725" class="ey" style="fill:#c1b2ff">FAIL-CLOSED PATHS</text><text x="86" y="761" class="bd">Invalid signature / request · Redis unavailable · unregistered store</text><text x="86" y="786" class="bd">Store/catalog API unavailable · rejected requests do not reach the answer path</text>
+<rect x="700" y="690" width="680" height="126" rx="16" fill="#102c3c" stroke="#42d9e8" stroke-width="1.2"/><text x="726" y="725" class="ey">VERIFICATION SNAPSHOT · NOV 1–21, 2026</text><text x="726" y="770" class="num">44</text><text x="782" y="769" class="sm">successful assistant records</text><text x="1000" y="770" class="num">26 / 27</text><text x="1102" y="769" class="sm">catalog sync success / total</text><text x="726" y="798" class="sm">Health monitor: 277 records; 200 most recent retrieved were successful. Preview · development store only.</text>
+<text x="60" y="865" class="sm">Simplified architecture generated from connected workflow metadata and project documentation. Not a raw n8n canvas screenshot.</text><text x="1380" y="865" text-anchor="end" class="sm">Draft and published graphs differ; draft-only work is not represented as released functionality.</text>
 </svg>
