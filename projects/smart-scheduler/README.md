@@ -4,7 +4,7 @@
 
 *Simplified visual of the email-to-calendar workflow. Human approval is required before event creation.*
 
-**Status:** Live and active in my self-hosted n8n instance as of November 11, 2026 for my own Gmail / Google Calendar account. Real calendar event creation has been tested; sustained recurring production polling has not yet been independently verified.
+**Status:** Active in my self-hosted n8n instance as of November 20, 2026 for my own Gmail / Google Calendar account. Twenty executions were recorded in the November 1–20 window, all successful. Real calendar event creation has been tested; sustained recurring production polling has not yet been independently verified.
 
 **Stack:** Self-hosted n8n · Gmail OAuth2 · Google Calendar OAuth2 · OpenRouter LLM · JavaScript · n8n Data Tables
 
