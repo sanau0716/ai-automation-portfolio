@@ -101,7 +101,7 @@ Execution counts below are n8n history records in the November 1–20, 2026 sear
 - PropertyFix AI 2.0
 - Smart Scheduler V1
 - Zoho FSM Webhook Receiver
-- ACME Job Readiness / Coordinator Dispatch challenge workflows
+- ACME — Job Readiness Verification
 
 ### Internal tooling and learning (5)
 - Portfolio GitHub Sync & Docs
