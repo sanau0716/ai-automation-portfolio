@@ -96,16 +96,31 @@ A separate error workflow handles n8n workflow-failure notifications. A successf
 - Log conversation records through the app's store-scoped APIs.
 - Keep private credentials and merchant configuration outside the public portfolio.
 
-## Verification snapshot — November 20, 2026
+## Verification snapshot — November 21, 2026
 
 | Component | Observed evidence | Boundary |
 |---|---|---|
-| Storefront Shopping Assistant API (Groq) | 44 successful n8n executions in the Nov 1–20 window | Current draft is 42 nodes; published active version is 37 nodes |
+| Storefront Shopping Assistant API (Groq) | 44 successful execution records in the Nov 1–21 history snapshot | Current draft is 42 nodes; published active version is 37 nodes; the graphs differ |
 | Shopify Catalog Sync | 26 successful and 1 failed execution across 27 records | Development-store-only workflow |
-| Health & Latency Monitor | 212 execution records in the Nov 1–20 window; 50 most recent retrieved records succeeded | Monitoring runs do not establish a formal uptime SLA |
-| Error Alert Handler | One successful test execution | Real failure-trigger coverage is not fully verified |
+| Health & Latency Monitor | 277 total records in the Nov 1–21 query; the 200 most recent retrieved records succeeded | The remaining 77 records were not individually retrieved in this query; monitoring runs do not establish an uptime SLA |
+| Error Alert Handler | One successful manual test | This does not prove a real production error-trigger event was handled |
 | Shopify app Preview | Vercel deployment marked READY for commit b72b0fc0324d60c0d10e592626f468cf0bbbe6fe on branch commercepilot/preview-setup | Preview, not Production |
 | Location-level inventory work | Schema migration and Preview code committed | Full Shopify location-sync acceptance test still pending |
+
+
+
+## Draft vs published release boundary
+
+The connected n8n workflow is active, but its current draft and published active version are not the same graph:
+
+| Version | Node count | What to understand |
+|---|---:|---|
+| Current draft | 42 | Includes newer store/catalog API retrieval and conversation load/save nodes |
+| Published active version | 37 | Uses a different registered-store, active-product, conversation-log, and session-recommendation node set |
+
+The 44 execution records are history evidence for the workflow ID; they should not be used to claim that every capability visible in the current draft is already published. Draft-only changes must be published and tested before being described as released storefront behavior.
+
+The updated [architecture visual](assets/workflow-overview.svg) summarizes the system at a component level and explicitly calls out this release boundary. It is generated from connected workflow metadata and project documentation, not captured from the n8n canvas.
 
 ## Current limitations
 
