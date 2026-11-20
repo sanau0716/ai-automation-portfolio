@@ -147,15 +147,13 @@
           "__rl": true,
           "value": "YOUR_AIRTABLE_BASE_ID",
           "mode": "list",
-          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME"
         },
         "table": {
           "__rl": true,
           "value": "YOUR_AIRTABLE_TABLE_ID",
           "mode": "list",
-          "cachedResultName": "Jobs",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "Jobs"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -509,15 +507,13 @@
           "__rl": true,
           "value": "YOUR_AIRTABLE_BASE_ID",
           "mode": "list",
-          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME"
         },
         "table": {
           "__rl": true,
           "value": "YOUR_AIRTABLE_TABLE_ID",
           "mode": "list",
-          "cachedResultName": "Jobs",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "Jobs"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -871,15 +867,13 @@
           "__rl": true,
           "value": "YOUR_AIRTABLE_BASE_ID",
           "mode": "list",
-          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME"
         },
         "table": {
           "__rl": true,
           "value": "YOUR_AIRTABLE_TABLE_ID",
           "mode": "list",
-          "cachedResultName": "Jobs",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "Jobs"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -1260,15 +1254,13 @@
           "__rl": true,
           "value": "YOUR_AIRTABLE_BASE_ID",
           "mode": "list",
-          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME"
         },
         "table": {
           "__rl": true,
           "value": "YOUR_AIRTABLE_TABLE_ID",
           "mode": "list",
-          "cachedResultName": "Jobs",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "Jobs"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -1646,15 +1638,13 @@
           "__rl": true,
           "value": "YOUR_AIRTABLE_BASE_ID",
           "mode": "list",
-          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME"
         },
         "table": {
           "__rl": true,
           "value": "YOUR_AIRTABLE_TABLE_ID",
           "mode": "list",
-          "cachedResultName": "Jobs",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "Jobs"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -2129,15 +2119,13 @@
           "__rl": true,
           "value": "YOUR_AIRTABLE_BASE_ID",
           "mode": "list",
-          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME"
         },
         "table": {
           "__rl": true,
           "value": "YOUR_AIRTABLE_TABLE_ID",
           "mode": "list",
-          "cachedResultName": "Jobs",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "Jobs"
         },
         "filterByFormula": "=={{ \"{Job ID} = '\" + $json.job_id + \"'\" }}",
         "returnAll": false,
@@ -2220,15 +2208,13 @@
           "__rl": true,
           "value": "YOUR_AIRTABLE_BASE_ID",
           "mode": "list",
-          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "YOUR_AIRTABLE_BASE_NAME"
         },
         "table": {
           "__rl": true,
           "value": "YOUR_AIRTABLE_TABLE_ID",
           "mode": "list",
-          "cachedResultName": "Jobs",
-          "cachedResultUrl": "https://airtable.com/YOUR_AIRTABLE_BASE_ID"
+          "cachedResultName": "Jobs"
         },
         "columns": {
           "mappingMode": "defineBelow",
@@ -2929,7 +2915,7 @@
       ]
     }
   },
-  "active": true,
+  "active": false,
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate"
