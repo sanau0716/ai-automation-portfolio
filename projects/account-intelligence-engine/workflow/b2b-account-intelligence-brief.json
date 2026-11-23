@@ -1,0 +1,163 @@
+{
+  "name": "B2B Account Intelligence & Pre-Call Brief Engine (Sanitized)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "account-intel-trigger",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "webhook-trigger",
+      "name": "Authenticated Lead / Domain Trigger",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [120, 260]
+    },
+    {
+      "parameters": {
+        "jsCode": "const raw = String($json.body?.domain || $json.body?.email || '').trim().toLowerCase();\nlet domain = raw.includes('@') && !raw.includes('://') ? raw.split('@').pop() : raw;\ndomain = domain.replace(/^https?:\\/\\//, '').split('/')[0].replace(/^www\\./, '');\nif (!domain || !/^[a-z0-9.-]+\\.[a-z]{2,}$/.test(domain)) {\n  throw new Error('Invalid public domain input');\n}\nconst blocked = ['localhost', '127.0.0.1', '169.254.169.254'];\nif (blocked.includes(domain) || domain.endsWith('.local') || domain.endsWith('.internal')) {\n  throw new Error('Blocked non-public domain');\n}\nreturn [{ json: { domain, callGoal: String($json.body?.callGoal || 'Discovery call prep').slice(0, 240), notes: String($json.body?.notes || '').slice(0, 600) } }];"
+      },
+      "id": "normalize-domain",
+      "name": "Normalize Domain & Safety Gate",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [360, 260]
+    },
+    {
+      "parameters": {
+        "url": "=https://{{$json.domain}}/",
+        "options": {
+          "timeout": 5000,
+          "redirect": { "redirect": { "followRedirects": true, "maxRedirects": 2 } }
+        }
+      },
+      "id": "fetch-homepage",
+      "name": "Fetch Company Homepage",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [600, 140],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "=https://{{$json.domain}}/pricing",
+        "options": { "timeout": 5000 }
+      },
+      "id": "fetch-pricing",
+      "name": "Probe Pricing Page",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [600, 260],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "url": "=https://news.google.com/rss/search?q={{encodeURIComponent($json.domain)}}&hl=en-US&gl=US&ceid=US:en",
+        "options": { "timeout": 4500 }
+      },
+      "id": "fetch-news-rss",
+      "name": "Fetch Google News RSS",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [600, 380],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const base = $('Normalize Domain & Safety Gate').first().json;\nconst homeHtml = String($('Fetch Company Homepage').first()?.json?.data || '');\nconst pricingHtml = String($('Probe Pricing Page').first()?.json?.data || '');\nconst newsXml = String($('Fetch Google News RSS').first()?.json?.data || '');\nconst combined = (homeHtml + '\\n' + pricingHtml).toLowerCase();\nconst stack = [];\nif (/cdn\\.shopify\\.com/.test(combined)) stack.push('Shopify');\nif (/hs-scripts\\.com|hubspot/.test(combined)) stack.push('HubSpot');\nif (/intercom/.test(combined)) stack.push('Intercom');\nif (/stripe\\.com/.test(combined)) stack.push('Stripe');\nif (/calendly\\.com/.test(combined)) stack.push('Calendly');\nif (/next\\/static/.test(combined)) stack.push('Next.js');\nconst hasPricing = pricingHtml.length > 200 || /pricing|per month/.test(combined);\nconst hasHiring = /careers|open roles|we.?re hiring/.test(combined);\nconst hasNews = /<item>/.test(newsXml);\nconst score = 20 + (hasPricing ? 20 : 6) + (hasHiring ? 20 : 5) + (stack.length ? 18 : 20) + (hasNews ? 18 : 6);\nconst strip = (s) => s.replace(/<script[\\s\\S]*?<\\/script>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim().slice(0, 1400);\nreturn [{ json: { domain: base.domain, callGoal: base.callGoal, notes: base.notes, stack, hasPricing, hasHiring, hasNews, score: Math.min(100, score), excerpt: strip(homeHtml) } }];"
+      },
+      "id": "score-and-fingerprint",
+      "name": "Deterministic Stack & Signal Scorer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [880, 260]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.groq.com/openai/v1/chat/completions",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ model: 'openai/gpt-oss-20b', response_format: { type: 'json_object' }, temperature: 0.2, messages: [{ role: 'system', content: 'Produce a grounded JSON pre-call brief using ONLY supplied facts. Never invent names or revenue.' }, { role: 'user', content: JSON.stringify($json) }] }) }}"
+      },
+      "id": "groq-brief",
+      "name": "Groq Grounded Brief Builder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1140, 260],
+      "continueOnFail": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const scored = $('Deterministic Stack & Signal Scorer').first().json;\nlet brief = {};\ntry { brief = JSON.parse($json.choices?.[0]?.message?.content || '{}'); } catch { brief = {}; }\nconst slackText = `*Pre-Call Brief: ${scored.domain}* (Signal Score: ${scored.score}/100)\\n• Stack: ${scored.stack.join(', ') || 'None detected'}\\n• Pricing detected: ${scored.hasPricing} | Hiring signals: ${scored.hasHiring}\\n• Opener: ${brief.openingLine || 'See full brief in CRM log.'}`;\nreturn [{ json: { ...scored, brief, slackText } }];"
+      },
+      "id": "format-dossier",
+      "name": "Format Slack & Webhook Dossier",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [1380, 260]
+    },
+    {
+      "parameters": {
+        "channel": "#sales-research",
+        "text": "={{ $json.slackText }}"
+      },
+      "id": "slack-notify",
+      "name": "Send Brief to Slack (Template)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.2,
+      "position": [1620, 180],
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}"
+      },
+      "id": "respond-webhook",
+      "name": "Return JSON Dossier",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1620, 340]
+    }
+  ],
+  "connections": {
+    "Authenticated Lead / Domain Trigger": {
+      "main": [[{ "node": "Normalize Domain & Safety Gate", "type": "main", "index": 0 }]]
+    },
+    "Normalize Domain & Safety Gate": {
+      "main": [[
+        { "node": "Fetch Company Homepage", "type": "main", "index": 0 },
+        { "node": "Probe Pricing Page", "type": "main", "index": 0 },
+        { "node": "Fetch Google News RSS", "type": "main", "index": 0 }
+      ]]
+    },
+    "Fetch Company Homepage": {
+      "main": [[{ "node": "Deterministic Stack & Signal Scorer", "type": "main", "index": 0 }]]
+    },
+    "Probe Pricing Page": {
+      "main": [[{ "node": "Deterministic Stack & Signal Scorer", "type": "main", "index": 0 }]]
+    },
+    "Fetch Google News RSS": {
+      "main": [[{ "node": "Deterministic Stack & Signal Scorer", "type": "main", "index": 0 }]]
+    },
+    "Deterministic Stack & Signal Scorer": {
+      "main": [[{ "node": "Groq Grounded Brief Builder", "type": "main", "index": 0 }]]
+    },
+    "Groq Grounded Brief Builder": {
+      "main": [[{ "node": "Format Slack & Webhook Dossier", "type": "main", "index": 0 }]]
+    },
+    "Format Slack & Webhook Dossier": {
+      "main": [[
+        { "node": "Send Brief to Slack (Template)", "type": "main", "index": 0 },
+        { "node": "Return JSON Dossier", "type": "main", "index": 0 }
+      ]]
+    }
+  },
+  "active": false,
+  "settings": { "executionOrder": "v1" }
+}

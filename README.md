@@ -100,6 +100,7 @@ The gallery also distinguishes real historical output screenshots from promotion
 
 | Project | What it demonstrates | Current boundary |
 |---|---|---|
+| [Pre-Call Account Intelligence Engine](projects/account-intelligence-engine) | SSRF-safe live crawl, DNS MX/TXT & tech stack fingerprinting, deterministic signal scoring, grounded Groq pre-call brief | Live public demo at awtomateai.com/tools/account-intel; n8n export is a sanitized template |
 | [AI Business Automation Auditor](projects/business-automation-auditor) | Business discovery, website research, AI opportunity assessment, scoring, and Sheets reporting | Research prototype; results require human verification |
 | [Campaign Research & Drafting Agent](projects/campaign-research-agent) | Crawl4AI research, local Ollama drafting, evidence checks, persistent review queue | Inactive; no outbound messages |
 | [Automated Voice Inquiry & Support Dispatcher](projects/voice-inquiry-dispatcher) | Audio intake, Whisper transcription, AI conversation, session memory, Piper synthesis | Fresh end-to-end audio acceptance test required |

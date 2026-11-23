@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="860" viewBox="0 0 1440 860" role="img" aria-labelledby="title desc">
+  <title id="title">B2B Account Intelligence and Pre-Call Brief Architecture</title>
+  <desc id="desc">Authenticated webhook or form trigger normalizes a company domain or work email, enforces public-IP SSRF checks, crawls homepage, pricing, careers and about pages, inspects DNS MX/TXT and tech stack signatures, fetches Google News RSS, applies deterministic buying-signal scoring, generates a grounded executive brief with Groq/OpenRouter, and delivers Slack Block Kit alerts and Google Sheets CRM records.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#060e1d"/>
+      <stop offset="0.6" stop-color="#0e1b33"/>
+      <stop offset="1" stop-color="#171b3b"/>
+    </linearGradient>
+    <linearGradient id="line" x1="0" y1="0" x2="1" y2="0">
+      <stop stop-color="#57d6ff"/>
+      <stop offset="1" stop-color="#9b8bff"/>
+    </linearGradient>
+    <style>
+      .ey{font:700 13px Arial,sans-serif;letter-spacing:2px;fill:#67dcff}
+      .h{font:800 36px Arial,sans-serif;fill:#f7fbff}
+      .sub{font:16px Arial,sans-serif;fill:#a7bdd9}
+      .ct{font:700 17px Arial,sans-serif;fill:#f5f8ff}
+      .bd{font:13.5px Arial,sans-serif;fill:#b9cbe1}
+      .sm{font:12px Arial,sans-serif;fill:#8fa6c2}
+      .pill{font:700 12px Arial,sans-serif;letter-spacing:1px;fill:#e8f8ff}
+      .line{fill:none;stroke:url(#line);stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+    </style>
+  </defs>
+  <rect width="1440" height="860" rx="24" fill="url(#bg)"/>
+  <text x="60" y="64" class="ey">B2B SALES &amp; AGENCY AUTOMATION · LIVE WEB + N8N ARCHITECTURE</text>
+  <text x="60" y="112" class="h">Pre-Call Account Intelligence &amp; Signal Engine</text>
+  <text x="60" y="144" class="sub">Domain/email normalization · SSRF gate · live multi-page crawl · DNS &amp; tech stack · deterministic score · grounded dossier</text>
+  <rect x="1080" y="54" width="300" height="42" rx="21" fill="#17324b" stroke="#57d6ff"/>
+  <text x="1230" y="80" text-anchor="middle" class="pill">LIVE AT AWTOMATEAI.COM/TOOLS/ACCOUNT-INTEL</text>
+
+  <g class="line">
+    <path d="M275 270h35"/><path d="M525 270h35"/><path d="M775 270h35"/><path d="M1025 270h35"/>
+    <path d="M1230 335v75H210v55"/><path d="M1230 335v75H580v55"/><path d="M1230 335v75H950v55"/><path d="M1230 335v75H1240v55"/>
+  </g>
+
+  <rect x="60" y="205" width="215" height="130" rx="16" fill="#11253d" stroke="#57d6ff"/>
+  <text x="82" y="240" class="ey">01 · TRIGGER</text>
+  <text x="82" y="274" class="ct">Email or Domain</text>
+  <text x="82" y="302" class="bd">Webhook / Web UI / Form</text>
+
+  <rect x="310" y="205" width="215" height="130" rx="16" fill="#11253d" stroke="#57d6ff"/>
+  <text x="332" y="240" class="ey">02 · SECURITY</text>
+  <text x="332" y="274" class="ct">SSRF &amp; Rate Gate</text>
+  <text x="332" y="302" class="bd">Public DNS + Supabase RL</text>
+
+  <rect x="560" y="205" width="215" height="130" rx="16" fill="#11253d" stroke="#57d6ff"/>
+  <text x="582" y="240" class="ey">03 · CRAWL</text>
+  <text x="582" y="274" class="ct">Live Web &amp; News</text>
+  <text x="582" y="302" class="bd">/ · /pricing · /careers · RSS</text>
+
+  <rect x="810" y="205" width="215" height="130" rx="16" fill="#11253d" stroke="#9b8bff"/>
+  <text x="832" y="240" class="ey" style="fill:#c0b2ff">04 · FINGERPRINT</text>
+  <text x="832" y="274" class="ct">Stack &amp; DNS MX</text>
+  <text x="832" y="302" class="bd">CRM, Shopify, Workspace</text>
+
+  <rect x="1060" y="205" width="320" height="130" rx="16" fill="#1a2645" stroke="#9b8bff" stroke-width="1.5"/>
+  <text x="1084" y="240" class="ey" style="fill:#c0b2ff">05 · DETERMINISTIC SCORE</text>
+  <text x="1084" y="274" class="ct">Buying Signal Scorer (0–100)</text>
+  <text x="1084" y="302" class="bd">Weighted rubric + exact URL citations</text>
+
+  <rect x="60" y="465" width="310" height="135" rx="16" fill="#142942" stroke="#6ae5b8"/>
+  <text x="84" y="502" class="ey" style="fill:#83f2cb">06 · GROUNDED AI BRIEF</text>
+  <text x="84" y="538" class="ct">Groq / OpenRouter JSON</text>
+  <text x="84" y="566" class="bd">Strict schema · no invented names</text>
+
+  <rect x="415" y="465" width="330" height="135" rx="16" fill="#142942" stroke="#57d6ff"/>
+  <text x="439" y="502" class="ey">07 · SLACK DOSSIER</text>
+  <text x="439" y="538" class="ct">Block Kit Pre-Call Brief</text>
+  <text x="439" y="566" class="bd">Priorities · opener · discovery Qs</text>
+
+  <rect x="790" y="465" width="310" height="135" rx="16" fill="#142942" stroke="#57d6ff"/>
+  <text x="814" y="502" class="ey">08 · EXPORT &amp; CRM</text>
+  <text x="814" y="538" class="ct">Google Sheets / Markdown</text>
+  <text x="814" y="566" class="bd">Audit trail &amp; Slack JSON payload</text>
+
+  <rect x="1145" y="465" width="235" height="135" rx="16" fill="#231f42" stroke="#a695ff"/>
+  <text x="1169" y="502" class="ey" style="fill:#c5b8ff">FAIL-CLOSED</text>
+  <text x="1169" y="538" class="ct">Deterministic Fallback</text>
+  <text x="1169" y="566" class="bd">Never crashes on AI 429</text>
+
+  <rect x="60" y="655" width="1320" height="120" rx="16" fill="#102138" stroke="#365178"/>
+  <text x="88" y="694" class="ey">WHY THIS BEATS STATIC PROMPT TEMPLATES</text>
+  <text x="88" y="726" class="bd">• Live SSRF-validated web crawling across homepage, pricing, careers &amp; about pages — zero manual copy-pasting of URLs</text>
+  <text x="88" y="752" class="bd">• Real HTML + DNS MX/TXT tech-stack fingerprinting and Google News RSS headlines paired with cited deterministic scoring</text>
+</svg>
