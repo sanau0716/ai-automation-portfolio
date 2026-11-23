@@ -17,6 +17,7 @@ Open a project by the business problem it addresses. Each project README explain
 
 | Project | Why open it | Stage |
 |---|---|---|
+| [Pre-Call Account Intelligence Engine](account-intelligence-engine) | Live SSRF-safe web crawl, DNS/tech-stack detection, deterministic signal scoring, grounded Groq brief & Slack JSON | Live web tool at awtomateai.com/tools/account-intel; sanitized n8n export |
 | [AI Business Automation Auditor](business-automation-auditor) | Business discovery, website research, AI opportunity analysis, scoring, and Sheets reporting | Research prototype; source/provider errors documented |
 | [Campaign Research & Drafting Agent](campaign-research-agent) | Crawl4AI research, local Ollama drafting, evidence checks, persistent review queue | Inactive; no outbound sending |
 | [Voice Inquiry & Support Dispatcher](voice-inquiry-dispatcher) | Audio intake, transcription, AI conversation, memory, and speech synthesis | Fresh end-to-end audio acceptance test required |

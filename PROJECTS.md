@@ -58,6 +58,16 @@ An AI-assisted Gmail-to-Google-Calendar workflow with structured event extractio
 
 ## Leads, sales, and business research
 
+### Pre-Call Account Intelligence & Signal Engine
+
+[**Explore the project**](projects/account-intelligence-engine) · [**Try live demo**](https://www.awtomateai.com/tools/account-intel)
+
+A live B2B pre-call research system for sales reps, agencies, and consultants. Accepts any company domain or work email, enforces DNS public-IP SSRF checks and Supabase rate limits, crawls public pages (`/`, `/pricing`, `/careers`, `/about`) plus Google News RSS, fingerprints HTML + DNS MX/TXT tech stacks, scores buying signals deterministically, and generates a cited 1-page brief and Slack Block Kit JSON.
+
+**Stack:** Next.js · TypeScript · Node DNS · Groq · Supabase Rate Limiter · n8n · Slack Block Kit.
+
+**Evidence and boundary:** Live public web demo deployed on `awtomateai.com/tools/account-intel`; accompanying n8n export is a sanitized template. Only inspects publicly reachable HTML, DNS, and news RSS (does not bypass authwalls).
+
 ### Campaign Research & Drafting Agent
 
 [**Explore the project**](projects/campaign-research-agent) · [Setup](projects/campaign-research-agent/docs/setup.md) · [Validation](projects/campaign-research-agent/docs/validation.md)
