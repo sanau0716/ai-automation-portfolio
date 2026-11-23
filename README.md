@@ -1,5 +1,7 @@
 # AI Automation Portfolio
 
+[![Portfolio CI](https://github.com/sanau0716/ai-automation-portfolio/actions/workflows/portfolio-ci.yml/badge.svg)](https://github.com/sanau0716/ai-automation-portfolio/actions/workflows/portfolio-ci.yml)
+
 ![AI Automation Engineering Portfolio overview](assets/portfolio-overview.svg)
 
 ### AI Automation Engineer | n8n Workflow Engineering | LLM Agents | API Integrations | JavaScript · TypeScript · Python
@@ -7,6 +9,9 @@
 I design and build AI-powered business systems that connect language models, workflow orchestration, APIs, operational tools, and persistent data. My focus is not simply connecting nodes: I build the validation, deterministic rules, human approval, audit trails, and monitoring that make automations useful and safer to operate.
 
 **Open the portfolio:** [Flagship case studies](PROJECTS.md) · [Visual proofs](VISUAL_PROOFS.md) · [36-workflow n8n audit](N8N_WORKFLOW_AUDIT.md) · [Project folders](projects/README.md) · [AwtomateAI](https://awtomateai.com)
+
+> **2-minute technical review for hiring managers:**
+> Start with [CommercePilot](projects/commercepilot) (Shopify App Proxy HMAC + Redis + n8n + Groq + Supabase), [Smart Scheduler V1](projects/smart-scheduler) (approval gate + conflict recheck + ledger idempotency), and [PropertyFix AI 2.0](projects/propertyfix-ai) (deterministic safety overrides over LLM triage). Repository integrity and Python adapter unit tests are verified on every push via [Portfolio CI](.github/workflows/portfolio-ci.yml).
 
 ---
 
