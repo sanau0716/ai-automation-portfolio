@@ -155,4 +155,5 @@ See the [n8n workflow alignment audit](N8N_WORKFLOW_AUDIT.md) for the connected 
 
 - **GitHub:** https://github.com/sanau0716
 - **Portfolio repository:** https://github.com/sanau0716/ai-automation-portfolio
+- **LinkedIn:** https://www.linkedin.com/in/ajbelmonte/
 - **AwtomateAI:** https://awtomateai.com
