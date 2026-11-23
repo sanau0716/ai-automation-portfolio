@@ -1,0 +1,1955 @@
+{
+  "name": "SaaS CRM — Admin Command Portal & API",
+  "nodes": [
+    {
+      "id": "4da71f27-946e-4ae6-b9e8-ac3e0917c99c",
+      "name": "Webhook — Serve Admin Portal",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "crm/portal",
+        "authentication": "none",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "739904a6-3b9d-4a7a-9ec7-836d9a6bb023",
+      "name": "Read All Leads",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        320
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_LEADS",
+          "cachedResultName": "CRM_Leads"
+        },
+        "returnAll": true
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "991d978d-7b8b-4fba-9a45-8431cdd6aba7",
+      "name": "Webhook — Overview JSON API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        192
+      ],
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "crm/api/overview",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "e6398af7-c271-4a3f-b049-b302c99ab521",
+      "name": "Read All Customers",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        320
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_CUSTOMERS",
+          "cachedResultName": "CRM_Customers"
+        },
+        "returnAll": true
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a52a27cb-1715-44ec-9f52-c939ccb84bff",
+      "name": "Read All Tickets",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        320
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_SUPPORT_TICKETS",
+          "cachedResultName": "CRM_Support_Tickets"
+        },
+        "returnAll": true
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "5bdee22e-99d8-4bfd-95f7-b69fb4f14b4b",
+      "name": "Read Activity Log",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        320
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_ACTIVITY_HISTORY",
+          "cachedResultName": "CRM_Activity_History"
+        },
+        "returnAll": true
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "f05390f6-479c-4593-a840-7ead59701a07",
+      "name": "Build Portal State & Render HTML",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const safeRows = (nodeName, keyField) => {\n  try {\n    return $(nodeName).all().map((i) => i.json).filter((r) => r && r[keyField]);\n  } catch {\n    return [];\n  }\n};\n\nlet isHtml = false;\ntry {\n  isHtml = $('Webhook — Serve Admin Portal').all().length > 0;\n} catch {\n  isHtml = false;\n}\n\nconst leads = safeRows('Read All Leads', 'lead_key').sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')));\nconst customers = safeRows('Read All Customers', 'customer_key').sort((a, b) => Number(b.risk_score || 0) - Number(a.risk_score || 0));\nconst tickets = safeRows('Read All Tickets', 'ticket_code').sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || '')));\nconst activities = safeRows('Read Activity Log', 'event_code').sort((a, b) => String(b.created_at || '').localeCompare(String(a.created_at || ''))).slice(0, 40);\n\nconst activeCustomers = customers.filter((c) => String(c.account_status || 'Active').toLowerCase() === 'active');\nconst totalMrr = activeCustomers.reduce((s, c) => s + Number(c.mrr_usd || 0), 0);\nconst atRisk = activeCustomers.filter((c) => ['AT_RISK', 'URGENT'].includes(String(c.current_risk_level || '').toUpperCase()));\nconst atRiskMrr = atRisk.reduce((s, c) => s + Number(c.mrr_usd || 0), 0);\nconst convertedLeads = leads.filter((l) => Boolean(l.converted_at) || /converted/i.test(String(l.pipeline_status || ''))).length;\nconst conversionRate = leads.length > 0 ? Math.round((convertedLeads / leads.length) * 100) : 0;\nconst openTickets = tickets.filter((t) => !/closed|replied|resolved/i.test(String(t.ticket_status || '')));\nconst criticalTickets = openTickets.filter((t) => ['HIGH', 'CRITICAL'].includes(String(t.urgency || '').toUpperCase()));\n\nconst snapshot = {\n  ok: true,\n  generated_at: new Date().toISOString(),\n  sheet_url: 'https://docs.google.com/spreadsheets/d/CONFIGURE_GOOGLE_SHEET_ID',\n  kpis: {\n    total_mrr: totalMrr,\n    at_risk_mrr: atRiskMrr,\n    at_risk_count: atRisk.length,\n    total_customers: activeCustomers.length,\n    total_leads: leads.length,\n    converted_leads: convertedLeads,\n    conversion_rate: conversionRate,\n    open_tickets: openTickets.length,\n    critical_tickets: criticalTickets.length,\n    total_events: activities.length,\n  },\n  leads,\n  customers,\n  tickets,\n  activities,\n};\n\nif (!isHtml) {\n  return [{ json: { is_html: false, overview: snapshot } }];\n}\n\nconst safeSeed = JSON.stringify(snapshot)\n  .replace(/</g, '\\\\u003c')\n  .replace(/>/g, '\\\\u003e')\n  .replace(/\\u2028/g, '\\\\u2028')\n  .replace(/\\u2029/g, '\\\\u2029');\n\nconst html = `<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n  <meta charset=\"UTF-8\" />\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\" />\n  <title>SaaS CRM SaaS CRM — Command Portal</title>\n  <script src=\"https://cdn.tailwindcss.com\"></script>\n  <script defer src=\"https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js\"></script>\n</head>\n<body class=\"bg-slate-950 text-slate-100 min-h-screen antialiased\" x-data=\"crmPortal()\">\n  <script id=\"crm-seed\" type=\"application/json\">${safeSeed}</script>\n  <header class=\"border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-20\">\n    <div class=\"max-w-7xl mx-auto px-6 py-4 flex flex-wrap items-center justify-between gap-4\">\n      <div class=\"flex items-center gap-3\">\n        <div class=\"w-9 h-9 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white\">AI</div>\n        <div>\n          <h1 class=\"text-lg font-semibold tracking-tight\">SaaS CRM SaaS CRM Command Portal</h1>\n          <p class=\"text-xs text-slate-400\">n8n Orchestrated Revenue, Churn &amp; Support Operations</p>\n        </div>\n      </div>\n      <div class=\"flex items-center gap-2.5\">\n        <a :href=\"data.sheet_url\" target=\"_blank\" class=\"px-3 py-1.5 rounded-lg bg-emerald-600/20 text-emerald-300 border border-emerald-500/30 text-xs font-medium hover:bg-emerald-600/30\">Google Sheets Mirror</a>\n        <button @click=\"authModal = true\" class=\"px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs font-medium\" x-text=\"apiSecret ? 'Operator Auth Connected' : 'Connect Operator Auth'\"></button>\n        <button @click=\"refreshOverview()\" :disabled=\"loading\" class=\"px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-medium disabled:opacity-50\" x-text=\"loading ? 'Syncing...' : 'Refresh Data'\"></button>\n      </div>\n    </div>\n  </header>\n\n  <main class=\"max-w-7xl mx-auto px-6 py-6 space-y-6\">\n    <template x-if=\"toast\">\n      <div class=\"rounded-lg px-4 py-3 text-sm border\" :class=\"toastError ? 'bg-rose-950/60 border-rose-700 text-rose-200' : 'bg-emerald-950/60 border-emerald-700 text-emerald-200'\" x-text=\"toast\"></div>\n    </template>\n\n    <section class=\"grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4\">\n      <div class=\"rounded-xl bg-slate-900 border border-slate-800 p-4\">\n        <p class=\"text-xs uppercase tracking-wider text-slate-400\">Active SaaS MRR</p>\n        <p class=\"text-2xl font-bold text-emerald-400 mt-1\" x-text=\"'$' + (data.kpis.total_mrr || 0).toLocaleString()\"></p>\n        <p class=\"text-xs text-slate-400 mt-1\" x-text=\"(data.kpis.total_customers || 0) + ' Active Subscriptions'\"></p>\n      </div>\n      <div class=\"rounded-xl bg-slate-900 border border-slate-800 p-4\">\n        <p class=\"text-xs uppercase tracking-wider text-slate-400\">Churn Exposure</p>\n        <p class=\"text-2xl font-bold text-rose-400 mt-1\" x-text=\"'$' + (data.kpis.at_risk_mrr || 0).toLocaleString()\"></p>\n        <p class=\"text-xs text-slate-400 mt-1\" x-text=\"(data.kpis.at_risk_count || 0) + ' At-Risk / Urgent Accounts'\"></p>\n      </div>\n      <div class=\"rounded-xl bg-slate-900 border border-slate-800 p-4\">\n        <p class=\"text-xs uppercase tracking-wider text-slate-400\">Lead Pipeline</p>\n        <p class=\"text-2xl font-bold text-sky-400 mt-1\" x-text=\"data.kpis.total_leads || 0\"></p>\n        <p class=\"text-xs text-slate-400 mt-1\" x-text=\"(data.kpis.conversion_rate || 0) + '% Converted (' + (data.kpis.converted_leads || 0) + ')'\"></p>\n      </div>\n      <div class=\"rounded-xl bg-slate-900 border border-slate-800 p-4\">\n        <p class=\"text-xs uppercase tracking-wider text-slate-400\">Open Support Tickets</p>\n        <p class=\"text-2xl font-bold text-amber-400 mt-1\" x-text=\"data.kpis.open_tickets || 0\"></p>\n        <p class=\"text-xs text-slate-400 mt-1\" x-text=\"(data.kpis.critical_tickets || 0) + ' High / Critical Priority'\"></p>\n      </div>\n    </section>\n\n    <div class=\"flex flex-wrap items-center justify-between gap-3 border-b border-slate-800 pb-3\">\n      <div class=\"flex gap-2\">\n        <template x-for=\"t in ['overview','leads','customers','tickets','activity']\" :key=\"t\">\n          <button @click=\"tab = t\" class=\"px-3.5 py-1.5 rounded-lg text-sm font-medium capitalize transition\" :class=\"tab === t ? 'bg-indigo-600 text-white' : 'bg-slate-900 text-slate-300 hover:bg-slate-800'\" x-text=\"t\"></button>\n        </template>\n      </div>\n      <input x-model=\"search\" type=\"search\" placeholder=\"Filter by name, company, email, code...\" class=\"bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-sm w-64 focus:outline-none focus:border-indigo-500\" />\n    </div>\n\n    <section x-show=\"tab === 'overview'\" class=\"grid grid-cols-1 lg:grid-cols-2 gap-6\">\n      <div class=\"rounded-xl bg-slate-900 border border-slate-800 p-5\">\n        <h2 class=\"text-sm font-semibold text-slate-200 mb-3\">Customer Churn Watchlist</h2>\n        <div class=\"space-y-2.5 max-h-96 overflow-y-auto\">\n          <template x-for=\"c in filteredCustomers()\" :key=\"c.customer_key\">\n            <div class=\"p-3 rounded-lg bg-slate-950 border border-slate-800 flex items-start justify-between gap-3\">\n              <div>\n                <p class=\"font-medium text-sm\" x-text=\"c.name + ' · ' + c.company\"></p>\n                <p class=\"text-xs text-slate-400\" x-text=\"c.subscription_plan + ' ($' + c.mrr_usd + '/mo) · ' + c.last_active_days + 'd inactive · ' + c.open_tickets_count + ' open tickets'\"></p>\n                <p class=\"text-xs text-slate-300 mt-1\" x-text=\"c.recommended_action\"></p>\n              </div>\n              <span class=\"px-2 py-0.5 rounded text-xs font-semibold shrink-0\" :class=\"riskBadge(c.current_risk_level)\" x-text=\"c.current_risk_level + ' (' + c.risk_score + ')'\"></span>\n            </div>\n          </template>\n          <p x-show=\"filteredCustomers().length === 0\" class=\"text-xs text-slate-500\">No customers seeded yet.</p>\n        </div>\n      </div>\n\n      <div class=\"rounded-xl bg-slate-900 border border-slate-800 p-5\">\n        <h2 class=\"text-sm font-semibold text-slate-200 mb-3\">Recent System Activity Timeline</h2>\n        <div class=\"space-y-2.5 max-h-96 overflow-y-auto\">\n          <template x-for=\"a in data.activities.slice(0, 15)\" :key=\"a.event_code\">\n            <div class=\"p-3 rounded-lg bg-slate-950 border border-slate-800\">\n              <div class=\"flex items-center justify-between text-xs text-slate-400\">\n                <span class=\"font-mono text-indigo-400\" x-text=\"a.event_type\"></span>\n                <span x-text=\"(a.created_at || '').slice(0, 19).replace('T', ' ')\"></span>\n              </div>\n              <p class=\"text-sm text-slate-200 mt-1\" x-text=\"a.summary\"></p>\n            </div>\n          </template>\n          <p x-show=\"data.activities.length === 0\" class=\"text-xs text-slate-500\">No activity recorded yet.</p>\n        </div>\n      </div>\n    </section>\n\n    <section x-show=\"tab === 'leads'\" class=\"rounded-xl bg-slate-900 border border-slate-800 overflow-x-auto\">\n      <table class=\"w-full text-left text-sm\">\n        <thead class=\"bg-slate-950 text-slate-400 text-xs uppercase\">\n          <tr><th class=\"p-3\">Lead</th><th class=\"p-3\">Score</th><th class=\"p-3\">Classification</th><th class=\"p-3\">Status</th><th class=\"p-3\">Touches</th><th class=\"p-3\">Action</th></tr>\n        </thead>\n        <tbody class=\"divide-y divide-slate-800\">\n          <template x-for=\"l in filteredLeads()\" :key=\"l.lead_key\">\n            <tr class=\"hover:bg-slate-800/40\">\n              <td class=\"p-3\"><div class=\"font-medium\" x-text=\"l.name + ' (' + l.company + ')'\"></div><div class=\"text-xs text-slate-400\" x-text=\"l.email\"></div></td>\n              <td class=\"p-3 font-semibold\" x-text=\"l.lead_score + '/100'\"></td>\n              <td class=\"p-3\" x-text=\"l.classification\"></td>\n              <td class=\"p-3 text-xs\" x-text=\"l.pipeline_status\"></td>\n              <td class=\"p-3\" x-text=\"l.followup_count\"></td>\n              <td class=\"p-3\">\n                <button x-show=\"!/converted/i.test(l.pipeline_status || '')\" @click=\"convertLead(l)\" class=\"px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-xs font-medium\">Convert to Customer</button>\n                <span x-show=\"/converted/i.test(l.pipeline_status || '')\" class=\"text-xs text-emerald-400 font-medium\">Converted</span>\n              </td>\n            </tr>\n          </template>\n        </tbody>\n      </table>\n    </section>\n\n    <section x-show=\"tab === 'customers'\" class=\"rounded-xl bg-slate-900 border border-slate-800 overflow-x-auto\">\n      <table class=\"w-full text-left text-sm\">\n        <thead class=\"bg-slate-950 text-slate-400 text-xs uppercase\">\n          <tr><th class=\"p-3\">Customer</th><th class=\"p-3\">Plan / MRR</th><th class=\"p-3\">Risk</th><th class=\"p-3\">Inactive</th><th class=\"p-3\">Open Tickets</th><th class=\"p-3\">Recommendation</th></tr>\n        </thead>\n        <tbody class=\"divide-y divide-slate-800\">\n          <template x-for=\"c in filteredCustomers()\" :key=\"c.customer_key\">\n            <tr class=\"hover:bg-slate-800/40\">\n              <td class=\"p-3\"><div class=\"font-medium\" x-text=\"c.name + ' (' + c.company + ')'\"></div><div class=\"text-xs text-slate-400\" x-text=\"c.customer_code + ' · ' + c.email\"></div></td>\n              <td class=\"p-3\" x-text=\"c.subscription_plan + ' · $' + c.mrr_usd + '/mo'\"></td>\n              <td class=\"p-3\"><span class=\"px-2 py-0.5 rounded text-xs font-semibold\" :class=\"riskBadge(c.current_risk_level)\" x-text=\"c.current_risk_level + ' (' + c.risk_score + ')'\"></span></td>\n              <td class=\"p-3\" x-text=\"c.last_active_days + 'd'\"></td>\n              <td class=\"p-3\" x-text=\"c.open_tickets_count\"></td>\n              <td class=\"p-3 text-xs text-slate-300\" x-text=\"c.recommended_action\"></td>\n            </tr>\n          </template>\n        </tbody>\n      </table>\n    </section>\n\n    <section x-show=\"tab === 'tickets'\" class=\"rounded-xl bg-slate-900 border border-slate-800 overflow-x-auto\">\n      <table class=\"w-full text-left text-sm\">\n        <thead class=\"bg-slate-950 text-slate-400 text-xs uppercase\">\n          <tr><th class=\"p-3\">Ticket</th><th class=\"p-3\">Customer</th><th class=\"p-3\">Intent</th><th class=\"p-3\">Urgency</th><th class=\"p-3\">Status</th><th class=\"p-3\">Action</th></tr>\n        </thead>\n        <tbody class=\"divide-y divide-slate-800\">\n          <template x-for=\"t in filteredTickets()\" :key=\"t.ticket_code\">\n            <tr class=\"hover:bg-slate-800/40\">\n              <td class=\"p-3\"><div class=\"font-medium\" x-text=\"t.ticket_code + ' · ' + t.subject\"></div><div class=\"text-xs text-slate-400\" x-text=\"t.ai_summary\"></div></td>\n              <td class=\"p-3\"><div x-text=\"t.customer_name\"></div><div class=\"text-xs text-slate-400\" x-text=\"t.customer_email + ' (' + t.subscription_plan + ')'\"></div></td>\n              <td class=\"p-3 text-xs\" x-text=\"t.intent\"></td>\n              <td class=\"p-3\"><span class=\"px-2 py-0.5 rounded text-xs font-semibold\" :class=\"urgencyBadge(t.urgency)\" x-text=\"t.urgency\"></span></td>\n              <td class=\"p-3 text-xs\" x-text=\"t.ticket_status\"></td>\n              <td class=\"p-3\">\n                <button x-show=\"!/closed/i.test(t.ticket_status || '')\" @click=\"closeTicket(t)\" class=\"px-2.5 py-1 rounded bg-sky-600 hover:bg-sky-500 text-xs font-medium\">Resolve Ticket</button>\n                <span x-show=\"/closed/i.test(t.ticket_status || '')\" class=\"text-xs text-slate-400\">Closed</span>\n              </td>\n            </tr>\n          </template>\n        </tbody>\n      </table>\n    </section>\n\n    <section x-show=\"tab === 'activity'\" class=\"rounded-xl bg-slate-900 border border-slate-800 p-5 space-y-2\">\n      <template x-for=\"a in data.activities\" :key=\"a.event_code\">\n        <div class=\"p-3 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between gap-4\">\n          <div>\n            <span class=\"text-xs font-mono text-indigo-400 mr-2\" x-text=\"a.event_code\"></span>\n            <span class=\"text-xs px-2 py-0.5 rounded bg-slate-800 text-slate-300\" x-text=\"a.event_type\"></span>\n            <p class=\"text-sm mt-1\" x-text=\"a.summary\"></p>\n          </div>\n          <span class=\"text-xs text-slate-500 shrink-0\" x-text=\"a.actor\"></span>\n        </div>\n      </template>\n    </section>\n  </main>\n\n  <div x-show=\"authModal\" class=\"fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-30\" style=\"display:none\">\n    <div class=\"bg-slate-900 border border-slate-700 rounded-xl max-w-md w-full p-5 space-y-4\">\n      <h3 class=\"text-base font-semibold\">Operator Header Authentication</h3>\n      <p class=\"text-xs text-slate-400\">Stored in browser sessionStorage only. Required for live JSON refresh and mutation endpoints.</p>\n      <div>\n        <label class=\"text-xs text-slate-300 block mb-1\">Header Name</label>\n        <input x-model=\"headerName\" type=\"text\" placeholder=\"Authorization\" class=\"w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm\" />\n      </div>\n      <div>\n        <label class=\"text-xs text-slate-300 block mb-1\">Header Value / Secret</label>\n        <input x-model=\"apiSecret\" type=\"password\" placeholder=\"Enter n8n Header Auth token\" class=\"w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-sm\" />\n      </div>\n      <div class=\"flex justify-end gap-2\">\n        <button @click=\"authModal = false\" class=\"px-3 py-1.5 rounded-lg bg-slate-800 text-xs\">Cancel</button>\n        <button @click=\"saveAuth()\" class=\"px-3 py-1.5 rounded-lg bg-indigo-600 text-xs font-medium\">Save Session Auth</button>\n      </div>\n    </div>\n  </div>\n\n  <script>\n    function crmPortal() {\n      const seed = JSON.parse(document.getElementById('crm-seed').textContent || '{}');\n      return {\n        data: seed,\n        tab: 'overview',\n        search: '',\n        loading: false,\n        authModal: false,\n        headerName: sessionStorage.getItem('crm_header_name') || 'Authorization',\n        apiSecret: sessionStorage.getItem('crm_api_secret') || '',\n        toast: '',\n        toastError: false,\n        showToast(msg, isErr = false) {\n          this.toast = msg;\n          this.toastError = isErr;\n          setTimeout(() => { this.toast = ''; }, 5000);\n        },\n        saveAuth() {\n          sessionStorage.setItem('crm_header_name', this.headerName);\n          sessionStorage.setItem('crm_api_secret', this.apiSecret);\n          this.authModal = false;\n          this.showToast('Session operator credentials updated.');\n        },\n        authHeaders() {\n          if (!this.apiSecret) {\n            this.authModal = true;\n            throw new Error('Operator auth header required.');\n          }\n          const h = { 'Content-Type': 'application/json' };\n          h[this.headerName] = this.apiSecret;\n          return h;\n        },\n        async refreshOverview() {\n          this.loading = true;\n          try {\n            const res = await fetch('/webhook/crm/api/overview', { headers: this.authHeaders() });\n            if (!res.ok) throw new Error('HTTP ' + res.status);\n            this.data = await res.json();\n            this.showToast('Synchronized live CRM snapshot.');\n          } catch (e) {\n            this.showToast('Sync requires valid Operator Header Auth (' + e.message + ').', true);\n          } finally {\n            this.loading = false;\n          }\n        },\n        async convertLead(lead) {\n          try {\n            const headers = this.authHeaders();\n            const res = await fetch('/webhook/crm/api/leads/convert', {\n              method: 'POST',\n              headers,\n              body: JSON.stringify({ lead_key: lead.lead_key, subscription_plan: 'Growth', mrr_usd: 299 }),\n            });\n            const out = await res.json();\n            if (!res.ok) throw new Error(out.error || ('HTTP ' + res.status));\n            this.showToast('Converted ' + lead.name + ' to Customer (' + out.customer_code + ').');\n            await this.refreshOverview();\n          } catch (e) {\n            this.showToast('Convert failed: ' + e.message, true);\n          }\n        },\n        async closeTicket(tkt) {\n          try {\n            const headers = this.authHeaders();\n            const res = await fetch('/webhook/crm/api/tickets/close', {\n              method: 'POST',\n              headers,\n              body: JSON.stringify({ ticket_code: tkt.ticket_code }),\n            });\n            const out = await res.json();\n            if (!res.ok) throw new Error(out.error || ('HTTP ' + res.status));\n            this.showToast('Closed ticket ' + tkt.ticket_code + '.');\n            await this.refreshOverview();\n          } catch (e) {\n            this.showToast('Resolve failed: ' + e.message, true);\n          }\n        },\n        matches(obj) {\n          const q = (this.search || '').toLowerCase().trim();\n          if (!q) return true;\n          return JSON.stringify(obj).toLowerCase().includes(q);\n        },\n        filteredLeads() { return (this.data.leads || []).filter((x) => this.matches(x)); },\n        filteredCustomers() { return (this.data.customers || []).filter((x) => this.matches(x)); },\n        filteredTickets() { return (this.data.tickets || []).filter((x) => this.matches(x)); },\n        riskBadge(lvl) {\n          if (lvl === 'URGENT') return 'bg-rose-500/20 text-rose-300 border border-rose-500/40';\n          if (lvl === 'AT_RISK') return 'bg-amber-500/20 text-amber-300 border border-amber-500/40';\n          return 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';\n        },\n        urgencyBadge(u) {\n          if (u === 'CRITICAL' || u === 'HIGH') return 'bg-rose-500/20 text-rose-300 border border-rose-500/40';\n          if (u === 'MEDIUM') return 'bg-amber-500/20 text-amber-300 border border-amber-500/40';\n          return 'bg-sky-500/20 text-sky-300 border border-sky-500/40';\n        }\n      };\n    }\n  </script>\n</body>\n</html>`;\n\nreturn [{ json: { is_html: true, html, overview: snapshot } }];"
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "0feedd84-c9f3-4673-a971-8aa7f1d737c4",
+      "name": "Is HTML Portal Request?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1392,
+        320
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "html1",
+              "leftValue": "={{ $json.is_html }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "51990f8e-5b1b-4c5a-9628-ec0e06cd845c",
+      "name": "Respond HTML Portal",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1616,
+        224
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.html }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "text/html; charset=utf-8"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "bdfc8354-c684-497a-8940-a16f8ada2332",
+      "name": "Respond JSON Overview",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1616,
+        416
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json.overview) }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "1f63364e-f236-4160-9c7b-1f4782590248",
+      "name": "Webhook — Convert Lead API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        416
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "crm/api/leads/convert",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "82d278e5-14d3-41b6-9b7b-3ad8a86e44be",
+      "name": "Parse Convert Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        640
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const raw = $input.item.json || {};\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst leadKey = String(body.lead_key || body.email || '').trim().toLowerCase();\nconst rawPlan = String(body.subscription_plan || 'Growth').trim();\nconst mrrMap = { Starter: 99, Growth: 299, Scale: 699, Enterprise: 1499 };\nconst mrrRaw = Number(body.mrr_usd);\nconst mrrUsd = (!Number.isNaN(mrrRaw) && mrrRaw > 0) ? Math.round(mrrRaw) : (mrrMap[rawPlan] || 299);\nreturn { json: { lead_key: leadKey, subscription_plan: rawPlan, mrr_usd: mrrUsd } };"
+      }
+    },
+    {
+      "id": "e2f07c03-4e85-432e-bb56-4b6bc62ead71",
+      "name": "Lookup Lead to Convert",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        640
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_LEADS",
+          "cachedResultName": "CRM_Leads"
+        },
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_key",
+              "condition": "eq",
+              "keyValue": "={{ $json.lead_key }}"
+            }
+          ]
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c5592164-2422-4d8a-8432-e2bcbc013176",
+      "name": "Lead Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        720,
+        640
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "le1",
+              "leftValue": "={{ Boolean($json.lead_key || $json.id) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "4737e67c-79e9-462c-b37f-4af8df32385a",
+      "name": "Build Conversion Record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        544
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const req = $('Parse Convert Request').item.json;\nconst lead = $input.item.json;\nconst nowIso = new Date().toISOString();\nconst email = String(lead.email || lead.lead_key).trim().toLowerCase();\nlet hash = 0;\nfor (let i = 0; i < email.length; i++) { hash = ((hash << 5) - hash) + email.charCodeAt(i); hash |= 0; }\nconst customerCode = 'CUST-' + Math.abs(hash).toString(16).toUpperCase().padStart(6, '0').slice(0, 6);\nreturn {\n  json: {\n    lead_key: lead.lead_key,\n    customer_key: email,\n    customer_code: customerCode,\n    name: lead.name || email.split('@')[0],\n    email,\n    company: lead.company || 'Direct Account',\n    subscription_plan: req.subscription_plan,\n    mrr_usd: req.mrr_usd,\n    account_status: 'Active',\n    last_active_days: 0,\n    open_tickets_count: 0,\n    total_tickets_count: 0,\n    current_risk_level: 'HEALTHY',\n    engagement_trend: 'NEW_ONBOARDING',\n    risk_score: 5,\n    last_reason: 'Converted via CRM Admin Command Portal.',\n    recommended_action: 'Confirm onboarding kickoff call.',\n    now_iso: nowIso,\n    event_code: 'CONV-' + Date.now().toString(36).toUpperCase(),\n  },\n};"
+      }
+    },
+    {
+      "id": "b0d9c237-ac4c-4c3c-869b-fb61293a0d20",
+      "name": "Provision Customer (DB)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1168,
+        544
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "upsert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_CUSTOMERS",
+          "cachedResultName": "CRM_Customers"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "customer_key",
+              "condition": "eq",
+              "keyValue": "={{ $json.customer_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "customer_key": "={{ $json.customer_key }}",
+            "customer_code": "={{ $json.customer_code }}",
+            "name": "={{ $json.name }}",
+            "email": "={{ $json.email }}",
+            "company": "={{ $json.company }}",
+            "subscription_plan": "={{ $json.subscription_plan }}",
+            "mrr_usd": "={{ $json.mrr_usd }}",
+            "account_status": "Active",
+            "last_active_days": 0,
+            "open_tickets_count": 0,
+            "total_tickets_count": 0,
+            "current_risk_level": "HEALTHY",
+            "engagement_trend": "NEW_ONBOARDING",
+            "risk_score": 5,
+            "last_reason": "={{ $json.last_reason }}",
+            "recommended_action": "={{ $json.recommended_action }}",
+            "onboarded_at": "={{ $json.now_iso }}",
+            "last_analyzed_at": "={{ $json.now_iso }}",
+            "updated_at": "={{ $json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "customer_key",
+              "displayName": "customer_key",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_code",
+              "displayName": "customer_code",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "subscription_plan",
+              "displayName": "subscription_plan",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "mrr_usd",
+              "displayName": "mrr_usd",
+              "required": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "account_status",
+              "displayName": "account_status",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "last_active_days",
+              "displayName": "last_active_days",
+              "required": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "open_tickets_count",
+              "displayName": "open_tickets_count",
+              "required": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "total_tickets_count",
+              "displayName": "total_tickets_count",
+              "required": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "current_risk_level",
+              "displayName": "current_risk_level",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "engagement_trend",
+              "displayName": "engagement_trend",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "risk_score",
+              "displayName": "risk_score",
+              "required": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "last_reason",
+              "displayName": "last_reason",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "recommended_action",
+              "displayName": "recommended_action",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "onboarded_at",
+              "displayName": "onboarded_at",
+              "required": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "last_analyzed_at",
+              "displayName": "last_analyzed_at",
+              "required": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "4c552b37-28d6-43b3-b675-050daa275490",
+      "name": "Sync New Customer Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1392,
+        544
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "CONFIGURE_GOOGLE_SHEET_ID",
+          "cachedResultName": "SaaS CRM SaaS CRM Dashboard"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1463666776",
+          "cachedResultName": "Customers"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "customer_key"
+          ],
+          "value": {
+            "customer_key": "={{ $('Build Conversion Record').item.json.customer_key }}",
+            "customer_code": "={{ $('Build Conversion Record').item.json.customer_code }}",
+            "name": "={{ $('Build Conversion Record').item.json.name }}",
+            "email": "={{ $('Build Conversion Record').item.json.email }}",
+            "company": "={{ $('Build Conversion Record').item.json.company }}",
+            "subscription_plan": "={{ $('Build Conversion Record').item.json.subscription_plan }}",
+            "mrr_usd": "={{ $('Build Conversion Record').item.json.mrr_usd }}",
+            "account_status": "Active",
+            "current_risk_level": "HEALTHY",
+            "risk_score": 5,
+            "onboarded_at": "={{ $('Build Conversion Record').item.json.now_iso }}",
+            "updated_at": "={{ $('Build Conversion Record').item.json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "customer_key",
+              "displayName": "customer_key",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "customer_code",
+              "displayName": "customer_code",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "name",
+              "displayName": "name",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "email",
+              "displayName": "email",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "company",
+              "displayName": "company",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "subscription_plan",
+              "displayName": "subscription_plan",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "mrr_usd",
+              "displayName": "mrr_usd",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "account_status",
+              "displayName": "account_status",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "current_risk_level",
+              "displayName": "current_risk_level",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "risk_score",
+              "displayName": "risk_score",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "onboarded_at",
+              "displayName": "onboarded_at",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "97820572-9c31-4dfd-97c5-2c2a001c7c98",
+      "name": "Mark Lead Converted (DB)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1616,
+        544
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_LEADS",
+          "cachedResultName": "CRM_Leads"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_key",
+              "condition": "eq",
+              "keyValue": "={{ $('Build Conversion Record').item.json.lead_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "pipeline_status": "Converted to Customer",
+            "converted_at": "={{ $('Build Conversion Record').item.json.now_iso }}",
+            "updated_at": "={{ $('Build Conversion Record').item.json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "pipeline_status",
+              "displayName": "pipeline_status",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "converted_at",
+              "displayName": "converted_at",
+              "required": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "80d2bab4-5e14-4a56-bc71-d3d7ef095545",
+      "name": "Sync Converted Lead Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1840,
+        544
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "CONFIGURE_GOOGLE_SHEET_ID",
+          "cachedResultName": "SaaS CRM SaaS CRM Dashboard"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "853091984",
+          "cachedResultName": "Leads"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "lead_key"
+          ],
+          "value": {
+            "lead_key": "={{ $('Build Conversion Record').item.json.lead_key }}",
+            "pipeline_status": "Converted to Customer",
+            "converted_at": "={{ $('Build Conversion Record').item.json.now_iso }}",
+            "updated_at": "={{ $('Build Conversion Record').item.json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "lead_key",
+              "displayName": "lead_key",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "pipeline_status",
+              "displayName": "pipeline_status",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "converted_at",
+              "displayName": "converted_at",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "cdca71d8-f3c0-4e48-b6fd-b0a5e091a8c4",
+      "name": "Log Conversion Event",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2064,
+        544
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_ACTIVITY_HISTORY",
+          "cachedResultName": "CRM_Activity_History"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ $('Build Conversion Record').item.json.event_code }}",
+            "entity_type": "customer",
+            "entity_key": "={{ $('Build Conversion Record').item.json.customer_key }}",
+            "actor": "portal_operator",
+            "event_type": "LEAD_CONVERTED",
+            "summary": "={{ 'Converted lead ' + $('Build Conversion Record').item.json.name + ' to ' + $('Build Conversion Record').item.json.customer_code }}",
+            "details_json": "={{ JSON.stringify({ plan: $('Build Conversion Record').item.json.subscription_plan, mrr_usd: $('Build Conversion Record').item.json.mrr_usd }) }}",
+            "created_at": "={{ $('Build Conversion Record').item.json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "entity_type",
+              "displayName": "entity_type",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "entity_key",
+              "displayName": "entity_key",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a2a45fdc-ff74-4807-afeb-d0035d27d326",
+      "name": "Respond 200 Lead Converted",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2288,
+        544
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, customer_code: $('Build Conversion Record').item.json.customer_code, customer_key: $('Build Conversion Record').item.json.customer_key }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    },
+    {
+      "id": "787e0ba4-6b16-44ab-98a7-f6f7129e52d1",
+      "name": "Respond 404 Lead Missing",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        944,
+        736
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"ok\":false,\"error\":\"Lead not found in CRM_Leads.\"}",
+        "options": {
+          "responseCode": 404
+        }
+      }
+    },
+    {
+      "id": "a831016b-64b9-40da-80a1-880ab39d5375",
+      "name": "Webhook — Close Ticket API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        640
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "crm/api/tickets/close",
+        "authentication": "headerAuth",
+        "responseMode": "responseNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "814dc5e1-a219-4c6b-bfa6-07549133e069",
+      "name": "Parse Close Ticket Request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        944
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const raw = $input.item.json || {};\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nreturn { json: { ticket_code: String(body.ticket_code || '').trim().toUpperCase(), now_iso: new Date().toISOString() } };"
+      }
+    },
+    {
+      "id": "a9a559a7-14ef-4ad4-bce7-fee2870a436f",
+      "name": "Lookup Ticket to Close",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        944
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_SUPPORT_TICKETS",
+          "cachedResultName": "CRM_Support_Tickets"
+        },
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ticket_code",
+              "condition": "eq",
+              "keyValue": "={{ $json.ticket_code }}"
+            }
+          ]
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "cdf6c045-000a-40a8-b210-4ec6f4b8db4d",
+      "name": "Ticket Exists?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        720,
+        944
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "te1",
+              "leftValue": "={{ Boolean($json.ticket_code || $json.id) }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "1e1c0d67-1625-41ff-ad18-bd3118fb23ab",
+      "name": "Close Ticket (DB)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        848
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_SUPPORT_TICKETS",
+          "cachedResultName": "CRM_Support_Tickets"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "ticket_code",
+              "condition": "eq",
+              "keyValue": "={{ $('Parse Close Ticket Request').item.json.ticket_code }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ticket_status": "Closed - Resolved",
+            "human_intervention": false,
+            "updated_at": "={{ $('Parse Close Ticket Request').item.json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "ticket_status",
+              "displayName": "ticket_status",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "human_intervention",
+              "displayName": "human_intervention",
+              "required": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "302b120e-e5a3-4ec7-9075-0d0d291e1855",
+      "name": "Sync Closed Ticket Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1168,
+        848
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "CONFIGURE_GOOGLE_SHEET_ID",
+          "cachedResultName": "SaaS CRM SaaS CRM Dashboard"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "17708827",
+          "cachedResultName": "Support_Tickets"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "ticket_code"
+          ],
+          "value": {
+            "ticket_code": "={{ $('Parse Close Ticket Request').item.json.ticket_code }}",
+            "ticket_status": "Closed - Resolved",
+            "human_intervention": false,
+            "updated_at": "={{ $('Parse Close Ticket Request').item.json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "ticket_code",
+              "displayName": "ticket_code",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ticket_status",
+              "displayName": "ticket_status",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "human_intervention",
+              "displayName": "human_intervention",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b02cd01f-6d21-4b9b-b1eb-4a6d671ca295",
+      "name": "Lookup Ticket Customer",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1392,
+        848
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_CUSTOMERS",
+          "cachedResultName": "CRM_Customers"
+        },
+        "returnAll": false,
+        "limit": 1,
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "customer_key",
+              "condition": "eq",
+              "keyValue": "={{ $('Lookup Ticket to Close').item.json.customer_key }}"
+            }
+          ]
+        }
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "c58788cf-3cda-4115-b5c0-3cab0a297dd5",
+      "name": "Compute Customer Counter",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1616,
+        848
+      ],
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const req = $('Parse Close Ticket Request').item.json;\nconst tkt = $('Lookup Ticket to Close').item.json;\nconst cust = $input.item.json || {};\nconst hasCust = Boolean(cust.customer_key || cust.id);\nconst nextOpen = hasCust ? Math.max(0, Number(cust.open_tickets_count || 0) - 1) : 0;\nreturn {\n  json: {\n    has_customer: hasCust,\n    ticket_code: req.ticket_code,\n    customer_key: tkt.customer_key || '',\n    next_open_tickets: nextOpen,\n    now_iso: req.now_iso,\n    event_code: 'CLS-' + Date.now().toString(36).toUpperCase(),\n  },\n};"
+      }
+    },
+    {
+      "id": "eb475c50-9102-44d5-9a6b-f061b9d10dbf",
+      "name": "Has Customer Account?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1840,
+        848
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "hc1",
+              "leftValue": "={{ $json.has_customer === true }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "3f4d986b-294e-4068-b990-9a4b089f87ae",
+      "name": "Decrement Open Tickets (DB)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2064,
+        768
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_CUSTOMERS",
+          "cachedResultName": "CRM_Customers"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "customer_key",
+              "condition": "eq",
+              "keyValue": "={{ $('Compute Customer Counter').item.json.customer_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "open_tickets_count": "={{ $('Compute Customer Counter').item.json.next_open_tickets }}",
+            "updated_at": "={{ $('Compute Customer Counter').item.json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "open_tickets_count",
+              "displayName": "open_tickets_count",
+              "required": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "e260ab19-9e0b-4226-8869-48aedb4121f6",
+      "name": "Sync Customer Tickets Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2288,
+        768
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "CONFIGURE_GOOGLE_SHEET_ID",
+          "cachedResultName": "SaaS CRM SaaS CRM Dashboard"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "1463666776",
+          "cachedResultName": "Customers"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "customer_key"
+          ],
+          "value": {
+            "customer_key": "={{ $('Compute Customer Counter').item.json.customer_key }}",
+            "open_tickets_count": "={{ $('Compute Customer Counter').item.json.next_open_tickets }}",
+            "updated_at": "={{ $('Compute Customer Counter').item.json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "customer_key",
+              "displayName": "customer_key",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "open_tickets_count",
+              "displayName": "open_tickets_count",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "58cae8f8-1bf3-4065-afa4-ff25cda7554e",
+      "name": "Log Ticket Resolution",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2512,
+        848
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_ACTIVITY_HISTORY",
+          "cachedResultName": "CRM_Activity_History"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ $('Compute Customer Counter').item.json.event_code }}",
+            "entity_type": "ticket",
+            "entity_key": "={{ $('Compute Customer Counter').item.json.ticket_code }}",
+            "actor": "portal_operator",
+            "event_type": "TICKET_CLOSED",
+            "summary": "={{ 'Resolved & closed ticket ' + $('Compute Customer Counter').item.json.ticket_code }}",
+            "details_json": "={{ JSON.stringify({ customer_key: $('Compute Customer Counter').item.json.customer_key, remaining_open: $('Compute Customer Counter').item.json.next_open_tickets }) }}",
+            "created_at": "={{ $('Compute Customer Counter').item.json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "entity_type",
+              "displayName": "entity_type",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "entity_key",
+              "displayName": "entity_key",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "1d33fa15-6091-4184-93cb-a8178aa6f1e8",
+      "name": "Respond 404 Ticket Missing",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        944,
+        1040
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"ok\":false,\"error\":\"Ticket not found in CRM_Support_Tickets.\"}",
+        "options": {
+          "responseCode": 404
+        }
+      }
+    },
+    {
+      "id": "212e61d2-3284-43be-8aa6-383504003eb0",
+      "name": "Respond 200 Ticket Closed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2736,
+        848
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true, ticket_code: $('Compute Customer Counter').item.json.ticket_code, ticket_status: 'Closed - Resolved' }) }}",
+        "options": {
+          "responseCode": 200
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Webhook — Serve Admin Portal": {
+      "main": [
+        [
+          {
+            "node": "Read All Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read All Leads": {
+      "main": [
+        [
+          {
+            "node": "Read All Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook — Overview JSON API": {
+      "main": [
+        [
+          {
+            "node": "Read All Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read All Customers": {
+      "main": [
+        [
+          {
+            "node": "Read All Tickets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read All Tickets": {
+      "main": [
+        [
+          {
+            "node": "Read Activity Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read Activity Log": {
+      "main": [
+        [
+          {
+            "node": "Build Portal State & Render HTML",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Portal State & Render HTML": {
+      "main": [
+        [
+          {
+            "node": "Is HTML Portal Request?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is HTML Portal Request?": {
+      "main": [
+        [
+          {
+            "node": "Respond HTML Portal",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond JSON Overview",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook — Convert Lead API": {
+      "main": [
+        [
+          {
+            "node": "Parse Convert Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Convert Request": {
+      "main": [
+        [
+          {
+            "node": "Lookup Lead to Convert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Lead to Convert": {
+      "main": [
+        [
+          {
+            "node": "Lead Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Exists?": {
+      "main": [
+        [
+          {
+            "node": "Build Conversion Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 404 Lead Missing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Conversion Record": {
+      "main": [
+        [
+          {
+            "node": "Provision Customer (DB)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Provision Customer (DB)": {
+      "main": [
+        [
+          {
+            "node": "Sync New Customer Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync New Customer Sheet": {
+      "main": [
+        [
+          {
+            "node": "Mark Lead Converted (DB)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Converted (DB)": {
+      "main": [
+        [
+          {
+            "node": "Sync Converted Lead Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Converted Lead Sheet": {
+      "main": [
+        [
+          {
+            "node": "Log Conversion Event",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Conversion Event": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 Lead Converted",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook — Close Ticket API": {
+      "main": [
+        [
+          {
+            "node": "Parse Close Ticket Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Close Ticket Request": {
+      "main": [
+        [
+          {
+            "node": "Lookup Ticket to Close",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Ticket to Close": {
+      "main": [
+        [
+          {
+            "node": "Ticket Exists?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ticket Exists?": {
+      "main": [
+        [
+          {
+            "node": "Close Ticket (DB)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 404 Ticket Missing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Close Ticket (DB)": {
+      "main": [
+        [
+          {
+            "node": "Sync Closed Ticket Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Closed Ticket Sheet": {
+      "main": [
+        [
+          {
+            "node": "Lookup Ticket Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Ticket Customer": {
+      "main": [
+        [
+          {
+            "node": "Compute Customer Counter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Customer Counter": {
+      "main": [
+        [
+          {
+            "node": "Has Customer Account?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Customer Account?": {
+      "main": [
+        [
+          {
+            "node": "Decrement Open Tickets (DB)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Ticket Resolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Decrement Open Tickets (DB)": {
+      "main": [
+        [
+          {
+            "node": "Sync Customer Tickets Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Customer Tickets Sheet": {
+      "main": [
+        [
+          {
+            "node": "Log Ticket Resolution",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Ticket Resolution": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 Ticket Closed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "errorWorkflow": "CONFIGURE_ERROR_WORKFLOW_ID"
+  },
+  "active": false,
+  "tags": [
+    "saas-crm-suite",
+    "crm-ops"
+  ],
+  "description": "Live web SPA Command Portal (GET /webhook/crm/portal) and authenticated JSON CRM mutation APIs (/webhook/crm/api/*) wired to all 4 Data Tables and Google Sheets.",
+  "nodeGroups": [
+    {
+      "id": "4dc4728f-7a28-49b5-ab37-634a06abf73d",
+      "name": "1. Hydrate Portal & Overview API",
+      "description": "Reads all 4 CRM Data Tables to render the SSR HTML Admin Command Portal or authenticated JSON overview.",
+      "nodeNames": [
+        "Read All Leads",
+        "Read All Customers",
+        "Read All Tickets",
+        "Read Activity Log",
+        "Build Portal State & Render HTML",
+        "Is HTML Portal Request?",
+        "Respond HTML Portal",
+        "Respond JSON Overview"
+      ]
+    },
+    {
+      "id": "f1ea8c73-336a-46f0-ba34-c320133cc33c",
+      "name": "2. Convert Lead Action API",
+      "description": "Promotes qualified CRM leads to active customers across Data Tables, Google Sheets, and Activity Log.",
+      "nodeNames": [
+        "Parse Convert Request",
+        "Lookup Lead to Convert",
+        "Lead Exists?",
+        "Build Conversion Record",
+        "Provision Customer (DB)",
+        "Sync New Customer Sheet",
+        "Mark Lead Converted (DB)",
+        "Sync Converted Lead Sheet",
+        "Log Conversion Event",
+        "Respond 200 Lead Converted",
+        "Respond 404 Lead Missing"
+      ]
+    },
+    {
+      "id": "670bb7f0-1b3a-4175-a535-41d20fffb189",
+      "name": "3. Resolve Ticket Action API",
+      "description": "Resolves support tickets, decrements customer open ticket counters, and syncs Sheets & Activity Log.",
+      "nodeNames": [
+        "Parse Close Ticket Request",
+        "Lookup Ticket to Close",
+        "Ticket Exists?",
+        "Close Ticket (DB)",
+        "Sync Closed Ticket Sheet",
+        "Lookup Ticket Customer",
+        "Compute Customer Counter",
+        "Has Customer Account?",
+        "Decrement Open Tickets (DB)",
+        "Sync Customer Tickets Sheet",
+        "Log Ticket Resolution",
+        "Respond 200 Ticket Closed",
+        "Respond 404 Ticket Missing"
+      ]
+    }
+  ]
+}

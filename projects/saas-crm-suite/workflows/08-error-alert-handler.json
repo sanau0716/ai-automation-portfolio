@@ -1,0 +1,570 @@
+{
+  "name": "SaaS CRM — Error Alert Handler",
+  "nodes": [
+    {
+      "id": "50345c7b-cc8c-4697-9f44-5ed917d04c09",
+      "name": "On CRM Workflow Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        200
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "8af2b12e-9c29-45a7-943e-84ebf0833914",
+      "name": "Format Production Failure",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        460,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ec",
+              "name": "event_code",
+              "type": "string",
+              "value": "={{ \"ERR-\" + ($json.execution?.id || $execution.id || \"RUN\") }}"
+            },
+            {
+              "id": "et",
+              "name": "entity_type",
+              "type": "string",
+              "value": "system"
+            },
+            {
+              "id": "ek",
+              "name": "entity_key",
+              "type": "string",
+              "value": "={{ $json.workflow?.id || $workflow.id }}"
+            },
+            {
+              "id": "ac",
+              "name": "actor",
+              "type": "string",
+              "value": "error_handler"
+            },
+            {
+              "id": "ev",
+              "name": "event_type",
+              "type": "string",
+              "value": "PRODUCTION_ERROR"
+            },
+            {
+              "id": "sm",
+              "name": "summary",
+              "type": "string",
+              "value": "={{ ($json.workflow?.name || \"SaaS CRM Workflow\") + \" failed at \" + ($json.execution?.lastNodeExecuted || \"Unknown Node\") + \": \" + ($json.execution?.error?.message || \"Runtime failure\") }}"
+            },
+            {
+              "id": "es",
+              "name": "email_subject",
+              "type": "string",
+              "value": "={{ \"[SaaS CRM Error] \" + ($json.workflow?.name || \"System Alert\") }}"
+            },
+            {
+              "id": "eh",
+              "name": "email_html",
+              "type": "string",
+              "value": "={{ '<h2>SaaS CRM SaaS CRM — Production Workflow Error</h2><p><strong>Workflow:</strong> ' + ($json.workflow?.name || 'Unknown') + ' (' + ($json.workflow?.id || 'N/A') + ')</p><p><strong>Execution ID:</strong> ' + ($json.execution?.id || 'N/A') + '</p><p><strong>Last Node:</strong> ' + ($json.execution?.lastNodeExecuted || 'N/A') + '</p><p><strong>Error:</strong> ' + ($json.execution?.error?.message || 'No error message supplied') + '</p><p><a href=\"' + ($json.execution?.url || 'https://n8n.example.com') + '\">Inspect Execution in n8n</a></p>' }}"
+            },
+            {
+              "id": "sl",
+              "name": "slack_message",
+              "type": "string",
+              "value": "={{ \":rotating_light: *SaaS CRM Production Error*\\n*Workflow:* \" + ($json.workflow?.name || \"Unknown\") + \"\\n*Node:* \" + ($json.execution?.lastNodeExecuted || \"Unknown\") + \"\\n*Error:* \" + ($json.execution?.error?.message || \"No message\") + \"\\n<\" + ($json.execution?.url || \"https://n8n.example.com\") + \"|Inspect Execution>\" }}"
+            },
+            {
+              "id": "ca",
+              "name": "created_at",
+              "type": "string",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "id": "dj",
+              "name": "details_json",
+              "type": "string",
+              "value": "={{ JSON.stringify({ workflowId: $json.workflow?.id || null, executionId: $json.execution?.id || null, lastNode: $json.execution?.lastNodeExecuted || null, error: $json.execution?.error?.message || null }) }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d6da46e5-c260-4a49-8b70-c7a98806c5bb",
+      "name": "Manual Failure Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        200,
+        440
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "68a46e74-35f3-4106-a13b-434b995806dc",
+      "name": "Format Test Alert",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        460,
+        440
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ec",
+              "name": "event_code",
+              "type": "string",
+              "value": "={{ \"ERR-TEST-\" + $execution.id }}"
+            },
+            {
+              "id": "et",
+              "name": "entity_type",
+              "type": "string",
+              "value": "system"
+            },
+            {
+              "id": "ek",
+              "name": "entity_key",
+              "type": "string",
+              "value": "={{ $workflow.id }}"
+            },
+            {
+              "id": "ac",
+              "name": "actor",
+              "type": "string",
+              "value": "error_handler"
+            },
+            {
+              "id": "ev",
+              "name": "event_type",
+              "type": "string",
+              "value": "ERROR_HANDLER_TEST"
+            },
+            {
+              "id": "sm",
+              "name": "summary",
+              "type": "string",
+              "value": "SaaS CRM Error Handler verification test succeeded."
+            },
+            {
+              "id": "es",
+              "name": "email_subject",
+              "type": "string",
+              "value": "[SaaS CRM Test] Error Handler Verification"
+            },
+            {
+              "id": "eh",
+              "name": "email_html",
+              "type": "string",
+              "value": "<h2>SaaS CRM SaaS CRM — Error Handler Test</h2><p>This confirms SMTP, Slack, Data Table, and Google Sheet logging are operational for the SaaS CRM suite.</p>"
+            },
+            {
+              "id": "sl",
+              "name": "slack_message",
+              "type": "string",
+              "value": ":white_check_mark: *SaaS CRM Error Handler Test* — SMTP, Slack, Data Table, and Sheet logging verified."
+            },
+            {
+              "id": "ca",
+              "name": "created_at",
+              "type": "string",
+              "value": "={{ $now.toISO() }}"
+            },
+            {
+              "id": "dj",
+              "name": "details_json",
+              "type": "string",
+              "value": "={{ JSON.stringify({ test: true, executionId: $execution.id }) }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "bb67552d-cfa7-4d01-a33a-41e7dafa016e",
+      "name": "Log Error to Activity Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        780,
+        100
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_ACTIVITY_HISTORY",
+          "cachedResultName": "CRM_Activity_History"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ $json.event_code }}",
+            "entity_type": "={{ $json.entity_type }}",
+            "entity_key": "={{ $json.entity_key }}",
+            "actor": "={{ $json.actor }}",
+            "event_type": "={{ $json.event_type }}",
+            "summary": "={{ $json.summary }}",
+            "details_json": "={{ $json.details_json }}",
+            "created_at": "={{ $json.created_at }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "entity_type",
+              "displayName": "entity_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "entity_key",
+              "displayName": "entity_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "9a3d32f0-9ee2-446b-9d43-5b5293c79fd1",
+      "name": "Append Error to Sheet Log",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1040,
+        100
+      ],
+      "parameters": {
+        "resource": "sheet",
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "CONFIGURE_GOOGLE_SHEET_ID",
+          "cachedResultName": "SaaS CRM SaaS CRM Dashboard"
+        },
+        "sheetName": {
+          "__rl": true,
+          "mode": "list",
+          "value": "593456227",
+          "cachedResultName": "Activity_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ $json.event_code }}",
+            "entity_type": "={{ $json.entity_type }}",
+            "entity_key": "={{ $json.entity_key }}",
+            "actor": "={{ $json.actor }}",
+            "event_type": "={{ $json.event_type }}",
+            "summary": "={{ $json.summary }}",
+            "details_json": "={{ $json.details_json }}",
+            "created_at": "={{ $json.created_at }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "entity_type",
+              "displayName": "entity_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "entity_key",
+              "displayName": "entity_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a13d4fcd-9cbe-43c5-9c7c-d88a4cef2174",
+      "name": "Send Error Email Alert",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        780,
+        380
+      ],
+      "parameters": {
+        "resource": "email",
+        "operation": "send",
+        "fromEmail": "SaaS CRM SaaS CRM <crm-notifications@example.com>",
+        "toEmail": "ops-alerts@example.com",
+        "subject": "={{ $json.email_subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.email_html }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "crm-notifications@example.com"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "81dd0324-1b8a-4e75-a68e-bc39292a56ab",
+      "name": "Post Error Alert to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        780,
+        520
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "authentication": "accessToken",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "CONFIGURE_SLACK_CHANNEL_ID",
+          "cachedResultName": "crm-alerts"
+        },
+        "messageType": "text",
+        "text": "={{ $json.slack_message }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "On CRM Workflow Error": {
+      "main": [
+        [
+          {
+            "node": "Format Production Failure",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Production Failure": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Activity Table",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Error Email Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Post Error Alert to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Failure Test": {
+      "main": [
+        [
+          {
+            "node": "Format Test Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Test Alert": {
+      "main": [
+        [
+          {
+            "node": "Log Error to Activity Table",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Error Email Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Post Error Alert to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Error to Activity Table": {
+      "main": [
+        [
+          {
+            "node": "Append Error to Sheet Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true
+  },
+  "active": false,
+  "tags": [
+    "saas-crm-suite",
+    "crm-ops"
+  ],
+  "description": "Shared error alert handler for the SaaS CRM suite: logs runtime failures to Data Table and Google Sheets and notifies operators via SMTP and Slack.",
+  "nodeGroups": [
+    {
+      "id": "16dbd37e-93e4-4bbb-995d-d0092a94c761",
+      "name": "Persist Failure Record",
+      "description": "Logs runtime failures sequentially to CRM_Activity_History Data Table and Activity_Log Google Sheet.",
+      "nodeNames": [
+        "Log Error to Activity Table",
+        "Append Error to Sheet Log"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,165 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="1010" viewBox="0 0 1440 1010" role="img" aria-labelledby="title desc">
+  <title id="title">SaaS CRM Suite — End-to-End n8n Architecture</title>
+  <desc id="desc">Eight connected n8n workflows (158 nodes) unifying lead intake and AI qualification, daily follow-up sequences, customer onboarding and lead conversion, churn monitoring, support ticket triage, an Admin Command Portal SPA and JSON API, an executive daily digest, and a shared error alert handler around four shared n8n Data Tables and a four-tab Google Sheets mirror.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#071525"/>
+      <stop offset="0.58" stop-color="#101d35"/>
+      <stop offset="1" stop-color="#171d3c"/>
+    </linearGradient>
+    <linearGradient id="line" gradientUnits="userSpaceOnUse" x1="60" y1="0" x2="1380" y2="0">
+      <stop stop-color="#48dce8"/>
+      <stop offset="1" stop-color="#8b7bff"/>
+    </linearGradient>
+    <linearGradient id="emeraldLine" gradientUnits="userSpaceOnUse" x1="60" y1="0" x2="1380" y2="0">
+      <stop stop-color="#4fd6b2"/>
+      <stop offset="1" stop-color="#48dce8"/>
+    </linearGradient>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8.5 5 L 0 8.5 z" fill="#62dce9"/>
+    </marker>
+    <marker id="arrowEm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M 0 1.5 L 8.5 5 L 0 8.5 z" fill="#4fd6b2"/>
+    </marker>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#000" flood-opacity="0.24"/>
+    </filter>
+    <style>
+      .ey { font: 700 12.5px Arial, sans-serif; letter-spacing: 1.8px; fill: #62dce9; }
+      .ey-em { font: 700 12.5px Arial, sans-serif; letter-spacing: 1.8px; fill: #7ef0cb; }
+      .ey-pu { font: 700 12.5px Arial, sans-serif; letter-spacing: 1.8px; fill: #c1b2ff; }
+      .h { font: 800 36px Arial, sans-serif; fill: #f7fbff; }
+      .sub { font: 16px Arial, sans-serif; fill: #a8bfd8; }
+      .ct { font: 700 17px Arial, sans-serif; fill: #f5f8ff; }
+      .bd { font: 13.5px Arial, sans-serif; fill: #b8c9df; }
+      .sm { font: 12px Arial, sans-serif; fill: #8ea5bf; }
+      .pill { font: 700 12px Arial, sans-serif; letter-spacing: 1px; fill: #e6f7ff; }
+      .num { font: 700 26px Arial, sans-serif; fill: #ffffff; }
+      .line { fill: none; stroke: url(#line); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+      .bus { fill: none; stroke: url(#emeraldLine); stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+    </style>
+  </defs>
+
+  <rect width="1440" height="1010" rx="24" fill="url(#bg)"/>
+  <circle cx="1340" cy="55" r="220" fill="#5947a8" opacity="0.13"/>
+
+  <!-- Header -->
+  <text x="60" y="60" class="ey">SAAS REVENUE, CHURN &amp; SUPPORT OPERATIONS · 8 CONNECTED N8N WORKFLOWS</text>
+  <text x="60" y="108" class="h">SaaS CRM Suite — How the System Works</text>
+  <text x="60" y="140" class="sub">Lead qualification · follow-up cadence · onboarding · churn &amp; support triage · Admin SPA &amp; API · daily digest · shared error handling</text>
+  <rect x="1080" y="48" width="300" height="42" rx="21" fill="#1b2c4a" stroke="#57d6ff" stroke-width="1.3"/>
+  <text x="1230" y="74" text-anchor="middle" class="pill">8 WORKFLOWS · 158 NODES · 4 TABLES</text>
+
+  <!-- Connector Paths (routed cleanly in gutters) -->
+  <g class="line">
+    <path d="M360 268h40" marker-end="url(#arrow)"/>
+    <path d="M700 268h40" marker-end="url(#arrow)"/>
+    <path d="M1050 268h40" marker-end="url(#arrow)"/>
+    <!-- Row 2: Support <-> Shared Hub <-> Admin Portal -->
+    <path d="M364 482h37" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+    <path d="M1054 482h37" marker-start="url(#arrow)" marker-end="url(#arrow)"/>
+  </g>
+
+  <!-- Data Bus from Row 1 down into Central State Hub (y=375) and down from Hub to Row 3 (y=588) -->
+  <g class="bus">
+    <path d="M210 340v35h1025v-35"/>
+    <path d="M552 340v35"/>
+    <path d="M898 340v35"/>
+    <path d="M727 375v30" marker-end="url(#arrowEm)"/>
+    <!-- Hub down to Digest & Error Handler -->
+    <path d="M727 555v33"/>
+    <path d="M727 588H377v27" marker-end="url(#arrowEm)"/>
+    <path d="M727 588h335v27" marker-end="url(#arrowEm)"/>
+  </g>
+
+  <!-- Row 1: Lifecycle Workflows 01–04 -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="195" width="300" height="145" rx="16" fill="#122940" stroke="#42d9e8" stroke-width="1.4"/>
+    <rect x="405" y="195" width="295" height="145" rx="16" fill="#122940" stroke="#42d9e8" stroke-width="1.4"/>
+    <rect x="745" y="195" width="305" height="145" rx="16" fill="#122940" stroke="#42d9e8" stroke-width="1.4"/>
+    <rect x="1095" y="195" width="285" height="145" rx="16" fill="#122940" stroke="#8b7bff" stroke-width="1.4"/>
+  </g>
+
+  <text x="82" y="227" class="ey">01 · LEAD INTAKE</text>
+  <text x="82" y="258" class="ct">Qualification Gateway (19)</text>
+  <text x="82" y="286" class="bd">Form + POST /crm/v1/leads</text>
+  <text x="82" y="308" class="bd">Gemini 3.1 Flash Lite + fallback</text>
+  <text x="82" y="328" class="sm">SMTP outreach · Slack high-value alert</text>
+
+  <text x="427" y="227" class="ey">02 · NURTURE CADENCE</text>
+  <text x="427" y="258" class="ct">Follow-Up Engine (18)</text>
+  <text x="427" y="286" class="bd">Daily 09:00 Asia/Manila sweep</text>
+  <text x="427" y="308" class="bd">AI touches #2–#4 via SMTP</text>
+  <text x="427" y="328" class="sm">Stops at #4 · Slack stalled escalation</text>
+
+  <text x="767" y="227" class="ey">03 · PROVISIONING</text>
+  <text x="767" y="258" class="ct">Customer Onboarding (16)</text>
+  <text x="767" y="286" class="bd">Form + /crm/v1/customers/onboard</text>
+  <text x="767" y="308" class="bd">Upserts customer · converts lead</text>
+  <text x="767" y="328" class="sm">Welcome email · Slack new-account alert</text>
+
+  <text x="1117" y="227" class="ey-pu">04 · CHURN MONITOR</text>
+  <text x="1117" y="258" class="ct">Engagement Monitor (25)</text>
+  <text x="1117" y="286" class="bd">Form/API + 08:00 daily sweep</text>
+  <text x="1117" y="308" class="bd">Spam gate + AI risk score (0–100)</text>
+  <text x="1117" y="328" class="sm">Urgent alert · HITL retention email</text>
+
+  <!-- Row 2: Support Triage (05), Shared Persistence Fabric, Admin Command Portal (06) -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="410" width="300" height="145" rx="16" fill="#142942" stroke="#8b7bff" stroke-width="1.4"/>
+    <rect x="405" y="410" width="645" height="145" rx="16" fill="#0f2c3f" stroke="#4fd6b2" stroke-width="1.8"/>
+    <rect x="1095" y="410" width="285" height="145" rx="16" fill="#142942" stroke="#57d6ff" stroke-width="1.4"/>
+  </g>
+
+  <text x="82" y="442" class="ey-pu">05 · SUPPORT DESK</text>
+  <text x="82" y="473" class="ct">Ticket Triage Manager (26)</text>
+  <text x="82" y="501" class="bd">Form + POST /crm/v1/support/tickets</text>
+  <text x="82" y="523" class="bd">CRM lookup + safety override</text>
+  <text x="82" y="543" class="sm">HITL draft approval · syncs ticket counts</text>
+
+  <text x="727" y="442" text-anchor="middle" class="ey-em">SHARED PERSISTENCE &amp; NOTIFICATION FABRIC</text>
+  <text x="727" y="473" text-anchor="middle" class="ct">4 Relational n8n Data Tables  ⇄  Google Sheets 4-Tab Mirror</text>
+  <text x="727" y="503" text-anchor="middle" class="bd">CRM_Leads   ·   CRM_Customers   ·   CRM_Support_Tickets   ·   CRM_Activity_History</text>
+  <text x="727" y="531" text-anchor="middle" class="sm">Cross-workflow state updates · Purelymail SMTP customer/admin mail · Slack alerts channel</text>
+
+  <text x="1117" y="442" class="ey">06 · COMMAND PLANE</text>
+  <text x="1117" y="473" class="ct">Admin Portal &amp; API (36)</text>
+  <text x="1117" y="501" class="bd">GET /crm/portal (Tailwind/Alpine SPA)</text>
+  <text x="1117" y="523" class="bd">Header-Auth /crm/api/* mutations</text>
+  <text x="1117" y="543" class="sm">Convert leads · close tickets · live KPIs</text>
+
+  <!-- Row 3: Executive Digest (07) & Shared Error Handler (08) -->
+  <g filter="url(#shadow)">
+    <rect x="60" y="620" width="635" height="128" rx="16" fill="#132a42" stroke="#4fd6b2" stroke-width="1.4"/>
+    <rect x="745" y="620" width="635" height="128" rx="16" fill="#1f2042" stroke="#a28bff" stroke-width="1.4"/>
+  </g>
+
+  <text x="84" y="654" class="ey-em">07 · EXECUTIVE REPORTING</text>
+  <text x="84" y="686" class="ct">Executive Daily Digest &amp; Health Report (10 nodes)</text>
+  <text x="84" y="713" class="bd">Daily 18:00 Asia/Manila job reads all 4 tables for MRR, churn &amp; ticket KPIs</text>
+  <text x="84" y="734" class="sm">Sends HTML KPI cards via SMTP, posts Slack brief, and logs digest event</text>
+
+  <text x="769" y="654" class="ey-pu">08 · SUITE-WIDE RELIABILITY</text>
+  <text x="769" y="686" class="ct">Shared Error Alert Handler (8 nodes)</text>
+  <text x="769" y="713" class="bd">Linked via settings.errorWorkflow on all 7 operational workflows + node guards</text>
+  <text x="769" y="734" class="sm">Logs failing node &amp; execution details to Activity Table/Sheet + SMTP &amp; Slack</text>
+
+  <!-- Row 4: Security Boundaries & Verification Snapshot -->
+  <rect x="60" y="790" width="635" height="136" rx="16" fill="#231d3d" stroke="#a28bff" stroke-width="1.2"/>
+  <text x="84" y="822" class="ey-pu">SECURITY, FALLBACKS &amp; HONEST BOUNDARIES</text>
+  <text x="84" y="852" class="bd">• Intake &amp; mutation APIs (/crm/v1/*, /crm/api/*) enforce Header Auth; forms use none</text>
+  <text x="84" y="876" class="bd">• Live caveat: GET /crm/portal embeds crm-seed pre-login — gate before client use</text>
+  <text x="84" y="900" class="bd">• Deterministic fallbacks handle AI 402/429 outages; GitHub exports set active=false</text>
+
+  <rect x="745" y="790" width="635" height="136" rx="16" fill="#102c3c" stroke="#42d9e8" stroke-width="1.2"/>
+  <text x="769" y="822" class="ey">VERIFICATION SNAPSHOT · NOVEMBER 23, 2026</text>
+  <text x="769" y="866" class="num">8 / 8</text>
+  <text x="838" y="865" class="sm">active workflows synced to draft</text>
+  <text x="1055" y="866" class="num">17</text>
+  <text x="1095" y="865" class="sm">passing Nov 23 runs (0 errors)</text>
+  <text x="769" y="900" class="sm">Verified with synthetic CRM tests (incl. AI 402 fallback #1474); follow-up #1477 had 0 due leads.</text>
+
+  <!-- Footer -->
+  <text x="60" y="972" class="sm">Simplified architecture generated from connected n8n workflow metadata. Not a raw n8n editor canvas screenshot.</text>
+  <text x="1380" y="972" text-anchor="end" class="sm">Sanitized JSON exports under workflows/ are inactive inspection &amp; import templates.</text>
+</svg>

@@ -1,0 +1,1195 @@
+{
+  "name": "SaaS CRM — Customer Onboarding & Account Provisioning",
+  "nodes": [
+    {
+      "id": "f574af17-8265-416a-93d1-7d99540b5f66",
+      "name": "Customer Onboarding Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        100,
+        140
+      ],
+      "parameters": {
+        "formDescription": "Provision a new paid SaaS customer account, assign subscription plan & MRR, mark matching CRM lead as converted, and trigger welcome onboarding.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Customer Name",
+              "fieldType": "text",
+              "placeholder": "Elena Vance",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "elena@cloudscale.io",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Company",
+              "fieldType": "text",
+              "placeholder": "CloudScale IO",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Subscription Plan",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Starter ($99/mo)"
+                  },
+                  {
+                    "option": "Growth ($299/mo)"
+                  },
+                  {
+                    "option": "Scale ($699/mo)"
+                  },
+                  {
+                    "option": "Enterprise ($1499/mo)"
+                  }
+                ]
+              },
+              "fieldType": "dropdown",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Monthly MRR USD",
+              "fieldType": "number",
+              "placeholder": "299",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Onboarding Notes",
+              "fieldType": "textarea",
+              "placeholder": "Kickoff date, priority workflows, or billing contact notes.",
+              "requiredField": false
+            }
+          ]
+        },
+        "formTitle": "SaaS CRM SaaS CRM — Customer Onboarding",
+        "options": {
+          "appendAttribution": false
+        },
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "id": "5439e85f-58f4-4e82-ae1c-62e91c924f22",
+      "name": "Webhook — Onboard Customer API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        100,
+        380
+      ],
+      "parameters": {
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "options": {},
+        "path": "crm/v1/customers/onboard",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "5f0fcbad-104b-49d7-8bfc-c539d8c611d8",
+      "name": "Normalize Onboarding Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        380,
+        260
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.item.json || {};\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst isWebhook = Boolean(raw.headers || raw.body);\n\nconst name = String(body['Customer Name'] ?? body.name ?? body.customer_name ?? '').trim();\nconst email = String(body.Email ?? body.email ?? body.customer_email ?? '').trim().toLowerCase();\nconst company = String(body.Company ?? body.company ?? '').trim() || 'Direct Account';\nconst rawPlan = String(body['Subscription Plan'] ?? body.subscription_plan ?? body.plan ?? 'Growth ($299/mo)').trim();\nconst notes = String(body['Onboarding Notes'] ?? body.notes ?? '').trim();\n\nconst planCatalog = [\n  { key: 'Starter', regex: /starter/i, mrr: 99 },\n  { key: 'Growth', regex: /growth/i, mrr: 299 },\n  { key: 'Scale', regex: /scale/i, mrr: 699 },\n  { key: 'Enterprise', regex: /enterprise/i, mrr: 1499 },\n];\nconst matched = planCatalog.find((p) => p.regex.test(rawPlan)) || planCatalog[1];\nconst overrideMrr = Number(body['Monthly MRR USD'] ?? body.mrr_usd ?? body.mrr);\nconst mrrUsd = (!Number.isNaN(overrideMrr) && overrideMrr > 0) ? Math.round(overrideMrr) : matched.mrr;\n\nconst emailValid = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);\nconst isValid = emailValid && name.length >= 2;\nconst nowIso = new Date().toISOString();\n\nlet hash = 0;\nfor (let i = 0; i < email.length; i++) {\n  hash = ((hash << 5) - hash) + email.charCodeAt(i);\n  hash |= 0;\n}\nconst shortHex = Math.abs(hash).toString(16).toUpperCase().padStart(6, '0').slice(0, 6);\nconst customerCode = String(body.customer_code || `CUST-${shortHex}`).trim().toUpperCase();\nconst escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\nconst welcomeHtml = `\n<div style=\"font-family:Inter,Segoe UI,Arial,sans-serif;max-width:600px;margin:0 auto;color:#111827;line-height:1.6;\">\n  <h2 style=\"color:#0f172a;margin-bottom:8px;\">Welcome to SaaS CRM, ${escHtml(name)}!</h2>\n  <p>Your <strong>${escHtml(matched.key)}</strong> SaaS workspace for <strong>${escHtml(company)}</strong> is now provisioned and active.</p>\n  <div style=\"background:#f0fdf4;border-left:4px solid #16a34a;padding:12px 16px;margin:16px 0;border-radius:6px;\">\n    <strong>Account Summary</strong><br>\n    Customer Code: <code>${escHtml(customerCode)}</code><br>\n    Plan: ${escHtml(matched.key)} (\\$${mrrUsd}/mo)<br>\n    Status: Active\n  </div>\n  ${notes ? `<p><strong>Onboarding Notes:</strong> ${escHtml(notes)}</p>` : ''}\n  <p>Reply directly to this email anytime you need workflow adjustments or priority onboarding support.</p>\n  <p style=\"margin-top:20px;\">Best regards,<br><strong>Operator Name</strong><br>SaaS CRM Solutions</p>\n</div>`.trim();\n\nreturn {\n  json: {\n    trigger_source: isWebhook ? 'webhook' : 'form',\n    is_valid: isValid,\n    validation_error: isValid ? '' : 'Valid customer name and email are required.',\n    customer_key: email,\n    customer_code: customerCode,\n    name,\n    email,\n    company,\n    subscription_plan: matched.key,\n    mrr_usd: mrrUsd,\n    account_status: 'Active',\n    last_active_days: 0,\n    open_tickets_count: 0,\n    total_tickets_count: 0,\n    current_risk_level: 'HEALTHY',\n    engagement_trend: 'NEW_ONBOARDING',\n    risk_score: 5,\n    last_reason: 'Newly onboarded active SaaS subscription account.',\n    recommended_action: 'Schedule kickoff check-in at Day 7 to confirm workflow adoption.',\n    onboarded_at: nowIso,\n    last_analyzed_at: nowIso,\n    updated_at: nowIso,\n    notes,\n    event_code: `ONB-${Date.now().toString(36).toUpperCase()}`,\n    welcome_html: welcomeHtml,\n    slack_message: `:tada: *New SaaS Customer Onboarded*\\n*Customer:* ${name} (${company})\\n*Code:* ${customerCode} | *Plan:* ${matched.key} (\\$${mrrUsd}/mo)\\n*Email:* ${email}`,\n  },\n};",
+        "mode": "runOnceForEachItem"
+      }
+    },
+    {
+      "id": "ba31f504-75b1-4dd4-85d9-4b5f83cbc41a",
+      "name": "Valid Onboarding Input?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        620,
+        260
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "vo1",
+              "leftValue": "={{ $json.is_valid }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "f8935184-4bdf-4be4-9e84-053b3a170353",
+      "name": "Respond 400 Invalid Onboarding",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        860,
+        420
+      ],
+      "parameters": {
+        "options": {
+          "responseCode": 400
+        },
+        "respondBody": "={{ JSON.stringify({ ok: false, error: $('Normalize Onboarding Payload').item.json.validation_error }) }}",
+        "respondWith": "json"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "2e51f843-539e-4c60-b91d-d5197c351b6b",
+      "name": "Upsert Customer Record",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        900,
+        180
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "customer_key",
+              "id": "customer_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "customer_code",
+              "id": "customer_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "name",
+              "id": "name",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "email",
+              "id": "email",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "company",
+              "id": "company",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "subscription_plan",
+              "id": "subscription_plan",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "mrr_usd",
+              "id": "mrr_usd",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "account_status",
+              "id": "account_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_active_days",
+              "id": "last_active_days",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "open_tickets_count",
+              "id": "open_tickets_count",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "total_tickets_count",
+              "id": "total_tickets_count",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "current_risk_level",
+              "id": "current_risk_level",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "engagement_trend",
+              "id": "engagement_trend",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "risk_score",
+              "id": "risk_score",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_reason",
+              "id": "last_reason",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "recommended_action",
+              "id": "recommended_action",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "onboarded_at",
+              "id": "onboarded_at",
+              "required": false,
+              "type": "dateTime"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_analyzed_at",
+              "id": "last_analyzed_at",
+              "required": false,
+              "type": "dateTime"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "account_status": "={{ $('Normalize Onboarding Payload').item.json.account_status }}",
+            "company": "={{ $('Normalize Onboarding Payload').item.json.company }}",
+            "current_risk_level": "={{ $('Normalize Onboarding Payload').item.json.current_risk_level }}",
+            "customer_code": "={{ $('Normalize Onboarding Payload').item.json.customer_code }}",
+            "customer_key": "={{ $('Normalize Onboarding Payload').item.json.customer_key }}",
+            "email": "={{ $('Normalize Onboarding Payload').item.json.email }}",
+            "engagement_trend": "={{ $('Normalize Onboarding Payload').item.json.engagement_trend }}",
+            "last_active_days": "={{ $('Normalize Onboarding Payload').item.json.last_active_days }}",
+            "last_analyzed_at": "={{ $('Normalize Onboarding Payload').item.json.last_analyzed_at }}",
+            "last_reason": "={{ $('Normalize Onboarding Payload').item.json.last_reason }}",
+            "mrr_usd": "={{ $('Normalize Onboarding Payload').item.json.mrr_usd }}",
+            "name": "={{ $('Normalize Onboarding Payload').item.json.name }}",
+            "onboarded_at": "={{ $('Normalize Onboarding Payload').item.json.onboarded_at }}",
+            "open_tickets_count": "={{ $('Normalize Onboarding Payload').item.json.open_tickets_count }}",
+            "recommended_action": "={{ $('Normalize Onboarding Payload').item.json.recommended_action }}",
+            "risk_score": "={{ $('Normalize Onboarding Payload').item.json.risk_score }}",
+            "subscription_plan": "={{ $('Normalize Onboarding Payload').item.json.subscription_plan }}",
+            "total_tickets_count": "={{ $('Normalize Onboarding Payload').item.json.total_tickets_count }}",
+            "updated_at": "={{ $('Normalize Onboarding Payload').item.json.updated_at }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Customers",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_CUSTOMERS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "customer_key",
+              "keyValue": "={{ $('Normalize Onboarding Payload').item.json.customer_key }}"
+            }
+          ]
+        },
+        "operation": "upsert",
+        "resource": "row"
+      }
+    },
+    {
+      "id": "fa1bda68-8202-4409-a638-594897e98b00",
+      "name": "Sync Customer Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1140,
+        180
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "customer_key"
+          ],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "customer_key",
+              "id": "customer_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "customer_code",
+              "id": "customer_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "name",
+              "id": "name",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "email",
+              "id": "email",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "company",
+              "id": "company",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "subscription_plan",
+              "id": "subscription_plan",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "mrr_usd",
+              "id": "mrr_usd",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "account_status",
+              "id": "account_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_active_days",
+              "id": "last_active_days",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "open_tickets_count",
+              "id": "open_tickets_count",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "total_tickets_count",
+              "id": "total_tickets_count",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "current_risk_level",
+              "id": "current_risk_level",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "engagement_trend",
+              "id": "engagement_trend",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "risk_score",
+              "id": "risk_score",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_reason",
+              "id": "last_reason",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "recommended_action",
+              "id": "recommended_action",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "onboarded_at",
+              "id": "onboarded_at",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_analyzed_at",
+              "id": "last_analyzed_at",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "account_status": "={{ $('Normalize Onboarding Payload').item.json.account_status }}",
+            "company": "={{ $('Normalize Onboarding Payload').item.json.company }}",
+            "current_risk_level": "={{ $('Normalize Onboarding Payload').item.json.current_risk_level }}",
+            "customer_code": "={{ $('Normalize Onboarding Payload').item.json.customer_code }}",
+            "customer_key": "={{ $('Normalize Onboarding Payload').item.json.customer_key }}",
+            "email": "={{ $('Normalize Onboarding Payload').item.json.email }}",
+            "engagement_trend": "={{ $('Normalize Onboarding Payload').item.json.engagement_trend }}",
+            "last_active_days": "={{ $('Normalize Onboarding Payload').item.json.last_active_days }}",
+            "last_analyzed_at": "={{ $('Normalize Onboarding Payload').item.json.last_analyzed_at }}",
+            "last_reason": "={{ $('Normalize Onboarding Payload').item.json.last_reason }}",
+            "mrr_usd": "={{ $('Normalize Onboarding Payload').item.json.mrr_usd }}",
+            "name": "={{ $('Normalize Onboarding Payload').item.json.name }}",
+            "onboarded_at": "={{ $('Normalize Onboarding Payload').item.json.onboarded_at }}",
+            "open_tickets_count": "={{ $('Normalize Onboarding Payload').item.json.open_tickets_count }}",
+            "recommended_action": "={{ $('Normalize Onboarding Payload').item.json.recommended_action }}",
+            "risk_score": "={{ $('Normalize Onboarding Payload').item.json.risk_score }}",
+            "subscription_plan": "={{ $('Normalize Onboarding Payload').item.json.subscription_plan }}",
+            "total_tickets_count": "={{ $('Normalize Onboarding Payload').item.json.total_tickets_count }}",
+            "updated_at": "={{ $('Normalize Onboarding Payload').item.json.updated_at }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "cachedResultName": "SaaS CRM SaaS CRM Dashboard",
+          "mode": "id",
+          "value": "CONFIGURE_GOOGLE_SHEET_ID"
+        },
+        "operation": "appendOrUpdate",
+        "resource": "sheet",
+        "sheetName": {
+          "__rl": true,
+          "cachedResultName": "Customers",
+          "mode": "list",
+          "value": "1463666776"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d8ad274a-297a-40be-a09c-4721cb18fc34",
+      "name": "Lookup Lead in CRM_Leads",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1400,
+        180
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Leads",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_LEADS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "lead_key",
+              "keyValue": "={{ $('Normalize Onboarding Payload').item.json.customer_key }}"
+            }
+          ]
+        },
+        "limit": 1,
+        "operation": "get",
+        "resource": "row",
+        "returnAll": false
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "2f1572b1-8b1d-4ca8-adc6-8d4f8fc572ac",
+      "name": "Matched Existing Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1640,
+        180
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "ml1",
+              "leftValue": "={{ Boolean($json.lead_key || $json.id) }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "2c490821-0df8-47e6-88aa-979a87b53ec6",
+      "name": "Mark Lead Converted (DB)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1880,
+        100
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "pipeline_status",
+              "id": "pipeline_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "converted_at",
+              "id": "converted_at",
+              "required": false,
+              "type": "dateTime"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "converted_at": "={{ $('Normalize Onboarding Payload').item.json.onboarded_at }}",
+            "pipeline_status": "Converted to Customer",
+            "updated_at": "={{ $('Normalize Onboarding Payload').item.json.updated_at }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Leads",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_LEADS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "lead_key",
+              "keyValue": "={{ $('Normalize Onboarding Payload').item.json.customer_key }}"
+            }
+          ]
+        },
+        "operation": "update",
+        "resource": "row"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "383346e9-bbd8-4d9f-82b7-8f2bd5c18ef2",
+      "name": "Mark Lead Converted (Sheet)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2120,
+        100
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "lead_key"
+          ],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "lead_key",
+              "id": "lead_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "pipeline_status",
+              "id": "pipeline_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "converted_at",
+              "id": "converted_at",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "converted_at": "={{ $('Normalize Onboarding Payload').item.json.onboarded_at }}",
+            "lead_key": "={{ $('Normalize Onboarding Payload').item.json.customer_key }}",
+            "pipeline_status": "Converted to Customer",
+            "updated_at": "={{ $('Normalize Onboarding Payload').item.json.updated_at }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "cachedResultName": "SaaS CRM SaaS CRM Dashboard",
+          "mode": "id",
+          "value": "CONFIGURE_GOOGLE_SHEET_ID"
+        },
+        "operation": "appendOrUpdate",
+        "resource": "sheet",
+        "sheetName": {
+          "__rl": true,
+          "cachedResultName": "Leads",
+          "mode": "list",
+          "value": "853091984"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "6e078024-293e-4a16-80b5-8ca822fcb52a",
+      "name": "Log Onboarding Activity",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2400,
+        240
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "event_code",
+              "id": "event_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_type",
+              "id": "entity_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_key",
+              "id": "entity_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "actor",
+              "id": "actor",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "event_type",
+              "id": "event_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "summary",
+              "id": "summary",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "details_json",
+              "id": "details_json",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "actor": "onboarding_engine",
+            "created_at": "={{ $('Normalize Onboarding Payload').item.json.onboarded_at }}",
+            "details_json": "={{ JSON.stringify({ customer_code: $('Normalize Onboarding Payload').item.json.customer_code, subscription_plan: $('Normalize Onboarding Payload').item.json.subscription_plan, mrr_usd: $('Normalize Onboarding Payload').item.json.mrr_usd }) }}",
+            "entity_key": "={{ $('Normalize Onboarding Payload').item.json.customer_key }}",
+            "entity_type": "customer",
+            "event_code": "={{ $('Normalize Onboarding Payload').item.json.event_code }}",
+            "event_type": "CUSTOMER_ONBOARDED",
+            "summary": "={{ 'Onboarded ' + $('Normalize Onboarding Payload').item.json.name + ' (' + $('Normalize Onboarding Payload').item.json.company + ') on ' + $('Normalize Onboarding Payload').item.json.subscription_plan + ' ($' + $('Normalize Onboarding Payload').item.json.mrr_usd + '/mo)' }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Activity_History",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_ACTIVITY_HISTORY"
+        },
+        "operation": "insert",
+        "resource": "row"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "ace573bb-0c45-47fc-ab48-cb1e070f312d",
+      "name": "Send Welcome Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2640,
+        240
+      ],
+      "parameters": {
+        "emailFormat": "html",
+        "fromEmail": "SaaS CRM SaaS CRM <crm-notifications@example.com>",
+        "html": "={{ $('Normalize Onboarding Payload').item.json.welcome_html }}",
+        "operation": "send",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "crm-notifications@example.com"
+        },
+        "resource": "email",
+        "subject": "={{ 'Welcome to SaaS CRM (' + $('Normalize Onboarding Payload').item.json.subscription_plan + ') — Account ' + $('Normalize Onboarding Payload').item.json.customer_code }}",
+        "toEmail": "={{ $('Normalize Onboarding Payload').item.json.email }}"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "443e0f10-49cf-49f0-96e2-285d9a5ccc87",
+      "name": "Alert Slack New Customer",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        2880,
+        240
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "channelId": {
+          "__rl": true,
+          "cachedResultName": "crm-alerts",
+          "mode": "id",
+          "value": "CONFIGURE_SLACK_CHANNEL_ID"
+        },
+        "messageType": "text",
+        "operation": "post",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        },
+        "resource": "message",
+        "select": "channel",
+        "text": "={{ $('Normalize Onboarding Payload').item.json.slack_message }}"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b4f6da64-c51a-4779-bae9-1f3a37b8d9f0",
+      "name": "From Webhook?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3120,
+        240
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "owh1",
+              "leftValue": "={{ $('Normalize Onboarding Payload').item.json.trigger_source === 'webhook' }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "ca091de0-52f1-42bc-a7b2-eeccf6df8dc5",
+      "name": "Respond 201 Customer Provisioned",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        3360,
+        240
+      ],
+      "parameters": {
+        "options": {
+          "responseCode": 201
+        },
+        "respondBody": "={{ JSON.stringify({ ok: true, workflow: 'customer_onboarding', customer_key: $('Normalize Onboarding Payload').item.json.customer_key, customer_code: $('Normalize Onboarding Payload').item.json.customer_code, subscription_plan: $('Normalize Onboarding Payload').item.json.subscription_plan, mrr_usd: $('Normalize Onboarding Payload').item.json.mrr_usd, account_status: 'Active' }) }}",
+        "respondWith": "json"
+      }
+    }
+  ],
+  "connections": {
+    "Customer Onboarding Form": {
+      "main": [
+        [
+          {
+            "node": "Normalize Onboarding Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook — Onboard Customer API": {
+      "main": [
+        [
+          {
+            "node": "Normalize Onboarding Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Onboarding Payload": {
+      "main": [
+        [
+          {
+            "node": "Valid Onboarding Input?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Onboarding Input?": {
+      "main": [
+        [
+          {
+            "node": "Upsert Customer Record",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400 Invalid Onboarding",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upsert Customer Record": {
+      "main": [
+        [
+          {
+            "node": "Sync Customer Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Customer Sheet": {
+      "main": [
+        [
+          {
+            "node": "Lookup Lead in CRM_Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Lead in CRM_Leads": {
+      "main": [
+        [
+          {
+            "node": "Matched Existing Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Matched Existing Lead?": {
+      "main": [
+        [
+          {
+            "node": "Mark Lead Converted (DB)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Onboarding Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Converted (DB)": {
+      "main": [
+        [
+          {
+            "node": "Mark Lead Converted (Sheet)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Converted (Sheet)": {
+      "main": [
+        [
+          {
+            "node": "Log Onboarding Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Onboarding Activity": {
+      "main": [
+        [
+          {
+            "node": "Send Welcome Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Welcome Email": {
+      "main": [
+        [
+          {
+            "node": "Alert Slack New Customer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert Slack New Customer": {
+      "main": [
+        [
+          {
+            "node": "From Webhook?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From Webhook?": {
+      "main": [
+        [
+          {
+            "node": "Respond 201 Customer Provisioned",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "errorWorkflow": "CONFIGURE_ERROR_WORKFLOW_ID"
+  },
+  "active": false,
+  "tags": [
+    "crm-customers",
+    "crm-leads",
+    "saas-crm-suite"
+  ],
+  "description": "Provisions new SaaS customers via authenticated API or web form, syncs CRM_Customers & Google Sheets, converts matching leads in CRM_Leads, and sends welcome email + Slack notifications.",
+  "nodeGroups": [
+    {
+      "id": "8661d18e-f204-420d-affe-906786510fd2",
+      "name": "1. Provision Customer Ledger",
+      "description": "Upserts canonical CRM_Customers row and mirrors to Customers Google Sheet.",
+      "nodeNames": [
+        "Upsert Customer Record",
+        "Sync Customer Sheet"
+      ]
+    },
+    {
+      "id": "ebe63c8d-8043-47d2-9e0e-fe538590b158",
+      "name": "2. Convert Lead, Audit & Notify",
+      "description": "Matches CRM_Leads by email to mark converted, logs onboarding event, sends SMTP welcome & Slack notice, and replies to webhook.",
+      "nodeNames": [
+        "Lookup Lead in CRM_Leads",
+        "Matched Existing Lead?",
+        "Mark Lead Converted (DB)",
+        "Mark Lead Converted (Sheet)",
+        "Log Onboarding Activity",
+        "Send Welcome Email",
+        "Alert Slack New Customer",
+        "From Webhook?",
+        "Respond 201 Customer Provisioned"
+      ]
+    }
+  ]
+}

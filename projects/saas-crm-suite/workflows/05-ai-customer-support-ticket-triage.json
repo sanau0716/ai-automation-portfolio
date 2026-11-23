@@ -1,0 +1,1697 @@
+{
+  "name": "SaaS CRM — AI Customer Support & Ticket Triage Manager",
+  "nodes": [
+    {
+      "id": "99c85c66-4456-4965-a4f9-1ca73fb1b21c",
+      "name": "Support Request Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        80,
+        140
+      ],
+      "parameters": {
+        "formDescription": "Submit a customer support request for AI triage, CRM ticket tracking, SLA escalation, and approval-gated SMTP resolution.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Customer Name",
+              "fieldType": "text",
+              "placeholder": "Elena Vance",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "elena@cloudscale.io",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Company",
+              "fieldType": "text",
+              "placeholder": "CloudScale IO",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Subject",
+              "fieldType": "text",
+              "placeholder": "Webhook timeout on high-volume sync",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Urgency Hint",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Normal"
+                  },
+                  {
+                    "option": "High"
+                  },
+                  {
+                    "option": "Outage / Blocking"
+                  }
+                ]
+              },
+              "fieldType": "dropdown",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Support Message",
+              "fieldType": "textarea",
+              "placeholder": "Describe the issue, impact, and steps to reproduce.",
+              "requiredField": true
+            }
+          ]
+        },
+        "formTitle": "SaaS CRM SaaS CRM — Support Intake",
+        "options": {
+          "appendAttribution": false
+        },
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "id": "ac12adf9-0aa4-4962-9c16-24a132b00e12",
+      "name": "Webhook — Support Ticket API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        380
+      ],
+      "parameters": {
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "options": {},
+        "path": "crm/v1/support/tickets",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "a13597ca-b47d-4dfb-b25d-91268356483f",
+      "name": "Normalize Support Ticket",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        340,
+        260
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.item.json || {};\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst isWebhook = Boolean(raw.headers || raw.body);\n\nconst name = String(body['Customer Name'] ?? body.customer_name ?? body.name ?? '').trim();\nconst email = String(body.Email ?? body.email ?? body.customer_email ?? '').trim().toLowerCase();\nconst company = String(body.Company ?? body.company ?? '').trim() || 'Unspecified';\nconst subject = String(body.Subject ?? body.subject ?? '').trim();\nconst message = String(body['Support Message'] ?? body.message ?? body.body_text ?? '').trim();\nconst urgencyHint = String(body['Urgency Hint'] ?? body.urgency_hint ?? body.urgency ?? 'Normal').trim();\nconst channel = String(body.channel || (isWebhook ? 'api_webhook' : 'support_form')).trim();\n\nconst emailValid = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);\nconst selfOrDaemon = /crm-notifications@example\\.com|noreply@|no-reply@|mailer-daemon@|postmaster@/i.test(email);\nconst isValid = emailValid && !selfOrDaemon && subject.length >= 2 && message.length >= 3;\n\nconst nowIso = new Date().toISOString();\nconst ticketCode = String(body.ticket_code || `TKT-${Date.now().toString(36).toUpperCase()}`).trim().toUpperCase();\n\nreturn {\n  json: {\n    trigger_source: isWebhook ? 'webhook' : 'form',\n    is_valid: isValid,\n    validation_error: !emailValid ? 'Valid customer email is required.' : (selfOrDaemon ? 'Blocked automated/self-reply sender.' : 'Subject and support message are required.'),\n    ticket_code: ticketCode,\n    customer_key: email,\n    customer_name: name || (email ? email.split('@')[0] : 'Customer'),\n    customer_email: email,\n    company,\n    subject,\n    message,\n    urgency_hint: urgencyHint,\n    channel,\n    created_at: nowIso,\n    updated_at: nowIso,\n  },\n};",
+        "mode": "runOnceForEachItem"
+      }
+    },
+    {
+      "id": "431362f6-a254-4124-b8a6-e3ad0b0979f8",
+      "name": "Valid Ticket Input?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        580,
+        260
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "vt1",
+              "leftValue": "={{ $json.is_valid }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "0c1c5962-206e-445a-bcc1-53db8bff8028",
+      "name": "Respond 400 Invalid Ticket",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        820,
+        440
+      ],
+      "parameters": {
+        "options": {
+          "responseCode": 400
+        },
+        "respondBody": "={{ JSON.stringify({ ok: false, error: $('Normalize Support Ticket').item.json.validation_error }) }}",
+        "respondWith": "json"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "804992df-5c41-411e-9099-677c13af5dbf",
+      "name": "Persist Raw Ticket Intake",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        860,
+        180
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "ticket_code",
+              "id": "ticket_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "customer_key",
+              "id": "customer_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "customer_name",
+              "id": "customer_name",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "customer_email",
+              "id": "customer_email",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "known_customer",
+              "id": "known_customer",
+              "required": false,
+              "type": "boolean"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "subscription_plan",
+              "id": "subscription_plan",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "subject",
+              "id": "subject",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "channel",
+              "id": "channel",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "intent",
+              "id": "intent",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "urgency",
+              "id": "urgency",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "human_intervention",
+              "id": "human_intervention",
+              "required": false,
+              "type": "boolean"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "ticket_status",
+              "id": "ticket_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "required": false,
+              "type": "dateTime"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "channel": "={{ $json.channel }}",
+            "created_at": "={{ $json.created_at }}",
+            "customer_email": "={{ $json.customer_email }}",
+            "customer_key": "={{ $json.customer_key }}",
+            "customer_name": "={{ $json.customer_name }}",
+            "human_intervention": false,
+            "intent": "Pending",
+            "known_customer": false,
+            "message": "={{ $json.message }}",
+            "subject": "={{ $json.subject }}",
+            "subscription_plan": "Unknown",
+            "ticket_code": "={{ $json.ticket_code }}",
+            "ticket_status": "RECEIVED",
+            "updated_at": "={{ $json.updated_at }}",
+            "urgency": "MEDIUM"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Support_Tickets",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_SUPPORT_TICKETS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "ticket_code",
+              "keyValue": "={{ $json.ticket_code }}"
+            }
+          ]
+        },
+        "operation": "upsert",
+        "resource": "row"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "1bd9b60a-08f6-4441-abed-9e1d61e9d9c6",
+      "name": "Lookup Customer Profile",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1100,
+        180
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Customers",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_CUSTOMERS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "customer_key",
+              "keyValue": "={{ $('Normalize Support Ticket').item.json.customer_key }}"
+            }
+          ]
+        },
+        "limit": 1,
+        "operation": "get",
+        "resource": "row",
+        "returnAll": false
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "067ce5b0-4c04-41cf-9bb4-1aad918bce7b",
+      "name": "AI Support Triage Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1360,
+        180
+      ],
+      "parameters": {
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an AI SaaS Customer Support Triage Specialist for SaaS CRM. Classify each ticket cleanly, assess urgency (LOW, MEDIUM, HIGH, CRITICAL), summarize in 1-2 sentences, flag requires_escalation=true for outages, billing disputes, cancellations, security/data loss, or frustrated enterprise users, and draft a calm, accurate, empathetic customer reply body (plain text without greeting or signature). Never promise unauthorized refunds or SLAs."
+        },
+        "promptType": "define",
+        "text": "=Triage this support request:\\n\\nTicket Code: {{ $('Normalize Support Ticket').item.json.ticket_code }}\\nSender: {{ $('Normalize Support Ticket').item.json.customer_name }} <{{ $('Normalize Support Ticket').item.json.customer_email }}>\\nKnown CRM Customer: {{ Boolean($json.customer_key || $json.id) ? ('YES — Plan: ' + $json.subscription_plan + ', MRR: $' + $json.mrr_usd + ', Risk: ' + $json.current_risk_level) : 'NO (Unknown/Prospect Sender)' }}\\nSubject: {{ $('Normalize Support Ticket').item.json.subject }}\\nUrgency Hint: {{ $('Normalize Support Ticket').item.json.urgency_hint }}\\nMessage:\\n{{ $('Normalize Support Ticket').item.json.message }}"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "e8737789-bef6-4ca9-879c-3ae3d428c666",
+      "name": "OpenRouter Support LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        400
+      ],
+      "parameters": {
+        "model": "google/gemini-3.1-flash-lite",
+        "options": {
+          "maxTokens": 1200,
+          "temperature": 0.2
+        }
+      }
+    },
+    {
+      "id": "5b68e0af-b202-4744-a60c-6d6c891639dd",
+      "name": "Support Triage Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1500,
+        400
+      ],
+      "parameters": {
+        "inputSchema": "{\"type\":\"object\",\"properties\":{\"intent\":{\"type\":\"string\",\"enum\":[\"Billing & Refund\",\"Technical Bug\",\"Account & Onboarding\",\"Feature Request\",\"Cancellation / Dispute\",\"General Inquiry\"]},\"urgency\":{\"type\":\"string\",\"enum\":[\"LOW\",\"MEDIUM\",\"HIGH\",\"CRITICAL\"]},\"ai_summary\":{\"type\":\"string\"},\"ai_draft_reply\":{\"type\":\"string\"},\"requires_escalation\":{\"type\":\"boolean\"}},\"required\":[\"intent\",\"urgency\",\"ai_summary\",\"ai_draft_reply\",\"requires_escalation\"],\"additionalProperties\":false}",
+        "schemaType": "manual"
+      }
+    },
+    {
+      "id": "48b87198-0447-4b13-b376-bf929bc74697",
+      "name": "Apply Triage & Safety Override",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1640,
+        180
+      ],
+      "parameters": {
+        "jsCode": "const t = $('Normalize Support Ticket').item.json;\nconst cust = $('Lookup Customer Profile').item.json || {};\nconst raw = $input.item.json || {};\nconst ai = (raw.output && typeof raw.output === 'object') ? raw.output : raw;\n\nconst knownCustomer = Boolean(cust.customer_key || cust.id);\nconst subPlan = knownCustomer ? String(cust.subscription_plan || 'Active') : 'Unknown / Prospect';\nconst combinedText = `${t.subject} ${t.message} ${t.urgency_hint}`.toLowerCase();\n\nconst criticalMatch = /outage|production down|data loss|security|breach|legal|lawyer/i.test(combinedText);\nconst highMatch = /cancel|refund|chargeback|dispute|urgent|blocking|emergency/i.test(combinedText);\nconst aiFailed = Boolean(raw.error) || !ai.urgency;\n\nlet urgency = String(ai.urgency || 'MEDIUM').toUpperCase();\nif (!['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'].includes(urgency)) urgency = 'MEDIUM';\nif (criticalMatch) urgency = 'CRITICAL';\nelse if (highMatch && (urgency === 'LOW' || urgency === 'MEDIUM')) urgency = 'HIGH';\nelse if (aiFailed && urgency !== 'CRITICAL') urgency = 'HIGH';\n\nconst intent = String(ai.intent || (highMatch ? 'Cancellation / Dispute' : 'General Inquiry')).trim();\nconst humanIntervention = Boolean(ai.requires_escalation) || urgency === 'HIGH' || urgency === 'CRITICAL' || aiFailed;\nconst aiSummary = String(ai.ai_summary || t.subject).trim();\nconst aiDraftReply = String(ai.ai_draft_reply || `Thank you for contacting SaaS CRM support regarding \"${t.subject}\". Our engineering team has logged ticket ${t.ticket_code} and will follow up with concrete next steps shortly.`).trim();\n\nconst nowIso = new Date().toISOString();\nconst customerName = knownCustomer ? (cust.name || t.customer_name) : t.customer_name;\nconst nextOpenTickets = knownCustomer ? Number(cust.open_tickets_count || 0) + 1 : 0;\nconst nextTotalTickets = knownCustomer ? Number(cust.total_tickets_count || 0) + 1 : 0;\nconst ticketStatus = humanIntervention ? 'Escalated to Human' : 'Awaiting Approval';\n\nconst escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst replyHtml = `\n<div style=\"font-family:Inter,Segoe UI,Arial,sans-serif;max-width:600px;margin:0 auto;color:#111827;line-height:1.6;\">\n  <p>Hi ${escHtml(customerName)},</p>\n  <p>${escHtml(aiDraftReply).replace(/\\n/g, '<br>')}</p>\n  <p style=\"font-size:12px;color:#64748b;margin-top:16px;\">Ticket Reference: <code>${escHtml(t.ticket_code)}</code></p>\n  <p>Best regards,<br><strong>SaaS CRM Support Team</strong></p>\n</div>`.trim();\n\nconst escalationHtml = `<h2>[${escHtml(urgency)}] Support Escalation — ${escHtml(t.ticket_code)}</h2><p><strong>Customer:</strong> ${escHtml(customerName)} (${escHtml(t.customer_email)})</p><p><strong>CRM Account:</strong> ${knownCustomer ? escHtml(subPlan) + ' ($' + Number(cust.mrr_usd || 0) + '/mo MRR)' : 'Unknown / Prospect Sender'}</p><p><strong>Intent:</strong> ${escHtml(intent)} | <strong>Urgency:</strong> ${escHtml(urgency)}</p><p><strong>AI Summary:</strong> ${escHtml(aiSummary)}</p><p><strong>Message:</strong><br>${escHtml(t.message)}</p><p><strong>AI Draft Suggestion:</strong><br>${escHtml(aiDraftReply)}</p>`;\n\nreturn {\n  json: {\n    trigger_source: t.trigger_source,\n    ticket_code: t.ticket_code,\n    customer_key: t.customer_key,\n    customer_name: customerName,\n    customer_email: t.customer_email,\n    known_customer: knownCustomer,\n    subscription_plan: subPlan,\n    subject: t.subject,\n    message: t.message,\n    channel: t.channel,\n    intent,\n    urgency,\n    ai_summary: aiSummary,\n    ai_draft_reply: aiDraftReply,\n    human_intervention: humanIntervention,\n    ticket_status: ticketStatus,\n    next_open_tickets: nextOpenTickets,\n    next_total_tickets: nextTotalTickets,\n    created_at: t.created_at,\n    updated_at: nowIso,\n    event_code: `SUP-${Date.now().toString(36).toUpperCase()}`,\n    reply_html: replyHtml,\n    escalation_html: escalationHtml,\n    slack_message: `:ticket: *[${urgency}] Support Escalation — ${t.ticket_code}*\\n*Sender:* ${customerName} (${t.customer_email}) | *Plan:* ${subPlan}\\n*Intent:* ${intent}\\n*Summary:* ${aiSummary}\\n*Subject:* ${t.subject}`,\n  },\n};",
+        "mode": "runOnceForEachItem"
+      }
+    },
+    {
+      "id": "52be241a-3604-46e4-9fa8-af6f2d3f1dec",
+      "name": "Save Triaged Ticket (DB)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1900,
+        180
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "ticket_code",
+              "id": "ticket_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "customer_key",
+              "id": "customer_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "customer_name",
+              "id": "customer_name",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "customer_email",
+              "id": "customer_email",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "known_customer",
+              "id": "known_customer",
+              "required": false,
+              "type": "boolean"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "subscription_plan",
+              "id": "subscription_plan",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "subject",
+              "id": "subject",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "channel",
+              "id": "channel",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "intent",
+              "id": "intent",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "urgency",
+              "id": "urgency",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "ai_summary",
+              "id": "ai_summary",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "ai_draft_reply",
+              "id": "ai_draft_reply",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "human_intervention",
+              "id": "human_intervention",
+              "required": false,
+              "type": "boolean"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "ticket_status",
+              "id": "ticket_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "required": false,
+              "type": "dateTime"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "ai_draft_reply": "={{ $('Apply Triage & Safety Override').item.json.ai_draft_reply }}",
+            "ai_summary": "={{ $('Apply Triage & Safety Override').item.json.ai_summary }}",
+            "channel": "={{ $('Apply Triage & Safety Override').item.json.channel }}",
+            "created_at": "={{ $('Apply Triage & Safety Override').item.json.created_at }}",
+            "customer_email": "={{ $('Apply Triage & Safety Override').item.json.customer_email }}",
+            "customer_key": "={{ $('Apply Triage & Safety Override').item.json.customer_key }}",
+            "customer_name": "={{ $('Apply Triage & Safety Override').item.json.customer_name }}",
+            "human_intervention": "={{ $('Apply Triage & Safety Override').item.json.human_intervention }}",
+            "intent": "={{ $('Apply Triage & Safety Override').item.json.intent }}",
+            "known_customer": "={{ $('Apply Triage & Safety Override').item.json.known_customer }}",
+            "message": "={{ $('Apply Triage & Safety Override').item.json.message }}",
+            "subject": "={{ $('Apply Triage & Safety Override').item.json.subject }}",
+            "subscription_plan": "={{ $('Apply Triage & Safety Override').item.json.subscription_plan }}",
+            "ticket_code": "={{ $('Apply Triage & Safety Override').item.json.ticket_code }}",
+            "ticket_status": "={{ $('Apply Triage & Safety Override').item.json.ticket_status }}",
+            "updated_at": "={{ $('Apply Triage & Safety Override').item.json.updated_at }}",
+            "urgency": "={{ $('Apply Triage & Safety Override').item.json.urgency }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Support_Tickets",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_SUPPORT_TICKETS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "ticket_code",
+              "keyValue": "={{ $('Apply Triage & Safety Override').item.json.ticket_code }}"
+            }
+          ]
+        },
+        "operation": "upsert",
+        "resource": "row"
+      }
+    },
+    {
+      "id": "a77f2479-3c81-4974-9d28-6a4f58bc230f",
+      "name": "Sync Ticket Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2140,
+        180
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "ticket_code"
+          ],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "ticket_code",
+              "id": "ticket_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "customer_key",
+              "id": "customer_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "customer_name",
+              "id": "customer_name",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "customer_email",
+              "id": "customer_email",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "known_customer",
+              "id": "known_customer",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "subscription_plan",
+              "id": "subscription_plan",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "subject",
+              "id": "subject",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "message",
+              "id": "message",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "channel",
+              "id": "channel",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "intent",
+              "id": "intent",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "urgency",
+              "id": "urgency",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "ai_summary",
+              "id": "ai_summary",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "ai_draft_reply",
+              "id": "ai_draft_reply",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "human_intervention",
+              "id": "human_intervention",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "ticket_status",
+              "id": "ticket_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "ai_draft_reply": "={{ $('Apply Triage & Safety Override').item.json.ai_draft_reply }}",
+            "ai_summary": "={{ $('Apply Triage & Safety Override').item.json.ai_summary }}",
+            "channel": "={{ $('Apply Triage & Safety Override').item.json.channel }}",
+            "created_at": "={{ $('Apply Triage & Safety Override').item.json.created_at }}",
+            "customer_email": "={{ $('Apply Triage & Safety Override').item.json.customer_email }}",
+            "customer_key": "={{ $('Apply Triage & Safety Override').item.json.customer_key }}",
+            "customer_name": "={{ $('Apply Triage & Safety Override').item.json.customer_name }}",
+            "human_intervention": "={{ $('Apply Triage & Safety Override').item.json.human_intervention }}",
+            "intent": "={{ $('Apply Triage & Safety Override').item.json.intent }}",
+            "known_customer": "={{ $('Apply Triage & Safety Override').item.json.known_customer }}",
+            "message": "={{ $('Apply Triage & Safety Override').item.json.message }}",
+            "subject": "={{ $('Apply Triage & Safety Override').item.json.subject }}",
+            "subscription_plan": "={{ $('Apply Triage & Safety Override').item.json.subscription_plan }}",
+            "ticket_code": "={{ $('Apply Triage & Safety Override').item.json.ticket_code }}",
+            "ticket_status": "={{ $('Apply Triage & Safety Override').item.json.ticket_status }}",
+            "updated_at": "={{ $('Apply Triage & Safety Override').item.json.updated_at }}",
+            "urgency": "={{ $('Apply Triage & Safety Override').item.json.urgency }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "cachedResultName": "SaaS CRM SaaS CRM Dashboard",
+          "mode": "id",
+          "value": "CONFIGURE_GOOGLE_SHEET_ID"
+        },
+        "operation": "appendOrUpdate",
+        "resource": "sheet",
+        "sheetName": {
+          "__rl": true,
+          "cachedResultName": "Support_Tickets",
+          "mode": "list",
+          "value": "17708827"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "0e836d21-75c5-4e9b-afae-f4b2d6e084be",
+      "name": "Known Customer?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2380,
+        180
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "kc1",
+              "leftValue": "={{ $('Apply Triage & Safety Override').item.json.known_customer === true }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "8b542b90-86e9-4f3d-a751-7aac5c7a29c2",
+      "name": "Update Customer Ticket Count (DB)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2620,
+        60
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "open_tickets_count",
+              "id": "open_tickets_count",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "total_tickets_count",
+              "id": "total_tickets_count",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "open_tickets_count": "={{ $('Apply Triage & Safety Override').item.json.next_open_tickets }}",
+            "total_tickets_count": "={{ $('Apply Triage & Safety Override').item.json.next_total_tickets }}",
+            "updated_at": "={{ $('Apply Triage & Safety Override').item.json.updated_at }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Customers",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_CUSTOMERS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "customer_key",
+              "keyValue": "={{ $('Apply Triage & Safety Override').item.json.customer_key }}"
+            }
+          ]
+        },
+        "operation": "update",
+        "resource": "row"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "34e828e8-81ca-457a-9787-96e4e11ee459",
+      "name": "Sync Customer Ticket Count (Sheet)",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2860,
+        60
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "customer_key"
+          ],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "customer_key",
+              "id": "customer_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "open_tickets_count",
+              "id": "open_tickets_count",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "total_tickets_count",
+              "id": "total_tickets_count",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "customer_key": "={{ $('Apply Triage & Safety Override').item.json.customer_key }}",
+            "open_tickets_count": "={{ $('Apply Triage & Safety Override').item.json.next_open_tickets }}",
+            "total_tickets_count": "={{ $('Apply Triage & Safety Override').item.json.next_total_tickets }}",
+            "updated_at": "={{ $('Apply Triage & Safety Override').item.json.updated_at }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "cachedResultName": "SaaS CRM SaaS CRM Dashboard",
+          "mode": "id",
+          "value": "CONFIGURE_GOOGLE_SHEET_ID"
+        },
+        "operation": "appendOrUpdate",
+        "resource": "sheet",
+        "sheetName": {
+          "__rl": true,
+          "cachedResultName": "Customers",
+          "mode": "list",
+          "value": "1463666776"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "4e87dc6b-7cfa-49a0-a3ea-44f78dfb90d2",
+      "name": "Log Support Activity",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        3120,
+        180
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "event_code",
+              "id": "event_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_type",
+              "id": "entity_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_key",
+              "id": "entity_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "actor",
+              "id": "actor",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "event_type",
+              "id": "event_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "summary",
+              "id": "summary",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "details_json",
+              "id": "details_json",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "actor": "ai_support_triage",
+            "created_at": "={{ $('Apply Triage & Safety Override').item.json.updated_at }}",
+            "details_json": "={{ JSON.stringify({ ticket_code: $('Apply Triage & Safety Override').item.json.ticket_code, intent: $('Apply Triage & Safety Override').item.json.intent, urgency: $('Apply Triage & Safety Override').item.json.urgency, known_customer: $('Apply Triage & Safety Override').item.json.known_customer }) }}",
+            "entity_key": "={{ $('Apply Triage & Safety Override').item.json.ticket_code }}",
+            "entity_type": "ticket",
+            "event_code": "={{ $('Apply Triage & Safety Override').item.json.event_code }}",
+            "event_type": "={{ 'TICKET_' + $('Apply Triage & Safety Override').item.json.urgency }}",
+            "summary": "={{ '[' + $('Apply Triage & Safety Override').item.json.urgency + '] ' + $('Apply Triage & Safety Override').item.json.subject + ' (' + $('Apply Triage & Safety Override').item.json.customer_email + ')' }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Activity_History",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_ACTIVITY_HISTORY"
+        },
+        "operation": "insert",
+        "resource": "row"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "e70bcb20-1151-4e9f-8f2e-50f08674e681",
+      "name": "From Webhook?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3380,
+        180
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "sfw1",
+              "leftValue": "={{ $('Apply Triage & Safety Override').item.json.trigger_source === 'webhook' }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "81ad2213-bef9-4f16-a33d-c258fcf15525",
+      "name": "Respond 201 Ticket Created",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        3620,
+        80
+      ],
+      "parameters": {
+        "options": {
+          "responseCode": 201
+        },
+        "respondBody": "={{ JSON.stringify({ ok: true, workflow: 'support_triage', ticket_code: $('Apply Triage & Safety Override').item.json.ticket_code, intent: $('Apply Triage & Safety Override').item.json.intent, urgency: $('Apply Triage & Safety Override').item.json.urgency, ticket_status: $('Apply Triage & Safety Override').item.json.ticket_status, known_customer: $('Apply Triage & Safety Override').item.json.known_customer }) }}",
+        "respondWith": "json"
+      }
+    },
+    {
+      "id": "7c44e0b4-cb48-4cca-9aa4-48d9f63178a7",
+      "name": "Needs Immediate Escalation?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3880,
+        180
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "esc1",
+              "leftValue": "={{ $('Apply Triage & Safety Override').item.json.human_intervention === true }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "44f925b8-e401-4bc7-b6b3-9d4308de735d",
+      "name": "Escalate Ticket (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        4140,
+        80
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "channelId": {
+          "__rl": true,
+          "cachedResultName": "crm-alerts",
+          "mode": "id",
+          "value": "CONFIGURE_SLACK_CHANNEL_ID"
+        },
+        "messageType": "text",
+        "operation": "post",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        },
+        "resource": "message",
+        "select": "channel",
+        "text": "={{ $('Apply Triage & Safety Override').item.json.slack_message }}"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "97a750c0-a9bd-402d-906c-76f566964ef7",
+      "name": "Send Escalation Alert (Email)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        4400,
+        80
+      ],
+      "parameters": {
+        "emailFormat": "html",
+        "fromEmail": "SaaS CRM SaaS CRM <crm-notifications@example.com>",
+        "html": "={{ $('Apply Triage & Safety Override').item.json.escalation_html }}",
+        "operation": "send",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "crm-notifications@example.com"
+        },
+        "resource": "email",
+        "subject": "={{ '[' + $('Apply Triage & Safety Override').item.json.urgency + ' Support Escalation] ' + $('Apply Triage & Safety Override').item.json.ticket_code + ' — ' + $('Apply Triage & Safety Override').item.json.subject }}",
+        "toEmail": "ops-alerts@example.com"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "9c252d53-576d-4f13-b63e-ba34b4f66b02",
+      "name": "Request Reply Approval (Email)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        4140,
+        300
+      ],
+      "parameters": {
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "approveLabel": "Approve & Send Reply",
+            "disapproveLabel": "Hold for Manual Edit"
+          }
+        },
+        "fromEmail": "SaaS CRM SaaS CRM <crm-notifications@example.com>",
+        "message": "=Support Ticket: {{ $('Apply Triage & Safety Override').item.json.ticket_code }}\\nCustomer: {{ $('Apply Triage & Safety Override').item.json.customer_name }} ({{ $('Apply Triage & Safety Override').item.json.customer_email }})\\nKnown Customer: {{ $('Apply Triage & Safety Override').item.json.known_customer }}\\nUrgency: {{ $('Apply Triage & Safety Override').item.json.urgency }} | Intent: {{ $('Apply Triage & Safety Override').item.json.intent }}\\nSubject: {{ $('Apply Triage & Safety Override').item.json.subject }}\\n\\nDraft AI Reply:\\n{{ $('Apply Triage & Safety Override').item.json.ai_draft_reply }}",
+        "operation": "sendAndWait",
+        "options": {
+          "appendAttribution": false,
+          "limitWaitTime": {
+            "values": {
+              "limitType": "afterTimeInterval",
+              "resumeAmount": 24,
+              "resumeUnit": "hours"
+            }
+          }
+        },
+        "resource": "email",
+        "responseType": "approval",
+        "subject": "={{ '[Approve Support Reply] ' + $('Apply Triage & Safety Override').item.json.ticket_code + ' — ' + $('Apply Triage & Safety Override').item.json.subject }}",
+        "toEmail": "ops-alerts@example.com"
+      }
+    },
+    {
+      "id": "6d582b76-e99c-479b-a53b-116abecd6289",
+      "name": "Reply Approved?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        4400,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "ra1",
+              "leftValue": "={{ $json.data?.approved === true }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "e98a95fc-5e82-4c2b-a1be-901b3c8482e7",
+      "name": "Send Customer Support Reply",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        4660,
+        300
+      ],
+      "parameters": {
+        "emailFormat": "html",
+        "fromEmail": "SaaS CRM SaaS CRM <crm-notifications@example.com>",
+        "html": "={{ $('Apply Triage & Safety Override').item.json.reply_html }}",
+        "operation": "send",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "crm-notifications@example.com"
+        },
+        "resource": "email",
+        "subject": "={{ 'Re: ' + $('Apply Triage & Safety Override').item.json.subject + ' [' + $('Apply Triage & Safety Override').item.json.ticket_code + ']' }}",
+        "toEmail": "={{ $('Apply Triage & Safety Override').item.json.customer_email }}"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "66ed0e53-38de-496c-b7b6-ffc61423cf0e",
+      "name": "Mark Ticket Replied (DB)",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        4900,
+        300
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "ticket_status",
+              "id": "ticket_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "ticket_status": "Replied",
+            "updated_at": "={{ $now.toISO() }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Support_Tickets",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_SUPPORT_TICKETS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "ticket_code",
+              "keyValue": "={{ $('Apply Triage & Safety Override').item.json.ticket_code }}"
+            }
+          ]
+        },
+        "operation": "update",
+        "resource": "row"
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Support Request Form": {
+      "main": [
+        [
+          {
+            "node": "Normalize Support Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook — Support Ticket API": {
+      "main": [
+        [
+          {
+            "node": "Normalize Support Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Support Ticket": {
+      "main": [
+        [
+          {
+            "node": "Valid Ticket Input?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Ticket Input?": {
+      "main": [
+        [
+          {
+            "node": "Persist Raw Ticket Intake",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400 Invalid Ticket",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Raw Ticket Intake": {
+      "main": [
+        [
+          {
+            "node": "Lookup Customer Profile",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Customer Profile": {
+      "main": [
+        [
+          {
+            "node": "AI Support Triage Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Support LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Support Triage Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Support Triage Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Support Triage Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Support Triage Agent": {
+      "main": [
+        [
+          {
+            "node": "Apply Triage & Safety Override",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Apply Triage & Safety Override": {
+      "main": [
+        [
+          {
+            "node": "Save Triaged Ticket (DB)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Triaged Ticket (DB)": {
+      "main": [
+        [
+          {
+            "node": "Sync Ticket Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Ticket Sheet": {
+      "main": [
+        [
+          {
+            "node": "Known Customer?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Known Customer?": {
+      "main": [
+        [
+          {
+            "node": "Update Customer Ticket Count (DB)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Support Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Customer Ticket Count (DB)": {
+      "main": [
+        [
+          {
+            "node": "Sync Customer Ticket Count (Sheet)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Customer Ticket Count (Sheet)": {
+      "main": [
+        [
+          {
+            "node": "Log Support Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Support Activity": {
+      "main": [
+        [
+          {
+            "node": "From Webhook?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From Webhook?": {
+      "main": [
+        [
+          {
+            "node": "Respond 201 Ticket Created",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Needs Immediate Escalation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond 201 Ticket Created": {
+      "main": [
+        [
+          {
+            "node": "Needs Immediate Escalation?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Needs Immediate Escalation?": {
+      "main": [
+        [
+          {
+            "node": "Escalate Ticket (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Request Reply Approval (Email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalate Ticket (Slack)": {
+      "main": [
+        [
+          {
+            "node": "Send Escalation Alert (Email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Reply Approval (Email)": {
+      "main": [
+        [
+          {
+            "node": "Reply Approved?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reply Approved?": {
+      "main": [
+        [
+          {
+            "node": "Send Customer Support Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Customer Support Reply": {
+      "main": [
+        [
+          {
+            "node": "Mark Ticket Replied (DB)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "errorWorkflow": "CONFIGURE_ERROR_WORKFLOW_ID"
+  },
+  "active": false,
+  "tags": [
+    "crm-support",
+    "saas-crm-suite"
+  ],
+  "description": "AI support ticket intake via Form & Webhook with customer CRM lookup, safety override, Google Sheet sync, Slack urgent alerts, and Purelymail SMTP HITL approvals.",
+  "nodeGroups": [
+    {
+      "id": "1aced4ab-f41d-411e-a2c2-b5d43f59251d",
+      "name": "1. AI Triage & CRM Persistence",
+      "description": "Persists raw ticket, looks up customer profile, runs OpenRouter AI triage + safety guard, updates CRM DB/Sheet, and logs activity.",
+      "nodeNames": [
+        "Persist Raw Ticket Intake",
+        "Lookup Customer Profile",
+        "AI Support Triage Agent",
+        "OpenRouter Support LLM",
+        "Support Triage Schema",
+        "Apply Triage & Safety Override",
+        "Save Triaged Ticket (DB)",
+        "Sync Ticket Sheet",
+        "Known Customer?",
+        "Update Customer Ticket Count (DB)",
+        "Sync Customer Ticket Count (Sheet)",
+        "Log Support Activity"
+      ]
+    },
+    {
+      "id": "32c3a36a-ecdf-4693-b86f-8d9dc90dce53",
+      "name": "2. API Reply, Escalation & Approval",
+      "description": "Responds to API webhooks and routes tickets to immediate Slack/SMTP escalation or approval-gated customer reply.",
+      "nodeNames": [
+        "From Webhook?",
+        "Respond 201 Ticket Created",
+        "Needs Immediate Escalation?",
+        "Escalate Ticket (Slack)",
+        "Send Escalation Alert (Email)",
+        "Request Reply Approval (Email)",
+        "Reply Approved?",
+        "Send Customer Support Reply",
+        "Mark Ticket Replied (DB)"
+      ]
+    }
+  ]
+}

@@ -8,6 +8,7 @@ Open a project by the business problem it addresses. Each project README explain
 
 | Project | Engineering focus | Current stage and evidence |
 |---|---|---|
+| **[SaaS CRM Suite — Revenue, Churn & Support Ops](saas-crm-suite)** | 8 coordinated workflows (158 nodes), 4 shared Data Tables, Google Sheets mirror, Admin SPA & API, deterministic fallbacks, shared error handler | Active on developer instance; 17 passing Nov 23 runs with synthetic test records; 8 sanitized exports |
 | **[CommercePilot — Shopify AI Shopping Assistant](commercepilot)** | Shopify app + n8n orchestration, catalog-grounded AI, App Proxy HMAC, Redis controls, variant availability, monitoring | Preview / development store; 44 successful assistant execution records; 42-node draft vs 37-node published version |
 | **[AI Lead Management](lead-management)** | Website-connected lead intake, OpenRouter qualification, JavaScript parsing, conditional Gmail routing, Google Sheets | Active 18-node workflow; 18 successful execution records; current workflow differs from historical exports |
 | **[PropertyFix AI 2.0](propertyfix-ai)** | Maintenance intake, AI triage, deterministic safety rules, persistent case records, manager approval | Active 17-node internal POC; 10 successful synthetic test runs; notifications/approval pinned or simulated |

@@ -1,0 +1,1262 @@
+{
+  "name": "SaaS CRM — Lead Intake & Qualification Gateway",
+  "nodes": [
+    {
+      "id": "a57aa862-ea5f-4bc3-8aa2-99a82c85d557",
+      "name": "Lead Intake Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        100,
+        140
+      ],
+      "parameters": {
+        "formDescription": "Submit a prospective client inquiry for automated AI qualification, CRM storage, and personalized outreach.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Name",
+              "fieldType": "text",
+              "placeholder": "Jordan Reyes",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Email",
+              "fieldType": "email",
+              "placeholder": "jordan@company.com",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Company",
+              "fieldType": "text",
+              "placeholder": "Northstar Logistics",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Phone",
+              "fieldType": "text",
+              "placeholder": "+1 415 555 0140",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Source",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Web Form"
+                  },
+                  {
+                    "option": "LinkedIn"
+                  },
+                  {
+                    "option": "Referral"
+                  },
+                  {
+                    "option": "Partner"
+                  },
+                  {
+                    "option": "Cold Outreach"
+                  }
+                ]
+              },
+              "fieldType": "dropdown",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Inquiry Message",
+              "fieldType": "textarea",
+              "placeholder": "Tell us about your automation goals, timeline, and monthly budget.",
+              "requiredField": true
+            }
+          ]
+        },
+        "formTitle": "SaaS CRM SaaS CRM — New Lead Intake",
+        "options": {
+          "appendAttribution": false
+        },
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "id": "013b4472-1c12-4115-9923-dd139cbefc34",
+      "name": "Webhook — CRM Lead API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        100,
+        380
+      ],
+      "parameters": {
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "options": {},
+        "path": "crm/v1/leads",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "537caf17-512c-4000-afea-162c01d91fe0",
+      "name": "Normalize & Validate Lead",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        380,
+        260
+      ],
+      "parameters": {
+        "jsCode": "const raw = $input.item.json || {};\nconst body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\nconst isWebhook = Boolean(raw.headers || raw.body);\n\nconst name = String(body.Name ?? body.name ?? body.full_name ?? '').trim();\nconst emailRaw = String(body.Email ?? body.email ?? body.work_email ?? '').trim().toLowerCase();\nconst company = String(body.Company ?? body.company ?? body.organization ?? '').trim() || 'Independent / Unspecified';\nconst phone = String(body.Phone ?? body.phone ?? '').trim();\nconst source = String(body.Source ?? body.source ?? (isWebhook ? 'API Webhook' : 'Web Form')).trim();\nconst inquiryMessage = String(body['Inquiry Message'] ?? body.inquiry_message ?? body.message ?? body.inquiry ?? '').trim();\n\nconst emailRegex = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/;\nconst hasValidEmail = emailRegex.test(emailRaw);\nconst hasInquiry = inquiryMessage.length >= 3;\nconst isValid = hasValidEmail && hasInquiry;\n\nconst cleanName = name || (hasValidEmail ? emailRaw.split('@')[0] : 'Valued Prospect');\nconst leadKey = String(body.lead_key || emailRaw || `invalid-${Date.now()}`).trim().toLowerCase();\nconst nowIso = new Date().toISOString();\n\nreturn {\n  json: {\n    trigger_source: isWebhook ? 'webhook' : 'form',\n    is_valid: isValid,\n    validation_error: isValid ? '' : (!hasValidEmail ? 'A valid email address is required.' : 'Inquiry message must be at least 3 characters.'),\n    lead_key: leadKey,\n    name: cleanName,\n    email: emailRaw,\n    company,\n    phone,\n    source,\n    inquiry_message: inquiryMessage,\n    pipeline_status: 'INTAKE_RECEIVED',\n    followup_count: 0,\n    created_at: nowIso,\n    updated_at: nowIso,\n  },\n};",
+        "mode": "runOnceForEachItem"
+      }
+    },
+    {
+      "id": "4eaffe73-bc52-4309-8e27-c33c0df85afd",
+      "name": "Valid Lead Input?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        620,
+        260
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.is_valid }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "460130a5-8633-432a-a8ec-e0fb1bb5fbc8",
+      "name": "Respond 400 Validation Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        880,
+        420
+      ],
+      "parameters": {
+        "options": {
+          "responseCode": 400
+        },
+        "respondBody": "={{ JSON.stringify({ ok: false, error: $('Normalize & Validate Lead').item.json.validation_error }) }}",
+        "respondWith": "json"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "fc72bcd6-25c3-4e8b-864e-176129ad97f7",
+      "name": "Save Raw Lead Intake",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        880,
+        180
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "lead_key",
+              "id": "lead_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "name",
+              "id": "name",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "email",
+              "id": "email",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "phone",
+              "id": "phone",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "company",
+              "id": "company",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "source",
+              "id": "source",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "inquiry_message",
+              "id": "inquiry_message",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "pipeline_status",
+              "id": "pipeline_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "followup_count",
+              "id": "followup_count",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "required": false,
+              "type": "dateTime"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "company": "={{ $json.company }}",
+            "created_at": "={{ $json.created_at }}",
+            "email": "={{ $json.email }}",
+            "followup_count": "={{ $json.followup_count }}",
+            "inquiry_message": "={{ $json.inquiry_message }}",
+            "lead_key": "={{ $json.lead_key }}",
+            "name": "={{ $json.name }}",
+            "phone": "={{ $json.phone }}",
+            "pipeline_status": "={{ $json.pipeline_status }}",
+            "source": "={{ $json.source }}",
+            "updated_at": "={{ $json.updated_at }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Leads",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_LEADS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "lead_key",
+              "keyValue": "={{ $json.lead_key }}"
+            }
+          ]
+        },
+        "operation": "upsert",
+        "resource": "row"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "af5e2b35-0b55-4086-8e0d-7b76c7d4696f",
+      "name": "AI Lead Qualification Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1180,
+        180
+      ],
+      "parameters": {
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an expert B2B SaaS Lead Qualification Strategist for SaaS CRM. Score inbound leads objectively from 0-100 based on budget, urgency, authority, pain clarity, and fit for AI workflow automation. Draft a concise, natural, personalized outreach email body (plain text paragraphs, no greeting or signature lines) plus subject line. Never invent unstated facts."
+        },
+        "promptType": "define",
+        "text": "=Evaluate this inbound lead for SaaS CRM SaaS CRM:\\n\\nName: {{ $('Normalize & Validate Lead').item.json.name }}\\nEmail: {{ $('Normalize & Validate Lead').item.json.email }}\\nCompany: {{ $('Normalize & Validate Lead').item.json.company }}\\nPhone: {{ $('Normalize & Validate Lead').item.json.phone || 'Not provided' }}\\nSource: {{ $('Normalize & Validate Lead').item.json.source }}\\nInquiry Message:\\n{{ $('Normalize & Validate Lead').item.json.inquiry_message }}\\n\\nScoring rubric:\\n- 80-100: High-Value Lead (explicit budget/enterprise scale/urgent automation need)\\n- 60-79: Qualified Lead (clear business pain & intent)\\n- 40-59: Potential Lead (early exploration, vague scope)\\n- 0-39: Low-Quality Lead (spam, irrelevant, student/hobbyist with zero buyer signal)"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "15837c60-7142-43ec-ac29-57dc171d492b",
+      "name": "OpenRouter Gemini Flash-Lite",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1140,
+        400
+      ],
+      "parameters": {
+        "model": "google/gemini-3.1-flash-lite",
+        "options": {
+          "maxTokens": 1200,
+          "temperature": 0.2
+        }
+      }
+    },
+    {
+      "id": "f9be8ead-b151-470e-81e7-6662d3824a95",
+      "name": "Lead Qualification Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1320,
+        400
+      ],
+      "parameters": {
+        "inputSchema": "{\"type\":\"object\",\"properties\":{\"lead_score\":{\"type\":\"number\",\"minimum\":0,\"maximum\":100},\"classification\":{\"type\":\"string\",\"enum\":[\"High-Value Lead\",\"Qualified Lead\",\"Potential Lead\",\"Low-Quality Lead\"]},\"urgency\":{\"type\":\"string\",\"enum\":[\"HIGH\",\"MEDIUM\",\"LOW\"]},\"reason\":{\"type\":\"string\"},\"recommended_action\":{\"type\":\"string\"},\"personalized_subject\":{\"type\":\"string\"},\"personalized_body\":{\"type\":\"string\"}},\"required\":[\"lead_score\",\"classification\",\"urgency\",\"reason\",\"recommended_action\",\"personalized_subject\",\"personalized_body\"],\"additionalProperties\":false}",
+        "schemaType": "manual"
+      }
+    },
+    {
+      "id": "3b487ddc-d4fd-4007-8b45-679b6c075e79",
+      "name": "Finalize Lead Assessment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1460,
+        180
+      ],
+      "parameters": {
+        "jsCode": "const lead = $('Normalize & Validate Lead').item.json;\nconst raw = $input.item.json || {};\nconst ai = (raw.output && typeof raw.output === 'object') ? raw.output : raw;\n\nconst parsedScore = Number(ai.lead_score);\nconst aiFailed = Boolean(raw.error) || Number.isNaN(parsedScore);\nconst leadScore = aiFailed ? 55 : Math.max(0, Math.min(100, Math.round(parsedScore)));\n\nlet classification = String(ai.classification || '').trim();\nif (aiFailed || !['High-Value Lead', 'Qualified Lead', 'Potential Lead', 'Low-Quality Lead'].includes(classification)) {\n  if (leadScore >= 80) classification = 'High-Value Lead';\n  else if (leadScore >= 60) classification = 'Qualified Lead';\n  else if (leadScore >= 40) classification = 'Potential Lead';\n  else classification = 'Low-Quality Lead';\n}\n\nlet urgency = String(ai.urgency || '').trim().toUpperCase();\nif (!['HIGH', 'MEDIUM', 'LOW'].includes(urgency)) {\n  urgency = leadScore >= 80 ? 'HIGH' : (leadScore >= 50 ? 'MEDIUM' : 'LOW');\n}\n\nconst statusMap = {\n  'High-Value Lead': 'High-Value — Priority Alert',\n  'Qualified Lead': 'Qualified — Active Nurture',\n  'Potential Lead': 'Potential — Sequence Enrolled',\n  'Low-Quality Lead': 'Low-Quality — Automated Nurture',\n};\n\nconst reason = String(ai.reason || (aiFailed ? 'AI qualification fallback applied — queued for review.' : 'Evaluated via automated SaaS CRM intake.')).trim();\nconst recommendedAction = String(ai.recommended_action || (leadScore >= 80 ? 'Schedule executive discovery call within 4 business hours.' : 'Send tailored capability deck and enroll in follow-up cadence.')).trim();\nconst pipelineStatus = aiFailed ? 'Manual Review Required' : statusMap[classification];\nconst nowIso = new Date().toISOString();\n\nconst escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst safeSubject = String(ai.personalized_subject || `Next steps for ${lead.company} — SaaS CRM`).trim();\nconst defaultBody = `Thank you for reaching out to SaaS CRM regarding ${lead.company}. We reviewed your inquiry and would love to walk through how we can streamline your operations.`;\nconst safeBody = String(ai.personalized_body || defaultBody).trim();\n\nconst emailHtml = `\n<div style=\"font-family:Inter,Segoe UI,Arial,sans-serif;max-width:600px;margin:0 auto;color:#111827;line-height:1.6;\">\n  <h2 style=\"color:#0f172a;margin-bottom:8px;\">Hi ${escHtml(lead.name)},</h2>\n  <p>${escHtml(safeBody).replace(/\\n/g, '<br>')}</p>\n  <div style=\"background:#f8fafc;border-left:4px solid #2563eb;padding:12px 16px;margin:16px 0;border-radius:6px;\">\n    <strong>Recommended Next Step:</strong><br>${escHtml(recommendedAction)}\n  </div>\n  <p style=\"margin-top:20px;\">Best regards,<br><strong>Operator Name</strong><br>SaaS CRM Solutions</p>\n</div>`.trim();\n\nreturn {\n  json: {\n    trigger_source: lead.trigger_source,\n    lead_key: lead.lead_key,\n    name: lead.name,\n    email: lead.email,\n    phone: lead.phone,\n    company: lead.company,\n    source: lead.source,\n    inquiry_message: lead.inquiry_message,\n    lead_score: leadScore,\n    classification,\n    urgency,\n    reason,\n    recommended_action: recommendedAction,\n    pipeline_status: pipelineStatus,\n    followup_count: 1,\n    last_contacted_at: nowIso,\n    created_at: lead.created_at,\n    updated_at: nowIso,\n    email_subject: safeSubject,\n    email_html: emailHtml,\n    event_code: `LEAD-${Date.now().toString(36).toUpperCase()}`,\n    slack_message: `:fire: *High-Value Lead Captured (${leadScore}/100)*\\n*Name:* ${lead.name} (${lead.company})\\n*Email:* ${lead.email}\\n*Source:* ${lead.source}\\n*Reason:* ${reason}\\n*Next Action:* ${recommendedAction}`,\n    admin_alert_html: `<h2>High-Value Lead Alert — ${leadScore}/100</h2><p><strong>Name:</strong> ${escHtml(lead.name)}</p><p><strong>Company:</strong> ${escHtml(lead.company)}</p><p><strong>Email:</strong> ${escHtml(lead.email)}</p><p><strong>Source:</strong> ${escHtml(lead.source)}</p><p><strong>Reason:</strong> ${escHtml(reason)}</p><p><strong>Recommended Action:</strong> ${escHtml(recommendedAction)}</p><p><strong>Inquiry:</strong> ${escHtml(lead.inquiry_message)}</p>`,\n  },\n};",
+        "mode": "runOnceForEachItem"
+      }
+    },
+    {
+      "id": "59165585-5563-4c98-a85a-25cfeb47e66a",
+      "name": "Persist Qualified Lead",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1740,
+        180
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "lead_key",
+              "id": "lead_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "name",
+              "id": "name",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "email",
+              "id": "email",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "phone",
+              "id": "phone",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "company",
+              "id": "company",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "source",
+              "id": "source",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "inquiry_message",
+              "id": "inquiry_message",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "lead_score",
+              "id": "lead_score",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "classification",
+              "id": "classification",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "urgency",
+              "id": "urgency",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "reason",
+              "id": "reason",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "recommended_action",
+              "id": "recommended_action",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "pipeline_status",
+              "id": "pipeline_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "followup_count",
+              "id": "followup_count",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_contacted_at",
+              "id": "last_contacted_at",
+              "required": false,
+              "type": "dateTime"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "required": false,
+              "type": "dateTime"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "classification": "={{ $('Finalize Lead Assessment').item.json.classification }}",
+            "company": "={{ $('Finalize Lead Assessment').item.json.company }}",
+            "created_at": "={{ $('Finalize Lead Assessment').item.json.created_at }}",
+            "email": "={{ $('Finalize Lead Assessment').item.json.email }}",
+            "followup_count": "={{ $('Finalize Lead Assessment').item.json.followup_count }}",
+            "inquiry_message": "={{ $('Finalize Lead Assessment').item.json.inquiry_message }}",
+            "last_contacted_at": "={{ $('Finalize Lead Assessment').item.json.last_contacted_at }}",
+            "lead_key": "={{ $('Finalize Lead Assessment').item.json.lead_key }}",
+            "lead_score": "={{ $('Finalize Lead Assessment').item.json.lead_score }}",
+            "name": "={{ $('Finalize Lead Assessment').item.json.name }}",
+            "phone": "={{ $('Finalize Lead Assessment').item.json.phone }}",
+            "pipeline_status": "={{ $('Finalize Lead Assessment').item.json.pipeline_status }}",
+            "reason": "={{ $('Finalize Lead Assessment').item.json.reason }}",
+            "recommended_action": "={{ $('Finalize Lead Assessment').item.json.recommended_action }}",
+            "source": "={{ $('Finalize Lead Assessment').item.json.source }}",
+            "updated_at": "={{ $('Finalize Lead Assessment').item.json.updated_at }}",
+            "urgency": "={{ $('Finalize Lead Assessment').item.json.urgency }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Leads",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_LEADS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "lead_key",
+              "keyValue": "={{ $('Finalize Lead Assessment').item.json.lead_key }}"
+            }
+          ]
+        },
+        "operation": "upsert",
+        "resource": "row"
+      }
+    },
+    {
+      "id": "bb0f54e0-811f-43ee-9efd-b941eed83ff6",
+      "name": "Sync Lead to Google Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1980,
+        180
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "lead_key"
+          ],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "lead_key",
+              "id": "lead_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "name",
+              "id": "name",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "email",
+              "id": "email",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "phone",
+              "id": "phone",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "company",
+              "id": "company",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "source",
+              "id": "source",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "inquiry_message",
+              "id": "inquiry_message",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "lead_score",
+              "id": "lead_score",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "classification",
+              "id": "classification",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "urgency",
+              "id": "urgency",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "reason",
+              "id": "reason",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "recommended_action",
+              "id": "recommended_action",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "pipeline_status",
+              "id": "pipeline_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "followup_count",
+              "id": "followup_count",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_contacted_at",
+              "id": "last_contacted_at",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "classification": "={{ $('Finalize Lead Assessment').item.json.classification }}",
+            "company": "={{ $('Finalize Lead Assessment').item.json.company }}",
+            "created_at": "={{ $('Finalize Lead Assessment').item.json.created_at }}",
+            "email": "={{ $('Finalize Lead Assessment').item.json.email }}",
+            "followup_count": "={{ $('Finalize Lead Assessment').item.json.followup_count }}",
+            "inquiry_message": "={{ $('Finalize Lead Assessment').item.json.inquiry_message }}",
+            "last_contacted_at": "={{ $('Finalize Lead Assessment').item.json.last_contacted_at }}",
+            "lead_key": "={{ $('Finalize Lead Assessment').item.json.lead_key }}",
+            "lead_score": "={{ $('Finalize Lead Assessment').item.json.lead_score }}",
+            "name": "={{ $('Finalize Lead Assessment').item.json.name }}",
+            "phone": "={{ $('Finalize Lead Assessment').item.json.phone }}",
+            "pipeline_status": "={{ $('Finalize Lead Assessment').item.json.pipeline_status }}",
+            "reason": "={{ $('Finalize Lead Assessment').item.json.reason }}",
+            "recommended_action": "={{ $('Finalize Lead Assessment').item.json.recommended_action }}",
+            "source": "={{ $('Finalize Lead Assessment').item.json.source }}",
+            "updated_at": "={{ $('Finalize Lead Assessment').item.json.updated_at }}",
+            "urgency": "={{ $('Finalize Lead Assessment').item.json.urgency }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "cachedResultName": "SaaS CRM SaaS CRM Dashboard",
+          "mode": "id",
+          "value": "CONFIGURE_GOOGLE_SHEET_ID"
+        },
+        "operation": "appendOrUpdate",
+        "resource": "sheet",
+        "sheetName": {
+          "__rl": true,
+          "cachedResultName": "Leads",
+          "mode": "list",
+          "value": "853091984"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "f133d2a4-5536-4d38-b65a-972198451def",
+      "name": "Log Lead Activity",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2220,
+        180
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "event_code",
+              "id": "event_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_type",
+              "id": "entity_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_key",
+              "id": "entity_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "actor",
+              "id": "actor",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "event_type",
+              "id": "event_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "summary",
+              "id": "summary",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "details_json",
+              "id": "details_json",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "actor": "ai_lead_qualifier",
+            "created_at": "={{ $('Finalize Lead Assessment').item.json.updated_at }}",
+            "details_json": "={{ JSON.stringify({ lead_score: $('Finalize Lead Assessment').item.json.lead_score, classification: $('Finalize Lead Assessment').item.json.classification, urgency: $('Finalize Lead Assessment').item.json.urgency, source: $('Finalize Lead Assessment').item.json.source }) }}",
+            "entity_key": "={{ $('Finalize Lead Assessment').item.json.lead_key }}",
+            "entity_type": "lead",
+            "event_code": "={{ $('Finalize Lead Assessment').item.json.event_code }}",
+            "event_type": "LEAD_QUALIFIED",
+            "summary": "={{ $('Finalize Lead Assessment').item.json.name + ' (' + $('Finalize Lead Assessment').item.json.classification + ', ' + $('Finalize Lead Assessment').item.json.lead_score + '/100)' }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Activity_History",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_ACTIVITY_HISTORY"
+        },
+        "operation": "insert",
+        "resource": "row"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "aa071943-9f91-4117-8d91-7259909c5fcd",
+      "name": "Send Lead Outreach Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2520,
+        100
+      ],
+      "parameters": {
+        "emailFormat": "html",
+        "fromEmail": "SaaS CRM SaaS CRM <crm-notifications@example.com>",
+        "html": "={{ $('Finalize Lead Assessment').item.json.email_html }}",
+        "operation": "send",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "crm-notifications@example.com"
+        },
+        "resource": "email",
+        "subject": "={{ $('Finalize Lead Assessment').item.json.email_subject }}",
+        "toEmail": "={{ $('Finalize Lead Assessment').item.json.email }}"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "3add4f26-d45e-4267-9ff8-a9531f62474c",
+      "name": "From Webhook?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2760,
+        100
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "wh1",
+              "leftValue": "={{ $('Normalize & Validate Lead').item.json.trigger_source === 'webhook' }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "efa23a8a-e2d5-41ed-a544-607f521711f7",
+      "name": "Respond 201 Lead Result",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        3020,
+        100
+      ],
+      "parameters": {
+        "options": {
+          "responseCode": 201
+        },
+        "respondBody": "={{ JSON.stringify({ ok: true, workflow: 'lead_intake', lead_key: $('Finalize Lead Assessment').item.json.lead_key, classification: $('Finalize Lead Assessment').item.json.classification, lead_score: $('Finalize Lead Assessment').item.json.lead_score, urgency: $('Finalize Lead Assessment').item.json.urgency, pipeline_status: $('Finalize Lead Assessment').item.json.pipeline_status }) }}",
+        "respondWith": "json"
+      }
+    },
+    {
+      "id": "3a1166e4-ff20-4546-952a-cb7802831078",
+      "name": "High-Value Lead?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2520,
+        340
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "hv1",
+              "leftValue": "={{ $('Finalize Lead Assessment').item.json.lead_score >= 80 || $('Finalize Lead Assessment').item.json.urgency === 'HIGH' }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "24445a2e-899b-4513-985b-63209dbcf84f",
+      "name": "Alert High-Value Lead (Slack)",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        2760,
+        340
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "channelId": {
+          "__rl": true,
+          "cachedResultName": "crm-alerts",
+          "mode": "id",
+          "value": "CONFIGURE_SLACK_CHANNEL_ID"
+        },
+        "messageType": "text",
+        "operation": "post",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        },
+        "resource": "message",
+        "select": "channel",
+        "text": "={{ $('Finalize Lead Assessment').item.json.slack_message }}"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "6b143dc1-0c82-45b4-a0eb-af8a00d17bee",
+      "name": "Alert Sales Lead (Email)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        3020,
+        340
+      ],
+      "parameters": {
+        "emailFormat": "html",
+        "fromEmail": "SaaS CRM SaaS CRM <crm-notifications@example.com>",
+        "html": "={{ $('Finalize Lead Assessment').item.json.admin_alert_html }}",
+        "operation": "send",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "crm-notifications@example.com"
+        },
+        "resource": "email",
+        "subject": "={{ '[High-Value Lead ' + $('Finalize Lead Assessment').item.json.lead_score + '/100] ' + $('Finalize Lead Assessment').item.json.name + ' — ' + $('Finalize Lead Assessment').item.json.company }}",
+        "toEmail": "ops-alerts@example.com"
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Lead Intake Form": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Validate Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook — CRM Lead API": {
+      "main": [
+        [
+          {
+            "node": "Normalize & Validate Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize & Validate Lead": {
+      "main": [
+        [
+          {
+            "node": "Valid Lead Input?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Lead Input?": {
+      "main": [
+        [
+          {
+            "node": "Save Raw Lead Intake",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400 Validation Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save Raw Lead Intake": {
+      "main": [
+        [
+          {
+            "node": "AI Lead Qualification Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Gemini Flash-Lite": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Lead Qualification Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Qualification Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Lead Qualification Agent",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Lead Qualification Agent": {
+      "main": [
+        [
+          {
+            "node": "Finalize Lead Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Lead Assessment": {
+      "main": [
+        [
+          {
+            "node": "Persist Qualified Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Qualified Lead": {
+      "main": [
+        [
+          {
+            "node": "Sync Lead to Google Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Lead to Google Sheet": {
+      "main": [
+        [
+          {
+            "node": "Log Lead Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Lead Activity": {
+      "main": [
+        [
+          {
+            "node": "Send Lead Outreach Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "High-Value Lead?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Lead Outreach Email": {
+      "main": [
+        [
+          {
+            "node": "From Webhook?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From Webhook?": {
+      "main": [
+        [
+          {
+            "node": "Respond 201 Lead Result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "High-Value Lead?": {
+      "main": [
+        [
+          {
+            "node": "Alert High-Value Lead (Slack)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alert High-Value Lead (Slack)": {
+      "main": [
+        [
+          {
+            "node": "Alert Sales Lead (Email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "errorWorkflow": "CONFIGURE_ERROR_WORKFLOW_ID"
+  },
+  "active": false,
+  "tags": [
+    "crm-leads",
+    "saas-crm-suite"
+  ],
+  "description": "Authenticated API and web form lead intake with OpenRouter AI qualification, Data Table & Google Sheet CRM persistence, SMTP outreach, and Slack high-value escalation.",
+  "nodeGroups": [
+    {
+      "id": "7492436e-2697-4d03-b30f-7400f637eb9f",
+      "name": "1. Intake & Validation",
+      "description": "Normalizes Form/Webhook intake, validates fields, and stores raw receipt immediately.",
+      "nodeNames": [
+        "Normalize & Validate Lead",
+        "Valid Lead Input?",
+        "Respond 400 Validation Error",
+        "Save Raw Lead Intake"
+      ]
+    },
+    {
+      "id": "ceba5c4b-373f-4696-8f89-2a1d5c3d07ab",
+      "name": "2. AI Qualification",
+      "description": "Qualifies lead intent with OpenRouter Gemini Flash-Lite and applies deterministic scoring/email formatting.",
+      "nodeNames": [
+        "AI Lead Qualification Agent",
+        "OpenRouter Gemini Flash-Lite",
+        "Lead Qualification Schema",
+        "Finalize Lead Assessment"
+      ]
+    },
+    {
+      "id": "b34e6633-1e04-48c5-bd66-37f9a7d69518",
+      "name": "3. CRM Persistence",
+      "description": "Persists qualified lead to CRM_Leads Data Table, Leads Google Sheet, and CRM_Activity_History.",
+      "nodeNames": [
+        "Persist Qualified Lead",
+        "Sync Lead to Google Sheet",
+        "Log Lead Activity"
+      ]
+    },
+    {
+      "id": "68028a0f-f57f-4a18-b3b5-e57c4f9508ec",
+      "name": "4. Outreach & API Response",
+      "description": "Sends personalized SMTP outreach and returns HTTP JSON response when invoked by API webhook.",
+      "nodeNames": [
+        "Send Lead Outreach Email",
+        "From Webhook?",
+        "Respond 201 Lead Result"
+      ]
+    },
+    {
+      "id": "edf84dc8-f2cb-4c45-a994-62f40b841573",
+      "name": "5. High-Value Escalation",
+      "description": "Routes high-value or urgent leads to Slack and operator SMTP alert.",
+      "nodeNames": [
+        "High-Value Lead?",
+        "Alert High-Value Lead (Slack)",
+        "Alert Sales Lead (Email)"
+      ]
+    }
+  ]
+}
