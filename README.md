@@ -11,7 +11,7 @@ I design and build AI-powered business systems that connect language models, wor
 **Open the portfolio:** [Flagship case studies](PROJECTS.md) · [Visual proofs](VISUAL_PROOFS.md) · [36-workflow n8n audit](N8N_WORKFLOW_AUDIT.md) · [Project folders](projects/README.md) · [AwtomateAI](https://awtomateai.com)
 
 > **2-minute technical review for hiring managers:**
-> Start with [CommercePilot](projects/commercepilot) (Shopify App Proxy HMAC + Redis + n8n + Groq + Supabase), [Smart Scheduler V1](projects/smart-scheduler) (approval gate + conflict recheck + ledger idempotency), and [PropertyFix AI 2.0](projects/propertyfix-ai) (deterministic safety overrides over LLM triage). Repository integrity and Python adapter unit tests are verified on every push via [Portfolio CI](.github/workflows/portfolio-ci.yml).
+> Start with [SaaS CRM Suite](projects/saas-crm-suite) (8 coordinated workflows, 4 Data Tables, Admin SPA & API, deterministic fallbacks, shared error handler), [CommercePilot](projects/commercepilot) (Shopify App Proxy HMAC + Redis + n8n + Groq + Supabase), [Smart Scheduler V1](projects/smart-scheduler) (approval gate + conflict recheck + ledger idempotency), and [PropertyFix AI 2.0](projects/propertyfix-ai) (deterministic safety overrides over LLM triage). Repository integrity and Python adapter unit tests are verified on every push via [Portfolio CI](.github/workflows/portfolio-ci.yml).
 
 ---
 
@@ -19,10 +19,10 @@ I design and build AI-powered business systems that connect language models, wor
 
 | Evidence snapshot | Verified position |
 |---|---|
-| Featured systems | 4 documented end-to-end systems |
-| Execution history | **92 successful records** across the four featured n8n workflows, November 1–21, 2026 |
-| Workflow inventory | 36 workflows audited on November 20, 2026 |
-| Inventory state | 12 active · 24 inactive at the November 20 audit |
+| Featured systems | 5 documented end-to-end systems (including the 8-workflow SaaS CRM Suite added Nov 23, 2026) |
+| Execution history | **92 successful records** across 4 core workflows (Nov 1–21, 2026) + **17 passing runs** across the 8 SaaS CRM Suite workflows (Nov 23, 2026) |
+| Workflow inventory | 36 workflows audited on November 20, 2026; expanded to 49 workflows by November 23, 2026 |
+| Inventory state | 12 active · 24 inactive at the Nov 20 audit (8-workflow SaaS CRM Suite active Nov 23) |
 | Engineering focus | AI orchestration, workflow design, API integration, business rules, persistence, and reliability |
 
 Execution records are dated n8n history snapshots—not uptime guarantees, paid-client outcomes, revenue, conversion lift, or time-saved metrics. See the [visual evidence and limitations](VISUAL_PROOFS.md).
@@ -85,6 +85,20 @@ An active 30-node workflow that screens Gmail messages, checks a persistent ledg
 **Stage:** Runs on the developer's own Gmail and Google Calendar account. Sustained polling, concurrency, and load testing remain unverified.
 
 [Technical case study](projects/smart-scheduler) · [Architecture and test visual](projects/smart-scheduler/assets/workflow-overview.svg)
+
+### 5. [SaaS CRM Suite — Multi-Workflow Revenue, Churn & Support Operations](projects/saas-crm-suite)
+
+**SaaS operations · Multi-workflow CRM · Admin SPA & API**
+
+An 8-workflow (`158`-node) operational SaaS CRM suite unifying inbound lead qualification, daily follow-up sequences, customer onboarding and automatic lead conversion, churn risk monitoring, support ticket triage, an Admin Command Portal SPA and Header-Auth JSON mutation API, an executive daily digest, and a suite-wide error handler around 4 shared n8n Data Tables and a 4-tab Google Sheets mirror.
+
+- **17 passing execution records** on November 23, 2026 (`0` failures) using synthetic CRM records across all 8 active workflows.
+- Verified deterministic fallback resilience on an OpenRouter `402` error (`#1474`); follow-up engine `#1477` exited cleanly on `0` due leads.
+- Supersedes the older standalone Phase 1–3 prototypes (`customer-engagement` and `lead-management/n8n`).
+
+**Stage:** Active on the developer's self-hosted n8n instance with synthetic test data, not a paid-client deployment. Live `GET /crm/portal` embeds `crm-seed` prior to token entry and should be auth-gated before multi-tenant use.
+
+[Technical case study](projects/saas-crm-suite) · [Architecture visual](projects/saas-crm-suite/assets/workflow-overview.svg)
 
 ---
 

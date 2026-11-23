@@ -1,0 +1,1558 @@
+{
+  "name": "SaaS CRM — AI Customer Engagement & Churn Monitor",
+  "nodes": [
+    {
+      "id": "56014c51-d533-48b1-b2fd-11cd37b3cb22",
+      "name": "Customer Telemetry Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        80,
+        100
+      ],
+      "parameters": {
+        "formDescription": "Simulate or submit SaaS customer engagement telemetry for AI churn risk scoring, Sheet/CRM sync, and retention workflows.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Customer Email",
+              "fieldType": "email",
+              "placeholder": "elena@cloudscale.io",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Customer Name",
+              "fieldType": "text",
+              "placeholder": "Elena Vance",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Company",
+              "fieldType": "text",
+              "placeholder": "CloudScale IO",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Subscription Plan",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Starter"
+                  },
+                  {
+                    "option": "Growth"
+                  },
+                  {
+                    "option": "Scale"
+                  },
+                  {
+                    "option": "Enterprise"
+                  }
+                ]
+              },
+              "fieldType": "dropdown",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Days Inactive",
+              "fieldType": "number",
+              "placeholder": "12",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Open Support Tickets",
+              "fieldType": "number",
+              "placeholder": "2",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Recent Activity Signal",
+              "fieldType": "textarea",
+              "placeholder": "Usage dropped 40% this week; opened billing question and workflow timeout issue.",
+              "requiredField": true
+            }
+          ]
+        },
+        "formTitle": "SaaS CRM SaaS CRM — Engagement Telemetry",
+        "options": {
+          "appendAttribution": false
+        },
+        "responseMode": "onReceived"
+      }
+    },
+    {
+      "id": "f83b3d5a-9b14-49cf-9e7e-28e96d7869dc",
+      "name": "Webhook — Engagement Event API",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        320
+      ],
+      "parameters": {
+        "authentication": "headerAuth",
+        "httpMethod": "POST",
+        "options": {},
+        "path": "crm/v1/customers/engagement",
+        "responseMode": "responseNode"
+      }
+    },
+    {
+      "id": "fddb03ad-7325-4b9c-9f33-0f0ada06847b",
+      "name": "Daily Health Sweep 08:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        80,
+        540
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 8,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "8c7b7cbd-31de-4ac8-9303-04f3e86fee4c",
+      "name": "Fetch Active Customers",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        320,
+        540
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Customers",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_CUSTOMERS"
+        },
+        "operation": "get",
+        "resource": "row",
+        "returnAll": true
+      }
+    },
+    {
+      "id": "f2d22298-1fc9-4965-a56e-e4c45528fcd5",
+      "name": "Normalize Telemetry Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        580,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst out = [];\nconst nowIso = new Date().toISOString();\n\nfor (let i = 0; i < items.length; i++) {\n  const raw = items[i].json || {};\n  const isWebhook = Boolean(raw.headers || raw.body);\n  const isScheduleRow = Boolean(raw.customer_key && raw.account_status && !raw.headers && !raw.body && !raw['Customer Email']);\n\n  if (isScheduleRow && String(raw.account_status).toLowerCase() !== 'active') {\n    continue;\n  }\n\n  const body = (raw.body && typeof raw.body === 'object') ? raw.body : raw;\n  const email = String(body['Customer Email'] ?? body.email ?? body.customer_email ?? body.customer_key ?? '').trim().toLowerCase();\n  const name = String(body['Customer Name'] ?? body.name ?? body.customer_name ?? '').trim() || (email ? email.split('@')[0] : 'Customer');\n  const company = String(body.Company ?? body.company ?? '').trim() || 'Direct Account';\n  const subscriptionPlan = String(body['Subscription Plan'] ?? body.subscription_plan ?? body.plan ?? 'Growth').trim();\n  const daysRaw = Number(body['Days Inactive'] ?? body.days_inactive ?? (isScheduleRow ? Number(raw.last_active_days || 0) + 1 : body.last_active_days ?? 0));\n  const ticketsRaw = Number(body['Open Support Tickets'] ?? body.open_tickets ?? body.open_tickets_count ?? 0);\n  const activitySignal = String(body['Recent Activity Signal'] ?? body.activity_signal ?? body.notes ?? body.event ?? (isScheduleRow ? 'Scheduled daily SaaS health evaluation sweep.' : '')).trim();\n\n  const daysInactive = Number.isNaN(daysRaw) ? 0 : Math.max(0, Math.round(daysRaw));\n  const openTickets = Number.isNaN(ticketsRaw) ? 0 : Math.max(0, Math.round(ticketsRaw));\n  const emailValid = /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email);\n\n  out.push({\n    json: {\n      trigger_source: isScheduleRow ? 'schedule' : (isWebhook ? 'webhook' : 'form'),\n      email_valid: emailValid,\n      customer_key: email || `invalid-${Date.now()}-${i}`,\n      email,\n      name,\n      company,\n      subscription_plan: subscriptionPlan,\n      days_inactive: daysInactive,\n      open_tickets: openTickets,\n      activity_signal: activitySignal || 'Telemetry check',\n      evaluated_at: nowIso,\n    },\n    pairedItem: { item: i },\n  });\n}\n\nreturn out;",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "5b66d49b-ad89-403b-bbbb-7388608aab72",
+      "name": "Lookup Customer Record",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        820,
+        300
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Customers",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_CUSTOMERS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "customer_key",
+              "keyValue": "={{ $json.customer_key }}"
+            }
+          ]
+        },
+        "limit": 1,
+        "operation": "get",
+        "resource": "row",
+        "returnAll": false
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "eba62504-b1f8-40c9-a37a-8282996ed913",
+      "name": "AI Engagement & Risk Analyst",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1080,
+        300
+      ],
+      "parameters": {
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are an AI Customer Success & Churn Intelligence Analyst for SaaS CRM SaaS CRM. First determine whether the inbound payload is a legitimate customer signal (\"VALID\") or spam/gibberish (\"SPAM\"/\"GIBBERISH\"). Next compute churn risk_score (0-100), risk_level (\"HEALTHY\", \"AT_RISK\", \"URGENT\"), engagement_trend (\"IMPROVING\", \"STABLE\", \"DECLINING\"), reason, recommended_action, and a personalized empathetic customer outreach subject/body (plain text, no greeting/signature). Never fabricate unstated metrics."
+        },
+        "promptType": "define",
+        "text": "=Evaluate customer churn risk and signal validity:\\n\\nCustomer Name: {{ $('Normalize Telemetry Payload').item.json.name }}\\nEmail: {{ $('Normalize Telemetry Payload').item.json.email }}\\nCompany: {{ $('Normalize Telemetry Payload').item.json.company }}\\nPlan: {{ $json.subscription_plan || $('Normalize Telemetry Payload').item.json.subscription_plan }}\\nMRR USD: {{ $json.mrr_usd ?? 'Unknown' }}\\nDays Inactive: {{ $('Normalize Telemetry Payload').item.json.days_inactive }}\\nOpen Tickets: {{ $('Normalize Telemetry Payload').item.json.open_tickets }}\\nActivity Signal: {{ $('Normalize Telemetry Payload').item.json.activity_signal }}\\nPrevious Risk Level: {{ $json.current_risk_level || 'None (first analysis)' }}\\nPrevious Risk Score: {{ $json.risk_score ?? 'None' }}"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "2885011f-b1ce-40d1-9f14-cc1865498fa1",
+      "name": "OpenRouter Gemini Flash-Lite",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1040,
+        520
+      ],
+      "parameters": {
+        "model": "google/gemini-3.1-flash-lite",
+        "options": {
+          "maxTokens": 1200,
+          "temperature": 0.2
+        }
+      }
+    },
+    {
+      "id": "1ec1f7cc-0463-4a16-834f-e097fefae7b3",
+      "name": "Risk Analysis Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1240,
+        520
+      ],
+      "parameters": {
+        "inputSchema": "{\"type\":\"object\",\"properties\":{\"entry_validity\":{\"type\":\"string\",\"enum\":[\"VALID\",\"SPAM\",\"GIBBERISH\"]},\"risk_level\":{\"type\":\"string\",\"enum\":[\"HEALTHY\",\"AT_RISK\",\"URGENT\"]},\"risk_score\":{\"type\":\"number\",\"minimum\":0,\"maximum\":100},\"engagement_trend\":{\"type\":\"string\",\"enum\":[\"IMPROVING\",\"STABLE\",\"DECLINING\"]},\"reason\":{\"type\":\"string\"},\"recommended_action\":{\"type\":\"string\"},\"outreach_subject\":{\"type\":\"string\"},\"outreach_body\":{\"type\":\"string\"}},\"required\":[\"entry_validity\",\"risk_level\",\"risk_score\",\"engagement_trend\",\"reason\",\"recommended_action\",\"outreach_subject\",\"outreach_body\"],\"additionalProperties\":false}",
+        "schemaType": "manual"
+      }
+    },
+    {
+      "id": "e4135476-57ad-4263-bccb-830dd6b94206",
+      "name": "Finalize Risk Assessment",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1360,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const t = $('Normalize Telemetry Payload').item.json;\nconst prior = $('Lookup Customer Record').item.json || {};\nconst raw = $input.item.json || {};\nconst ai = (raw.output && typeof raw.output === 'object') ? raw.output : raw;\n\nconst nowIso = new Date().toISOString();\nconst entryValidity = String(ai.entry_validity || 'VALID').toUpperCase();\nconst isSpam = !t.email_valid || entryValidity === 'SPAM' || entryValidity === 'GIBBERISH';\n\nconst planMrr = { Starter: 99, Growth: 299, Scale: 699, Enterprise: 1499 };\nconst subPlan = String(prior.subscription_plan || t.subscription_plan || 'Growth').trim();\nconst mrrUsd = Number(prior.mrr_usd || planMrr[subPlan] || 299);\nconst name = String(prior.name || t.name || 'Valued Customer').trim();\nconst company = String(prior.company || t.company || 'Direct Account').trim();\n\nlet hash = 0;\nfor (let i = 0; i < t.customer_key.length; i++) {\n  hash = ((hash << 5) - hash) + t.customer_key.charCodeAt(i);\n  hash |= 0;\n}\nconst customerCode = String(prior.customer_code || `CUST-${Math.abs(hash).toString(16).toUpperCase().padStart(6, '0').slice(0, 6)}`);\n\nconst parsedScore = Number(ai.risk_score);\nlet riskScore = Number.isNaN(parsedScore) ? Math.min(95, t.days_inactive * 3 + t.open_tickets * 15) : Math.max(0, Math.min(100, Math.round(parsedScore)));\nif (t.days_inactive >= 21 || (t.days_inactive >= 14 && t.open_tickets >= 2)) {\n  riskScore = Math.max(riskScore, 80);\n} else if (t.days_inactive >= 7 || t.open_tickets >= 1) {\n  riskScore = Math.max(riskScore, 50);\n}\n\nlet riskLevel = String(ai.risk_level || '').toUpperCase();\nif (!['HEALTHY', 'AT_RISK', 'URGENT'].includes(riskLevel)) {\n  riskLevel = riskScore >= 75 ? 'URGENT' : (riskScore >= 45 ? 'AT_RISK' : 'HEALTHY');\n}\nif (riskScore >= 75) riskLevel = 'URGENT';\nelse if (riskScore >= 45 && riskLevel === 'HEALTHY') riskLevel = 'AT_RISK';\n\nconst trend = ['IMPROVING', 'STABLE', 'DECLINING'].includes(String(ai.engagement_trend || '').toUpperCase())\n  ? String(ai.engagement_trend).toUpperCase()\n  : (riskScore >= 50 ? 'DECLINING' : 'STABLE');\n\nconst reason = String(ai.reason || `Days inactive: ${t.days_inactive}, open tickets: ${t.open_tickets}.`).trim();\nconst recommendedAction = String(ai.recommended_action || (riskLevel === 'URGENT' ? 'Immediate executive customer success call.' : (riskLevel === 'AT_RISK' ? 'Send proactive check-in after operator approval.' : 'Continue standard health cadence.'))).trim();\n\nconst routeBucket = isSpam ? 'SPAM_REJECTED' : riskLevel;\nconst escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst outreachSubject = String(ai.outreach_subject || `Checking in on your ${company} automation workspace — SaaS CRM`).trim();\nconst outreachBody = String(ai.outreach_body || `We noticed a slight pause in activity across your ${company} workflows and want to make sure everything is running smoothly or help unblock any pending requests.`).trim();\n\nconst outreachHtml = `\n<div style=\"font-family:Inter,Segoe UI,Arial,sans-serif;max-width:600px;margin:0 auto;color:#111827;line-height:1.6;\">\n  <h2 style=\"color:#0f172a;margin-bottom:8px;\">Hi ${escHtml(name)},</h2>\n  <p>${escHtml(outreachBody).replace(/\\n/g, '<br>')}</p>\n  <p style=\"margin-top:20px;\">Best regards,<br><strong>Operator Name</strong><br>SaaS CRM Customer Success</p>\n</div>`.trim();\n\nreturn {\n  json: {\n    trigger_source: t.trigger_source,\n    route_bucket: routeBucket,\n    customer_key: t.customer_key,\n    customer_code: customerCode,\n    name,\n    email: t.email,\n    company,\n    subscription_plan: subPlan,\n    mrr_usd: mrrUsd,\n    account_status: String(prior.account_status || 'Active'),\n    last_active_days: t.days_inactive,\n    open_tickets_count: t.open_tickets,\n    total_tickets_count: Math.max(Number(prior.total_tickets_count || 0), t.open_tickets),\n    current_risk_level: isSpam ? 'HEALTHY' : riskLevel,\n    engagement_trend: trend,\n    risk_score: riskScore,\n    last_reason: reason,\n    recommended_action: recommendedAction,\n    onboarded_at: prior.onboarded_at || nowIso,\n    last_analyzed_at: nowIso,\n    updated_at: nowIso,\n    outreach_subject: outreachSubject,\n    outreach_body: outreachBody,\n    outreach_html: outreachHtml,\n    event_code: `ENG-${Date.now().toString(36).toUpperCase()}`,\n    slack_message: `:rotating_light: *URGENT Churn Risk (${riskScore}/100)*\\n*Account:* ${name} — ${company} (${subPlan}, \\$${mrrUsd}/mo MRR)\\n*Inactive:* ${t.days_inactive}d | *Open Tickets:* ${t.open_tickets}\\n*Reason:* ${reason}\\n*Action:* ${recommendedAction}`,\n    urgent_email_html: `<h2>Urgent SaaS Churn Alert — ${riskScore}/100</h2><p><strong>Customer:</strong> ${escHtml(name)} (${escHtml(company)})</p><p><strong>Plan &amp; MRR:</strong> ${escHtml(subPlan)} (\\$${mrrUsd}/mo)</p><p><strong>Days Inactive:</strong> ${t.days_inactive} | <strong>Open Tickets:</strong> ${t.open_tickets}</p><p><strong>Reason:</strong> ${escHtml(reason)}</p><p><strong>Recommended Action:</strong> ${escHtml(recommendedAction)}</p>`,\n  },\n};",
+        "mode": "runOnceForEachItem"
+      }
+    },
+    {
+      "id": "537a2861-8da2-4023-80fe-ecf438067901",
+      "name": "Valid Non-Spam Signal?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1640,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "ns1",
+              "leftValue": "={{ $json.route_bucket !== 'SPAM_REJECTED' }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "762a45da-4536-4600-8fbf-840145915ba7",
+      "name": "Log Spam Activity",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1900,
+        560
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "event_code",
+              "id": "event_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_type",
+              "id": "entity_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_key",
+              "id": "entity_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "actor",
+              "id": "actor",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "event_type",
+              "id": "event_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "summary",
+              "id": "summary",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "details_json",
+              "id": "details_json",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "actor": "engagement_monitor",
+            "created_at": "={{ $('Finalize Risk Assessment').item.json.updated_at }}",
+            "details_json": "={{ JSON.stringify({ email: $('Finalize Risk Assessment').item.json.email, reason: $('Finalize Risk Assessment').item.json.last_reason }) }}",
+            "entity_key": "={{ $('Finalize Risk Assessment').item.json.customer_key }}",
+            "entity_type": "customer",
+            "event_code": "={{ $('Finalize Risk Assessment').item.json.event_code }}",
+            "event_type": "TELEMETRY_REJECTED",
+            "summary": "={{ 'Rejected invalid/spam telemetry payload for ' + $('Finalize Risk Assessment').item.json.customer_key }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Activity_History",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_ACTIVITY_HISTORY"
+        },
+        "operation": "insert",
+        "resource": "row"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b3e9fef3-3edb-422e-bb9f-cc35d8193251",
+      "name": "From Webhook (Spam)?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2140,
+        560
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "fws1",
+              "leftValue": "={{ $('Finalize Risk Assessment').item.json.trigger_source === 'webhook' }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "c7af663a-47d2-4d8c-98bd-769ae1c4d4d4",
+      "name": "Respond 400 Rejected",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2380,
+        560
+      ],
+      "parameters": {
+        "options": {
+          "responseCode": 400
+        },
+        "respondBody": "={{ JSON.stringify({ ok: false, status: 'SPAM_REJECTED', error: 'Telemetry entry failed validity check.' }) }}",
+        "respondWith": "json"
+      }
+    },
+    {
+      "id": "2de8c72c-50c8-4bb2-b1fe-323cb9db0303",
+      "name": "Persist Customer Risk",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1900,
+        180
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "customer_key",
+              "id": "customer_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "customer_code",
+              "id": "customer_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "name",
+              "id": "name",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "email",
+              "id": "email",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "company",
+              "id": "company",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "subscription_plan",
+              "id": "subscription_plan",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "mrr_usd",
+              "id": "mrr_usd",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "account_status",
+              "id": "account_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_active_days",
+              "id": "last_active_days",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "open_tickets_count",
+              "id": "open_tickets_count",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "total_tickets_count",
+              "id": "total_tickets_count",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "current_risk_level",
+              "id": "current_risk_level",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "engagement_trend",
+              "id": "engagement_trend",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "risk_score",
+              "id": "risk_score",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_reason",
+              "id": "last_reason",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "recommended_action",
+              "id": "recommended_action",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "onboarded_at",
+              "id": "onboarded_at",
+              "required": false,
+              "type": "dateTime"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_analyzed_at",
+              "id": "last_analyzed_at",
+              "required": false,
+              "type": "dateTime"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "account_status": "={{ $('Finalize Risk Assessment').item.json.account_status }}",
+            "company": "={{ $('Finalize Risk Assessment').item.json.company }}",
+            "current_risk_level": "={{ $('Finalize Risk Assessment').item.json.current_risk_level }}",
+            "customer_code": "={{ $('Finalize Risk Assessment').item.json.customer_code }}",
+            "customer_key": "={{ $('Finalize Risk Assessment').item.json.customer_key }}",
+            "email": "={{ $('Finalize Risk Assessment').item.json.email }}",
+            "engagement_trend": "={{ $('Finalize Risk Assessment').item.json.engagement_trend }}",
+            "last_active_days": "={{ $('Finalize Risk Assessment').item.json.last_active_days }}",
+            "last_analyzed_at": "={{ $('Finalize Risk Assessment').item.json.last_analyzed_at }}",
+            "last_reason": "={{ $('Finalize Risk Assessment').item.json.last_reason }}",
+            "mrr_usd": "={{ $('Finalize Risk Assessment').item.json.mrr_usd }}",
+            "name": "={{ $('Finalize Risk Assessment').item.json.name }}",
+            "onboarded_at": "={{ $('Finalize Risk Assessment').item.json.onboarded_at }}",
+            "open_tickets_count": "={{ $('Finalize Risk Assessment').item.json.open_tickets_count }}",
+            "recommended_action": "={{ $('Finalize Risk Assessment').item.json.recommended_action }}",
+            "risk_score": "={{ $('Finalize Risk Assessment').item.json.risk_score }}",
+            "subscription_plan": "={{ $('Finalize Risk Assessment').item.json.subscription_plan }}",
+            "total_tickets_count": "={{ $('Finalize Risk Assessment').item.json.total_tickets_count }}",
+            "updated_at": "={{ $('Finalize Risk Assessment').item.json.updated_at }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Customers",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_CUSTOMERS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "customer_key",
+              "keyValue": "={{ $('Finalize Risk Assessment').item.json.customer_key }}"
+            }
+          ]
+        },
+        "operation": "upsert",
+        "resource": "row"
+      }
+    },
+    {
+      "id": "2d3d5959-f21a-4f87-b040-259713b8738d",
+      "name": "Sync Customer Risk Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2140,
+        180
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "customer_key"
+          ],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "customer_key",
+              "id": "customer_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "customer_code",
+              "id": "customer_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "name",
+              "id": "name",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "email",
+              "id": "email",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "company",
+              "id": "company",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "subscription_plan",
+              "id": "subscription_plan",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "mrr_usd",
+              "id": "mrr_usd",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "account_status",
+              "id": "account_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_active_days",
+              "id": "last_active_days",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "open_tickets_count",
+              "id": "open_tickets_count",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "total_tickets_count",
+              "id": "total_tickets_count",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "current_risk_level",
+              "id": "current_risk_level",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "engagement_trend",
+              "id": "engagement_trend",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "risk_score",
+              "id": "risk_score",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_reason",
+              "id": "last_reason",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "recommended_action",
+              "id": "recommended_action",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "onboarded_at",
+              "id": "onboarded_at",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_analyzed_at",
+              "id": "last_analyzed_at",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "account_status": "={{ $('Finalize Risk Assessment').item.json.account_status }}",
+            "company": "={{ $('Finalize Risk Assessment').item.json.company }}",
+            "current_risk_level": "={{ $('Finalize Risk Assessment').item.json.current_risk_level }}",
+            "customer_code": "={{ $('Finalize Risk Assessment').item.json.customer_code }}",
+            "customer_key": "={{ $('Finalize Risk Assessment').item.json.customer_key }}",
+            "email": "={{ $('Finalize Risk Assessment').item.json.email }}",
+            "engagement_trend": "={{ $('Finalize Risk Assessment').item.json.engagement_trend }}",
+            "last_active_days": "={{ $('Finalize Risk Assessment').item.json.last_active_days }}",
+            "last_analyzed_at": "={{ $('Finalize Risk Assessment').item.json.last_analyzed_at }}",
+            "last_reason": "={{ $('Finalize Risk Assessment').item.json.last_reason }}",
+            "mrr_usd": "={{ $('Finalize Risk Assessment').item.json.mrr_usd }}",
+            "name": "={{ $('Finalize Risk Assessment').item.json.name }}",
+            "onboarded_at": "={{ $('Finalize Risk Assessment').item.json.onboarded_at }}",
+            "open_tickets_count": "={{ $('Finalize Risk Assessment').item.json.open_tickets_count }}",
+            "recommended_action": "={{ $('Finalize Risk Assessment').item.json.recommended_action }}",
+            "risk_score": "={{ $('Finalize Risk Assessment').item.json.risk_score }}",
+            "subscription_plan": "={{ $('Finalize Risk Assessment').item.json.subscription_plan }}",
+            "total_tickets_count": "={{ $('Finalize Risk Assessment').item.json.total_tickets_count }}",
+            "updated_at": "={{ $('Finalize Risk Assessment').item.json.updated_at }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "cachedResultName": "SaaS CRM SaaS CRM Dashboard",
+          "mode": "id",
+          "value": "CONFIGURE_GOOGLE_SHEET_ID"
+        },
+        "operation": "appendOrUpdate",
+        "resource": "sheet",
+        "sheetName": {
+          "__rl": true,
+          "cachedResultName": "Customers",
+          "mode": "list",
+          "value": "1463666776"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a9b8b22e-b8a1-43d9-bbf1-e93ea0c86157",
+      "name": "Log Engagement Activity",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2380,
+        180
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "event_code",
+              "id": "event_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_type",
+              "id": "entity_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_key",
+              "id": "entity_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "actor",
+              "id": "actor",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "event_type",
+              "id": "event_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "summary",
+              "id": "summary",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "details_json",
+              "id": "details_json",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "actor": "ai_churn_monitor",
+            "created_at": "={{ $('Finalize Risk Assessment').item.json.updated_at }}",
+            "details_json": "={{ JSON.stringify({ risk_level: $('Finalize Risk Assessment').item.json.current_risk_level, risk_score: $('Finalize Risk Assessment').item.json.risk_score, trend: $('Finalize Risk Assessment').item.json.engagement_trend }) }}",
+            "entity_key": "={{ $('Finalize Risk Assessment').item.json.customer_key }}",
+            "entity_type": "customer",
+            "event_code": "={{ $('Finalize Risk Assessment').item.json.event_code }}",
+            "event_type": "={{ 'ENGAGEMENT_' + $('Finalize Risk Assessment').item.json.current_risk_level }}",
+            "summary": "={{ $('Finalize Risk Assessment').item.json.name + ' (' + $('Finalize Risk Assessment').item.json.company + '): ' + $('Finalize Risk Assessment').item.json.current_risk_level + ' (' + $('Finalize Risk Assessment').item.json.risk_score + '/100)' }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Activity_History",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_ACTIVITY_HISTORY"
+        },
+        "operation": "insert",
+        "resource": "row"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "8f6cfe86-a0e9-438e-9d2d-5b6acb8c9025",
+      "name": "From Webhook (Valid)?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2620,
+        180
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "fwv1",
+              "leftValue": "={{ $('Finalize Risk Assessment').item.json.trigger_source === 'webhook' }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "72f3679d-b204-48b3-b053-29124b020d0a",
+      "name": "Respond 200 Engagement Analysis",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2860,
+        80
+      ],
+      "parameters": {
+        "options": {
+          "responseCode": 200
+        },
+        "respondBody": "={{ JSON.stringify({ ok: true, workflow: 'engagement_monitor', customer_key: $('Finalize Risk Assessment').item.json.customer_key, risk_level: $('Finalize Risk Assessment').item.json.current_risk_level, risk_score: $('Finalize Risk Assessment').item.json.risk_score, engagement_trend: $('Finalize Risk Assessment').item.json.engagement_trend, recommended_action: $('Finalize Risk Assessment').item.json.recommended_action }) }}",
+        "respondWith": "json"
+      }
+    },
+    {
+      "id": "beb21393-2f47-4462-966c-00288315c5dd",
+      "name": "Risk Level Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        3120,
+        180
+      ],
+      "parameters": {
+        "options": {
+          "fallbackOutput": "extra"
+        },
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r_urg",
+                    "leftValue": "={{ $('Finalize Risk Assessment').item.json.route_bucket }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "URGENT"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                }
+              },
+              "outputKey": "URGENT",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r_risk",
+                    "leftValue": "={{ $('Finalize Risk Assessment').item.json.route_bucket }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "AT_RISK"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                }
+              },
+              "outputKey": "AT_RISK",
+              "renameOutput": true
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r_ok",
+                    "leftValue": "={{ $('Finalize Risk Assessment').item.json.route_bucket }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "HEALTHY"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                }
+              },
+              "outputKey": "HEALTHY",
+              "renameOutput": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "fa7e83b4-7eb3-450f-ab78-54b66bc8a919",
+      "name": "Urgent Slack Escalation",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        3400,
+        60
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "channelId": {
+          "__rl": true,
+          "cachedResultName": "crm-alerts",
+          "mode": "id",
+          "value": "CONFIGURE_SLACK_CHANNEL_ID"
+        },
+        "messageType": "text",
+        "operation": "post",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        },
+        "resource": "message",
+        "select": "channel",
+        "text": "={{ $('Finalize Risk Assessment').item.json.slack_message }}"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "76af126b-2dfe-44cf-ac3d-eb442b851ad2",
+      "name": "Send Urgent Admin Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        3660,
+        60
+      ],
+      "parameters": {
+        "emailFormat": "html",
+        "fromEmail": "SaaS CRM SaaS CRM <crm-notifications@example.com>",
+        "html": "={{ $('Finalize Risk Assessment').item.json.urgent_email_html }}",
+        "operation": "send",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "crm-notifications@example.com"
+        },
+        "resource": "email",
+        "subject": "={{ '[URGENT Churn Risk ' + $('Finalize Risk Assessment').item.json.risk_score + '/100] ' + $('Finalize Risk Assessment').item.json.name + ' (' + $('Finalize Risk Assessment').item.json.company + ')' }}",
+        "toEmail": "ops-alerts@example.com"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a7fb46a0-e674-4d90-b40e-5661bc2b0892",
+      "name": "Request Retention Approval (Email)",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        3400,
+        260
+      ],
+      "parameters": {
+        "approvalOptions": {
+          "values": {
+            "approvalType": "double",
+            "approveLabel": "Approve & Send Check-In",
+            "disapproveLabel": "Skip Outreach"
+          }
+        },
+        "fromEmail": "SaaS CRM SaaS CRM <crm-notifications@example.com>",
+        "message": "=Approval needed before sending retention check-in email to {{ $('Finalize Risk Assessment').item.json.name }} ({{ $('Finalize Risk Assessment').item.json.email }}).\\n\\nRisk Level: {{ $('Finalize Risk Assessment').item.json.current_risk_level }} ({{ $('Finalize Risk Assessment').item.json.risk_score }}/100)\\nReason: {{ $('Finalize Risk Assessment').item.json.last_reason }}\\n\\nSubject: {{ $('Finalize Risk Assessment').item.json.outreach_subject }}\\nProposed Body:\\n{{ $('Finalize Risk Assessment').item.json.outreach_body }}",
+        "operation": "sendAndWait",
+        "options": {
+          "appendAttribution": false,
+          "limitWaitTime": {
+            "values": {
+              "limitType": "afterTimeInterval",
+              "resumeAmount": 24,
+              "resumeUnit": "hours"
+            }
+          }
+        },
+        "resource": "email",
+        "responseType": "approval",
+        "subject": "={{ '[Approval Needed] Retention Check-In for ' + $('Finalize Risk Assessment').item.json.name + ' (' + $('Finalize Risk Assessment').item.json.company + ')' }}",
+        "toEmail": "ops-alerts@example.com"
+      }
+    },
+    {
+      "id": "e3d9f9ee-684c-4154-8a40-7c0b0315963e",
+      "name": "Approval Granted?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        3660,
+        260
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "ag1",
+              "leftValue": "={{ $json.data?.approved === true }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "aab3f408-51c7-4374-b3d6-286c9dfe49c7",
+      "name": "Send Retention Outreach Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        3920,
+        260
+      ],
+      "parameters": {
+        "emailFormat": "html",
+        "fromEmail": "SaaS CRM SaaS CRM <crm-notifications@example.com>",
+        "html": "={{ $('Finalize Risk Assessment').item.json.outreach_html }}",
+        "operation": "send",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "crm-notifications@example.com"
+        },
+        "resource": "email",
+        "subject": "={{ $('Finalize Risk Assessment').item.json.outreach_subject }}",
+        "toEmail": "={{ $('Finalize Risk Assessment').item.json.email }}"
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Customer Telemetry Form": {
+      "main": [
+        [
+          {
+            "node": "Normalize Telemetry Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook — Engagement Event API": {
+      "main": [
+        [
+          {
+            "node": "Normalize Telemetry Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily Health Sweep 08:00": {
+      "main": [
+        [
+          {
+            "node": "Fetch Active Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Active Customers": {
+      "main": [
+        [
+          {
+            "node": "Normalize Telemetry Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Telemetry Payload": {
+      "main": [
+        [
+          {
+            "node": "Lookup Customer Record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Customer Record": {
+      "main": [
+        [
+          {
+            "node": "AI Engagement & Risk Analyst",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Gemini Flash-Lite": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Engagement & Risk Analyst",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Analysis Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Engagement & Risk Analyst",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Engagement & Risk Analyst": {
+      "main": [
+        [
+          {
+            "node": "Finalize Risk Assessment",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Finalize Risk Assessment": {
+      "main": [
+        [
+          {
+            "node": "Valid Non-Spam Signal?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Non-Spam Signal?": {
+      "main": [
+        [
+          {
+            "node": "Persist Customer Risk",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Spam Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Spam Activity": {
+      "main": [
+        [
+          {
+            "node": "From Webhook (Spam)?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From Webhook (Spam)?": {
+      "main": [
+        [
+          {
+            "node": "Respond 400 Rejected",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Persist Customer Risk": {
+      "main": [
+        [
+          {
+            "node": "Sync Customer Risk Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Customer Risk Sheet": {
+      "main": [
+        [
+          {
+            "node": "Log Engagement Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Engagement Activity": {
+      "main": [
+        [
+          {
+            "node": "From Webhook (Valid)?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "From Webhook (Valid)?": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 Engagement Analysis",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Risk Level Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond 200 Engagement Analysis": {
+      "main": [
+        [
+          {
+            "node": "Risk Level Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Risk Level Router": {
+      "main": [
+        [
+          {
+            "node": "Urgent Slack Escalation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Request Retention Approval (Email)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Urgent Slack Escalation": {
+      "main": [
+        [
+          {
+            "node": "Send Urgent Admin Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request Retention Approval (Email)": {
+      "main": [
+        [
+          {
+            "node": "Approval Granted?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Approval Granted?": {
+      "main": [
+        [
+          {
+            "node": "Send Retention Outreach Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "errorWorkflow": "CONFIGURE_ERROR_WORKFLOW_ID"
+  },
+  "active": false,
+  "tags": [
+    "crm-customers",
+    "saas-crm-suite"
+  ],
+  "description": "AI-powered SaaS customer engagement & churn monitor with telemetry form, authenticated webhook, daily sweep, CRM_Customers & Google Sheet sync, Slack urgent alerts, and SMTP HITL retention approvals.",
+  "nodeGroups": [
+    {
+      "id": "f84ce8cc-4a6b-4bce-8bd3-6ac17707d03a",
+      "name": "1. Telemetry, History & AI Risk",
+      "description": "Normalizes telemetry, loads CRM_Customers history, and evaluates churn risk via OpenRouter Gemini Flash-Lite.",
+      "nodeNames": [
+        "Normalize Telemetry Payload",
+        "Lookup Customer Record",
+        "AI Engagement & Risk Analyst",
+        "OpenRouter Gemini Flash-Lite",
+        "Risk Analysis Schema",
+        "Finalize Risk Assessment"
+      ]
+    },
+    {
+      "id": "80968a3e-8de8-4fc1-bc31-da19837862e9",
+      "name": "2. Persist, Route & Remediate",
+      "description": "Filters spam, syncs CRM_Customers, Sheet, and Activity Log, replies to webhook, and runs urgent Slack or HITL outreach.",
+      "nodeNames": [
+        "Valid Non-Spam Signal?",
+        "Log Spam Activity",
+        "From Webhook (Spam)?",
+        "Respond 400 Rejected",
+        "Persist Customer Risk",
+        "Sync Customer Risk Sheet",
+        "Log Engagement Activity",
+        "From Webhook (Valid)?",
+        "Respond 200 Engagement Analysis",
+        "Risk Level Router",
+        "Urgent Slack Escalation",
+        "Send Urgent Admin Email",
+        "Request Retention Approval (Email)",
+        "Approval Granted?",
+        "Send Retention Outreach Email"
+      ]
+    }
+  ]
+}

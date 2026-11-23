@@ -54,6 +54,18 @@ An AI-assisted Gmail-to-Google-Calendar workflow with structured event extractio
 
 **Stage and limits:** Active on the developer's own Gmail and Google Calendar account. The alert email node delivered successfully in test #398, but the actual Error Trigger was not fired. Sustained polling, concurrency, and load testing remain unverified.
 
+### 5. SaaS CRM Suite — Multi-Workflow Revenue, Churn & Support Operations
+
+[**Technical case study**](projects/saas-crm-suite) · [**Architecture visual**](projects/saas-crm-suite/assets/workflow-overview.svg)
+
+An 8-workflow (`158`-node) operational SaaS CRM suite unifying inbound lead intake & AI qualification, daily follow-up sequences, customer onboarding & automatic lead conversion, churn risk monitoring, support ticket triage, an Admin Command Portal SPA & Header-Auth JSON mutation API, an executive daily KPI digest, and a suite-wide error alert handler around 4 shared n8n Data Tables and a 4-tab Google Sheets mirror.
+
+**Stack:** n8n · n8n Data Tables · Webhooks & Forms · Tailwind + Alpine.js SPA · OpenRouter (`google/gemini-3.1-flash-lite`) · Google Sheets · Slack · Purelymail SMTP.
+
+**Evidence snapshot (November 23, 2026):** All 8 active workflows match their current drafts and recorded 17 successful runs (`0` failures) using synthetic CRM records—including graceful deterministic fallback handling during an OpenRouter `402` credit-concurrency error (`#1474`). Follow-up execution `#1477` exited cleanly on `0` due leads, so overdue follow-up copy/SMTP dispatch still needs a live overdue-lead test.
+
+**Stage and limits:** Active on the developer's self-hosted n8n instance with synthetic test records, not a paid-client deployment. Live `GET /crm/portal` currently embeds `crm-seed` in HTML prior to token entry and should be auth-gated before multi-tenant client use.
+
 ---
 
 ## Leads, sales, and business research

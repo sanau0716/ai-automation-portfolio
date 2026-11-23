@@ -1,0 +1,438 @@
+{
+  "name": "SaaS CRM — Executive Daily Digest & Health Report",
+  "nodes": [
+    {
+      "id": "32f5fcac-a88e-4efe-9897-a0094e9033c9",
+      "name": "Daily 18:00 Digest Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 18,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "f47eb4ba-38e0-41d7-8012-c1be68290b95",
+      "name": "Fetch CRM Leads",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        224
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_LEADS",
+          "cachedResultName": "CRM_Leads"
+        },
+        "returnAll": true
+      },
+      "alwaysOutputData": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "650f00b0-f998-4a2a-afff-59b94a4744a6",
+      "name": "Manual Digest Run",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        192
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "cf9f00e1-f24e-48f2-84fb-8573c00a5c13",
+      "name": "Fetch CRM Customers",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        496,
+        224
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_CUSTOMERS",
+          "cachedResultName": "CRM_Customers"
+        },
+        "returnAll": true
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d0807907-c646-4455-a4f5-e3256388b02d",
+      "name": "Fetch Support Tickets",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        224
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_SUPPORT_TICKETS",
+          "cachedResultName": "CRM_Support_Tickets"
+        },
+        "returnAll": true
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "1ad555c9-bd4f-49a1-8813-a5b93ad73b3e",
+      "name": "Fetch Activity History",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        944,
+        224
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_ACTIVITY_HISTORY",
+          "cachedResultName": "CRM_Activity_History"
+        },
+        "returnAll": true
+      },
+      "alwaysOutputData": true,
+      "executeOnce": true,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b92df296-2075-49b6-bf64-428b4c95d8e2",
+      "name": "Compile Executive KPIs & Digest",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1168,
+        224
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "jsCode": "const safeRows = (nodeName, keyField) => {\n  try {\n    return $(nodeName).all().map((item) => item.json).filter((r) => r && r[keyField]);\n  } catch {\n    return [];\n  }\n};\n\nconst leads = safeRows('Fetch CRM Leads', 'lead_key');\nconst customers = safeRows('Fetch CRM Customers', 'customer_key');\nconst tickets = safeRows('Fetch Support Tickets', 'ticket_code');\nconst activities = safeRows('Fetch Activity History', 'event_code');\n\nconst nowIso = new Date().toISOString();\nconst dateLabel = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'Asia/Manila' });\n\nconst totalLeads = leads.length;\nconst convertedLeads = leads.filter((l) => Boolean(l.converted_at) || /converted/i.test(String(l.pipeline_status || ''))).length;\nconst highValueLeads = leads.filter((l) => Number(l.lead_score || 0) >= 80 || /high-value/i.test(String(l.classification || ''))).length;\nconst conversionRate = totalLeads > 0 ? Math.round((convertedLeads / totalLeads) * 100) : 0;\n\nconst activeCustomers = customers.filter((c) => String(c.account_status || 'Active').toLowerCase() === 'active');\nconst totalMrr = activeCustomers.reduce((acc, c) => acc + Number(c.mrr_usd || 0), 0);\nconst atRiskCustomers = activeCustomers.filter((c) => ['AT_RISK', 'URGENT'].includes(String(c.current_risk_level || '').toUpperCase()));\nconst urgentCustomers = activeCustomers.filter((c) => String(c.current_risk_level || '').toUpperCase() === 'URGENT');\nconst atRiskMrr = atRiskCustomers.reduce((acc, c) => acc + Number(c.mrr_usd || 0), 0);\n\nconst openTickets = tickets.filter((t) => !/closed|replied|resolved/i.test(String(t.ticket_status || '')));\nconst criticalTickets = openTickets.filter((t) => ['HIGH', 'CRITICAL'].includes(String(t.urgency || '').toUpperCase()));\n\nconst esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\nconst topRiskListHtml = atRiskCustomers\n  .sort((a, b) => Number(b.risk_score || 0) - Number(a.risk_score || 0))\n  .slice(0, 5)\n  .map((c) => `<li><strong>${esc(c.name)} (${esc(c.company)})</strong> — ${esc(c.current_risk_level)} (${Number(c.risk_score || 0)}/100, $${Number(c.mrr_usd || 0)}/mo): ${esc(c.recommended_action)}</li>`)\n  .join('');\n\nconst emailHtml = `\n<div style=\"font-family:Inter,Segoe UI,Arial,sans-serif;max-width:680px;margin:0 auto;color:#0f172a;line-height:1.5;\">\n  <h2 style=\"margin-bottom:4px;\">SaaS CRM SaaS CRM — Executive Daily Health Digest</h2>\n  <p style=\"color:#475569;margin-top:0;\">Snapshot for ${esc(dateLabel)} (Asia/Manila)</p>\n  <table style=\"width:100%;border-collapse:collapse;margin:16px 0;\">\n    <tr>\n      <td style=\"padding:12px;border:1px solid #e2e8f0;background:#f8fafc;\"><strong>Total Active MRR</strong><br><span style=\"font-size:20px;color:#0f766e;\">$${totalMrr.toLocaleString()}</span></td>\n      <td style=\"padding:12px;border:1px solid #e2e8f0;background:#fef2f2;\"><strong>At-Risk MRR</strong><br><span style=\"font-size:20px;color:#b91c1c;\">$${atRiskMrr.toLocaleString()}</span> (${atRiskCustomers.length} accts)</td>\n      <td style=\"padding:12px;border:1px solid #e2e8f0;background:#eff6ff;\"><strong>Lead Pipeline</strong><br><span style=\"font-size:20px;color:#1d4ed8;\">${totalLeads}</span> (${conversionRate}% conv)</td>\n      <td style=\"padding:12px;border:1px solid #e2e8f0;background:#fff7ed;\"><strong>Open Support</strong><br><span style=\"font-size:20px;color:#c2410c;\">${openTickets.length}</span> (${criticalTickets.length} high/crit)</td>\n    </tr>\n  </table>\n  <p><strong>Accounts Summary:</strong> ${activeCustomers.length} Active Customers | ${urgentCustomers.length} Urgent Risk | ${highValueLeads} High-Value Leads | ${activities.length} Logged CRM Events</p>\n  ${topRiskListHtml ? `<h3>Priority Retention Watchlist</h3><ul>${topRiskListHtml}</ul>` : '<p>All tracked customer accounts are currently Healthy.</p>'}\n  <p><a href=\"https://n8n.example.com/webhook/crm/portal\">Open SaaS CRM Command Portal</a> &bull; <a href=\"https://docs.google.com/spreadsheets/d/CONFIGURE_GOOGLE_SHEET_ID\">Open Google Sheets Dashboard</a></p>\n</div>`.trim();\n\nconst slackMessage = `:bar_chart: *SaaS CRM SaaS CRM Daily Digest (${dateLabel})*\\n• *Active MRR:* $${totalMrr.toLocaleString()} across ${activeCustomers.length} active customers\\n• *Churn Exposure:* $${atRiskMrr.toLocaleString()} at-risk (${urgentCustomers.length} URGENT, ${atRiskCustomers.length} total flagged)\\n• *Lead Funnel:* ${totalLeads} leads (${highValueLeads} high-value, ${convertedLeads} converted — ${conversionRate}%)\\n• *Support Queue:* ${openTickets.length} open tickets (${criticalTickets.length} high/critical)\\n<https://n8n.example.com/webhook/crm/portal|Open Command Portal>`;\n\nreturn [{\n  json: {\n    event_code: `DIG-${Date.now().toString(36).toUpperCase()}`,\n    email_subject: `[SaaS CRM Digest] $${totalMrr.toLocaleString()} MRR | ${atRiskCustomers.length} At-Risk | ${openTickets.length} Open Tickets (${dateLabel})`,\n    email_html: emailHtml,\n    slack_message: slackMessage,\n    created_at: nowIso,\n    kpis: { totalLeads, convertedLeads, conversionRate, activeCustomers: activeCustomers.length, totalMrr, atRiskMrr, openTickets: openTickets.length, criticalTickets: criticalTickets.length },\n  },\n}];"
+      },
+      "executeOnce": true
+    },
+    {
+      "id": "3b46b6e0-549e-43bc-8be8-63e38a941eaf",
+      "name": "Send Executive Email Digest",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        800,
+        224
+      ],
+      "parameters": {
+        "resource": "email",
+        "operation": "send",
+        "fromEmail": "SaaS CRM SaaS CRM <crm-notifications@example.com>",
+        "toEmail": "ops-alerts@example.com",
+        "subject": "={{ $json.email_subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.email_html }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "crm-notifications@example.com"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "82ac2f52-e4ab-4152-a6a2-21a12cf03770",
+      "name": "Post Executive Brief to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1024,
+        224
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "authentication": "accessToken",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "CONFIGURE_SLACK_CHANNEL_ID",
+          "cachedResultName": "crm-alerts"
+        },
+        "messageType": "text",
+        "text": "={{ $('Compile Executive KPIs & Digest').item.json.slack_message }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a836f552-4db7-4485-907b-c36d235dee64",
+      "name": "Log Digest Activity",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1248,
+        224
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_ACTIVITY_HISTORY",
+          "cachedResultName": "CRM_Activity_History"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ $('Compile Executive KPIs & Digest').item.json.event_code }}",
+            "entity_type": "system",
+            "entity_key": "executive_digest",
+            "actor": "executive_digest",
+            "event_type": "DAILY_KPI_DIGEST",
+            "summary": "={{ $('Compile Executive KPIs & Digest').item.json.email_subject }}",
+            "details_json": "={{ JSON.stringify($('Compile Executive KPIs & Digest').item.json.kpis) }}",
+            "created_at": "={{ $('Compile Executive KPIs & Digest').item.json.created_at }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "entity_type",
+              "displayName": "entity_type",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "entity_key",
+              "displayName": "entity_key",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Daily 18:00 Digest Trigger": {
+      "main": [
+        [
+          {
+            "node": "Fetch CRM Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch CRM Leads": {
+      "main": [
+        [
+          {
+            "node": "Fetch CRM Customers",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Digest Run": {
+      "main": [
+        [
+          {
+            "node": "Fetch CRM Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch CRM Customers": {
+      "main": [
+        [
+          {
+            "node": "Fetch Support Tickets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Support Tickets": {
+      "main": [
+        [
+          {
+            "node": "Fetch Activity History",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Activity History": {
+      "main": [
+        [
+          {
+            "node": "Compile Executive KPIs & Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compile Executive KPIs & Digest": {
+      "main": [
+        [
+          {
+            "node": "Send Executive Email Digest",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Executive Email Digest": {
+      "main": [
+        [
+          {
+            "node": "Post Executive Brief to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Executive Brief to Slack": {
+      "main": [
+        [
+          {
+            "node": "Log Digest Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "errorWorkflow": "CONFIGURE_ERROR_WORKFLOW_ID"
+  },
+  "active": false,
+  "tags": [
+    "saas-crm-suite",
+    "crm-ops"
+  ],
+  "description": "Daily 18:00 Asia/Manila executive health report aggregating all 4 CRM Data Tables into email KPI cards, Slack summary, and CRM Activity Log.",
+  "nodeGroups": [
+    {
+      "id": "21675575-33eb-4c24-ad4b-bab3de5c9ed6",
+      "name": "1. Collect & Analyze Suite KPIs",
+      "description": "Reads CRM_Leads, CRM_Customers, CRM_Support_Tickets, and CRM_Activity_History and computes SaaS KPIs.",
+      "nodeNames": [
+        "Fetch CRM Leads",
+        "Fetch CRM Customers",
+        "Fetch Support Tickets",
+        "Fetch Activity History",
+        "Compile Executive KPIs & Digest"
+      ]
+    },
+    {
+      "id": "45fe5a75-3d73-4112-9777-16eb563b4178",
+      "name": "2. Deliver Executive Reports",
+      "description": "Sends HTML executive digest email, posts Slack KPI summary, and records execution in Activity Log.",
+      "nodeNames": [
+        "Send Executive Email Digest",
+        "Post Executive Brief to Slack",
+        "Log Digest Activity"
+      ]
+    }
+  ]
+}

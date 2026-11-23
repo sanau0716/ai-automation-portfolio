@@ -141,4 +141,23 @@ A read-only follow-up was performed against the connected n8n workspace on Novem
 
 All counts above are n8n execution-history records for the stated workflow IDs and time window. A successful execution is not proof of business impact, uptime, or paid-client deployment. "Active" describes the n8n workflow state; it does not by itself mean a workflow is externally offered as a production service.
 
+---
+
+## Focused addition — November 23, 2026 (SaaS CRM Suite)
+
+On November 23, 2026, the older standalone Phase 1–3 prototypes (`sAH9DsPno4CngyU9`, `pS56Epz27uIhJtxH`, `D1yYsDKyVOkN2xUO`, `kRvCuMf3uihaNpHu`) were rebuilt and unified with four new operational workflows into the **8-workflow SaaS CRM Suite** (`158` total nodes, all `active=true` and `sameAsDraft=true`):
+
+| Workflow | Nodes | Nov 23 executions | Key boundary |
+|---|---:|---:|---|
+| SaaS CRM — Lead Intake & Qualification Gateway (`D1yYsDKyVOkN2xUO`) | 19 | 3 / 3 success | Synthetic test leads; `#1474` verified deterministic fallback on OpenRouter `402` |
+| SaaS CRM — Automated Follow-Up Sequence Engine (`kRvCuMf3uihaNpHu`) | 18 | 1 / 1 success | Exited at `0` due leads in `#1477`; overdue follow-up branch needs an aged-lead test |
+| SaaS CRM — Customer Onboarding & Account Provisioning (`0acfPMOY4Y5GKE2R`) | 16 | 2 / 2 success | Synthetic customer records |
+| SaaS CRM — AI Customer Engagement & Churn Monitor (`sAH9DsPno4CngyU9`) | 25 | 3 / 3 success | Synthetic customer telemetry |
+| SaaS CRM — AI Customer Support & Ticket Triage Manager (`pS56Epz27uIhJtxH`) | 26 | 1 / 1 success | Synthetic support escalation |
+| SaaS CRM — Admin Command Portal & API (`5F5OQjZiIcZhPFWN`) | 36 | 5 / 5 success | `/crm/api/*` requires Header Auth; live `GET /crm/portal` embeds `crm-seed` before login and should be auth-gated for external client use |
+| SaaS CRM — Executive Daily Digest & Health Report (`ymr62vA2hK7CHp8u`) | 10 | 1 / 1 success | Synthetic KPI snapshot (`$2,198` MRR) |
+| SaaS CRM — Error Alert Handler (`5zLsss2Gr3yIhXjb`) | 8 | 1 / 1 success | Manual failure test; linked as `errorWorkflow` on the 7 operational workflows above |
+
+The historical Phase 1–3 JSON files under `projects/customer-engagement/` and `projects/lead-management/n8n/` remain preserved for reference; the current suite exports live under [projects/saas-crm-suite/workflows](projects/saas-crm-suite/workflows).
+
 [← Portfolio home](README.md) · [Visual proof gallery](VISUAL_PROOFS.md)

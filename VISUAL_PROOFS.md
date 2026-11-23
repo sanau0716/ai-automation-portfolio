@@ -72,7 +72,23 @@ This page collects visual evidence for the portfolio's four featured systems. It
 
 [Open the Smart Scheduler case study](projects/smart-scheduler)
 
-## 5. Additional visual evidence
+## 5. SaaS CRM Suite — Multi-Workflow Revenue, Churn & Support Operations
+
+![SaaS CRM Suite architecture and workflow connections](projects/saas-crm-suite/assets/workflow-overview.svg)
+
+**What this proves:** Eight coordinated workflows (`158` nodes) share four n8n Data Tables (`CRM_Leads`, `CRM_Customers`, `CRM_Support_Tickets`, `CRM_Activity_History`) and a four-tab Google Sheets mirror, connecting lead qualification, daily follow-up sequences, onboarding with automatic lead conversion, churn risk monitoring, support ticket triage, an Admin Command Portal SPA/API, daily executive KPI digests, and a suite-wide error handler.
+
+**Recorded evidence (November 23, 2026):**
+- 17 successful execution records across all 8 workflows (`0` failures) using synthetic CRM records.
+- Execution `#1474`: OpenRouter returned HTTP `402`; the deterministic fallback kept pipeline persistence and outreach intact without crashing.
+- Execution `#1481`: Executive daily digest aggregated `$2,198` active MRR across 2 synthetic accounts into HTML email KPI cards and Slack output.
+- Execution `#1477`: Follow-up engine ran cleanly and exited with `0` due leads; downstream overdue follow-up email generation remains to be tested with an aged lead.
+
+**Boundary:** Self-hosted developer-instance implementation tested with synthetic data, not a paid-client deployment. Live `GET /crm/portal` embeds `crm-seed` before token entry and should be auth-gated before multi-tenant use.
+
+[Open the SaaS CRM Suite case study](projects/saas-crm-suite)
+
+## 6. Additional visual evidence
 
 ### Historical Business Opportunity Finder output
 

@@ -1,0 +1,952 @@
+{
+  "name": "SaaS CRM — Automated Follow-Up Sequence Engine",
+  "nodes": [
+    {
+      "id": "e76c6153-f3ce-4487-aa03-7d6d8f2b4c5a",
+      "name": "Schedule Daily 09:00 Asia/Manila",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        100,
+        160
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "triggerAtHour": 9,
+              "triggerAtMinute": 0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "b3829d7f-5683-46ee-a2fb-4eb9d2978e14",
+      "name": "Manual Sequence Run",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        100,
+        380
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "fdebdd6b-754c-4dc0-bae9-85afd11d2a8b",
+      "name": "Fetch CRM Leads",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        380,
+        260
+      ],
+      "parameters": {
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Leads",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_LEADS"
+        },
+        "operation": "get",
+        "resource": "row",
+        "returnAll": true
+      }
+    },
+    {
+      "id": "2a3816b1-fc28-4fd7-802a-56569f6c4d44",
+      "name": "Select Due Leads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        260
+      ],
+      "parameters": {
+        "jsCode": "const items = $input.all();\nconst now = Date.now();\nconst nowIso = new Date(now).toISOString();\nconst out = [];\n\nfor (const item of items) {\n  const row = item.json || {};\n  const leadKey = String(row.lead_key || '').trim();\n  const email = String(row.email || '').trim().toLowerCase();\n  if (!leadKey || !email || !email.includes('@')) continue;\n\n  const status = String(row.pipeline_status || '');\n  const convertedAt = String(row.converted_at || '').trim();\n  if (convertedAt || /converted|closed|manual review|unsubscribed|intake_received/i.test(status)) {\n    continue;\n  }\n\n  const currentCount = Number(row.followup_count || 0);\n  const lastTouchStr = row.last_contacted_at || row.updated_at || row.created_at || nowIso;\n  const lastTouchMs = new Date(lastTouchStr).getTime();\n  const daysElapsed = Number.isNaN(lastTouchMs) ? 0 : Math.floor((now - lastTouchMs) / 86400000);\n\n  if (currentCount >= 4) {\n    if (daysElapsed >= 7) {\n      out.push({\n        json: {\n          ...row,\n          lead_key: leadKey,\n          email,\n          action: 'escalate_manual_review',\n          days_since_contact: daysElapsed,\n          next_followup_number: currentCount,\n          updated_at: nowIso,\n          event_code: `ESC-${Date.now().toString(36).toUpperCase()}-${out.length}`,\n        },\n      });\n    }\n    continue;\n  }\n\n  const nextStep = Math.max(2, currentCount + 1);\n  const requiredDays = nextStep === 2 ? 2 : (nextStep === 3 ? 4 : 7);\n  if (daysElapsed >= requiredDays) {\n    out.push({\n      json: {\n        ...row,\n        lead_key: leadKey,\n        email,\n        action: 'send_followup',\n        days_since_contact: daysElapsed,\n        next_followup_number: nextStep,\n        updated_at: nowIso,\n      },\n    });\n  }\n}\n\nreturn out;",
+        "mode": "runOnceForAllItems"
+      }
+    },
+    {
+      "id": "ac4c9b81-7dc8-430f-9f0c-528887d1e95f",
+      "name": "Should Send Follow-Up?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        860,
+        260
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "fu1",
+              "leftValue": "={{ $json.action }}",
+              "operator": {
+                "operation": "equals",
+                "type": "string"
+              },
+              "rightValue": "send_followup"
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 2
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "51ff1745-fa10-489b-97b3-57ea5ab3c3ff",
+      "name": "AI Follow-Up Strategist",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1160,
+        140
+      ],
+      "parameters": {
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "You are a consultative B2B SaaS Growth Advisor for SaaS CRM. Write non-pushy, context-aware follow-up emails tailored to the lead's original inquiry and step number (step 2 = value insight, step 3 = brief automation ROI case study, step 4 = polite close-the-loop note). Plain text body without greeting or signature lines."
+        },
+        "promptType": "define",
+        "text": "=Draft follow-up touch #{{ $json.next_followup_number }} for this lead:\\n\\nName: {{ $json.name }}\\nCompany: {{ $json.company }}\\nScore: {{ $json.lead_score }}/100 ({{ $json.classification }})\\nOriginal Inquiry: {{ $json.inquiry_message }}\\nPrevious Recommendation: {{ $json.recommended_action }}\\nDays Since Last Contact: {{ $json.days_since_contact }}"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "67869048-4900-4591-84f4-ef91826a2211",
+      "name": "OpenRouter Follow-Up LLM",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1120,
+        360
+      ],
+      "parameters": {
+        "model": "google/gemini-3.1-flash-lite",
+        "options": {
+          "maxTokens": 900,
+          "temperature": 0.3
+        }
+      }
+    },
+    {
+      "id": "4b3cc085-4e66-4021-8a51-3b20f2a0d1c0",
+      "name": "Follow-Up Schema",
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.3,
+      "position": [
+        1300,
+        360
+      ],
+      "parameters": {
+        "inputSchema": "{\"type\":\"object\",\"properties\":{\"subject\":{\"type\":\"string\"},\"body\":{\"type\":\"string\"},\"cta\":{\"type\":\"string\"}},\"required\":[\"subject\",\"body\",\"cta\"],\"additionalProperties\":false}",
+        "schemaType": "manual"
+      }
+    },
+    {
+      "id": "b8068783-7537-4199-b93a-153afe0ac0f9",
+      "name": "Format Follow-Up Email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        140
+      ],
+      "parameters": {
+        "jsCode": "const lead = $('Should Send Follow-Up?').item.json;\nconst raw = $input.item.json || {};\nconst ai = (raw.output && typeof raw.output === 'object') ? raw.output : raw;\nconst step = Number(lead.next_followup_number || 2);\nconst escHtml = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');\n\nconst subject = String(ai.subject || `Checking in on automation goals at ${lead.company} (Follow-Up #${step})`).trim();\nconst body = String(ai.body || `I wanted to follow up briefly regarding your inquiry for ${lead.company}. Let us know if mapping out an initial automation workflow this week makes sense.`).trim();\nconst cta = String(ai.cta || 'Reply with two 15-minute windows that work for your team.').trim();\n\nconst html = `\n<div style=\"font-family:Inter,Segoe UI,Arial,sans-serif;max-width:600px;margin:0 auto;color:#111827;line-height:1.6;\">\n  <p>Hi ${escHtml(lead.name)},</p>\n  <p>${escHtml(body).replace(/\\n/g, '<br>')}</p>\n  <p><strong>${escHtml(cta)}</strong></p>\n  <p style=\"margin-top:20px;\">Best,<br><strong>Operator Name</strong><br>SaaS CRM Solutions</p>\n</div>`.trim();\n\nreturn {\n  json: {\n    ...lead,\n    email_subject: subject,\n    email_html: html,\n  },\n};",
+        "mode": "runOnceForEachItem"
+      }
+    },
+    {
+      "id": "feed0de3-3003-48b3-9f0b-0fb01e304468",
+      "name": "Send Follow-Up Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1720,
+        140
+      ],
+      "parameters": {
+        "emailFormat": "html",
+        "fromEmail": "SaaS CRM SaaS CRM <crm-notifications@example.com>",
+        "html": "={{ $json.email_html }}",
+        "operation": "send",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "crm-notifications@example.com"
+        },
+        "resource": "email",
+        "subject": "={{ $json.email_subject }}",
+        "toEmail": "={{ $json.email }}"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "61e2d2bf-0245-4e25-905d-c63faa57c991",
+      "name": "Resolve Send Outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1960,
+        140
+      ],
+      "parameters": {
+        "jsCode": "const lead = $('Format Follow-Up Email').item.json;\nconst sendRes = $input.item.json || {};\nconst sentOk = Array.isArray(sendRes.accepted) ? sendRes.accepted.length > 0 : !sendRes.error;\nconst nowIso = new Date().toISOString();\nconst nextStep = Number(lead.next_followup_number || 2);\n\nreturn {\n  json: {\n    lead_key: lead.lead_key,\n    name: lead.name,\n    email: lead.email,\n    followup_count: sentOk ? nextStep : Number(lead.followup_count || 1),\n    pipeline_status: sentOk ? `Follow-Up #${nextStep} Sent` : 'Follow-Up Email Failed',\n    last_contacted_at: sentOk ? nowIso : (lead.last_contacted_at || nowIso),\n    updated_at: nowIso,\n    event_code: `FU-${nextStep}-${Date.now().toString(36).toUpperCase()}`,\n    event_type: sentOk ? 'FOLLOWUP_SENT' : 'FOLLOWUP_FAILED',\n    summary: sentOk ? `Sent Follow-Up #${nextStep} to ${lead.name} (${lead.company})` : `Follow-Up #${nextStep} failed for ${lead.email}: ${sendRes.error?.message || 'SMTP error'}`,\n    details_json: JSON.stringify({ step: nextStep, sentOk, messageId: sendRes.messageId || null, error: sendRes.error || null }),\n  },\n};",
+        "mode": "runOnceForEachItem"
+      }
+    },
+    {
+      "id": "11b2e28b-415b-42ea-b0c2-88247290d15d",
+      "name": "Update Lead After Follow-Up",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2200,
+        140
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "followup_count",
+              "id": "followup_count",
+              "required": false,
+              "type": "number"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "pipeline_status",
+              "id": "pipeline_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_contacted_at",
+              "id": "last_contacted_at",
+              "required": false,
+              "type": "dateTime"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "followup_count": "={{ $('Resolve Send Outcome').item.json.followup_count }}",
+            "last_contacted_at": "={{ $('Resolve Send Outcome').item.json.last_contacted_at }}",
+            "pipeline_status": "={{ $('Resolve Send Outcome').item.json.pipeline_status }}",
+            "updated_at": "={{ $('Resolve Send Outcome').item.json.updated_at }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Leads",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_LEADS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "lead_key",
+              "keyValue": "={{ $('Resolve Send Outcome').item.json.lead_key }}"
+            }
+          ]
+        },
+        "operation": "update",
+        "resource": "row"
+      }
+    },
+    {
+      "id": "a2d37813-e592-4353-a93c-669427c841a2",
+      "name": "Sync Follow-Up Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        2440,
+        140
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "lead_key"
+          ],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "lead_key",
+              "id": "lead_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "pipeline_status",
+              "id": "pipeline_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "followup_count",
+              "id": "followup_count",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "last_contacted_at",
+              "id": "last_contacted_at",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "followup_count": "={{ $('Resolve Send Outcome').item.json.followup_count }}",
+            "last_contacted_at": "={{ $('Resolve Send Outcome').item.json.last_contacted_at }}",
+            "lead_key": "={{ $('Resolve Send Outcome').item.json.lead_key }}",
+            "pipeline_status": "={{ $('Resolve Send Outcome').item.json.pipeline_status }}",
+            "updated_at": "={{ $('Resolve Send Outcome').item.json.updated_at }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "cachedResultName": "SaaS CRM SaaS CRM Dashboard",
+          "mode": "id",
+          "value": "CONFIGURE_GOOGLE_SHEET_ID"
+        },
+        "operation": "appendOrUpdate",
+        "resource": "sheet",
+        "sheetName": {
+          "__rl": true,
+          "cachedResultName": "Leads",
+          "mode": "list",
+          "value": "853091984"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "7159b536-b3f9-49c7-bf29-8d02dcd47c48",
+      "name": "Log Follow-Up Activity",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2680,
+        140
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "event_code",
+              "id": "event_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_type",
+              "id": "entity_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_key",
+              "id": "entity_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "actor",
+              "id": "actor",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "event_type",
+              "id": "event_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "summary",
+              "id": "summary",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "details_json",
+              "id": "details_json",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "actor": "followup_engine",
+            "created_at": "={{ $('Resolve Send Outcome').item.json.updated_at }}",
+            "details_json": "={{ $('Resolve Send Outcome').item.json.details_json }}",
+            "entity_key": "={{ $('Resolve Send Outcome').item.json.lead_key }}",
+            "entity_type": "lead",
+            "event_code": "={{ $('Resolve Send Outcome').item.json.event_code }}",
+            "event_type": "={{ $('Resolve Send Outcome').item.json.event_type }}",
+            "summary": "={{ $('Resolve Send Outcome').item.json.summary }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Activity_History",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_ACTIVITY_HISTORY"
+        },
+        "operation": "insert",
+        "resource": "row"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "a1cfa141-a9f0-4fa9-8a7e-aeb0e08c91b6",
+      "name": "Mark Stalled in CRM",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1160,
+        520
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "pipeline_status",
+              "id": "pipeline_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "pipeline_status": "Manual Review Required",
+            "updated_at": "={{ $('Should Send Follow-Up?').item.json.updated_at }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Leads",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_LEADS"
+        },
+        "filters": {
+          "conditions": [
+            {
+              "condition": "eq",
+              "keyName": "lead_key",
+              "keyValue": "={{ $('Should Send Follow-Up?').item.json.lead_key }}"
+            }
+          ]
+        },
+        "operation": "update",
+        "resource": "row"
+      }
+    },
+    {
+      "id": "e5796fc9-b759-46db-ac06-bef3b6fc5c33",
+      "name": "Sync Stalled Lead Sheet",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1400,
+        520
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "matchingColumns": [
+            "lead_key"
+          ],
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "lead_key",
+              "id": "lead_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "pipeline_status",
+              "id": "pipeline_status",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "updated_at",
+              "id": "updated_at",
+              "required": false,
+              "type": "string"
+            }
+          ],
+          "value": {
+            "lead_key": "={{ $('Should Send Follow-Up?').item.json.lead_key }}",
+            "pipeline_status": "Manual Review Required",
+            "updated_at": "={{ $('Should Send Follow-Up?').item.json.updated_at }}"
+          }
+        },
+        "documentId": {
+          "__rl": true,
+          "cachedResultName": "SaaS CRM SaaS CRM Dashboard",
+          "mode": "id",
+          "value": "CONFIGURE_GOOGLE_SHEET_ID"
+        },
+        "operation": "appendOrUpdate",
+        "resource": "sheet",
+        "sheetName": {
+          "__rl": true,
+          "cachedResultName": "Leads",
+          "mode": "list",
+          "value": "853091984"
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "d466c9fb-31af-4042-812c-bd788ad45de8",
+      "name": "Log Escalation Activity",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1640,
+        520
+      ],
+      "parameters": {
+        "columns": {
+          "mappingMode": "defineBelow",
+          "schema": [
+            {
+              "canBeUsedToMatch": true,
+              "display": true,
+              "displayName": "event_code",
+              "id": "event_code",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_type",
+              "id": "entity_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "entity_key",
+              "id": "entity_key",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "actor",
+              "id": "actor",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "event_type",
+              "id": "event_type",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "summary",
+              "id": "summary",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "details_json",
+              "id": "details_json",
+              "required": false,
+              "type": "string"
+            },
+            {
+              "canBeUsedToMatch": false,
+              "display": true,
+              "displayName": "created_at",
+              "id": "created_at",
+              "required": false,
+              "type": "dateTime"
+            }
+          ],
+          "value": {
+            "actor": "followup_engine",
+            "created_at": "={{ $('Should Send Follow-Up?').item.json.updated_at }}",
+            "details_json": "={{ JSON.stringify({ followup_count: $('Should Send Follow-Up?').item.json.followup_count, days_since_contact: $('Should Send Follow-Up?').item.json.days_since_contact }) }}",
+            "entity_key": "={{ $('Should Send Follow-Up?').item.json.lead_key }}",
+            "entity_type": "lead",
+            "event_code": "={{ $('Should Send Follow-Up?').item.json.event_code }}",
+            "event_type": "LEAD_MANUAL_REVIEW_REQUIRED",
+            "summary": "={{ $('Should Send Follow-Up?').item.json.name + ' reached 4 automated follow-ups without reply — flagged for manual review' }}"
+          }
+        },
+        "dataTableId": {
+          "__rl": true,
+          "cachedResultName": "CRM_Activity_History",
+          "mode": "list",
+          "value": "CONFIGURE_TABLE_CRM_ACTIVITY_HISTORY"
+        },
+        "operation": "insert",
+        "resource": "row"
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "de00fc93-8db4-4110-82b7-99cf5f571947",
+      "name": "Slack Stalled Lead Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1880,
+        520
+      ],
+      "parameters": {
+        "authentication": "accessToken",
+        "channelId": {
+          "__rl": true,
+          "cachedResultName": "crm-alerts",
+          "mode": "id",
+          "value": "CONFIGURE_SLACK_CHANNEL_ID"
+        },
+        "messageType": "text",
+        "operation": "post",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        },
+        "resource": "message",
+        "select": "channel",
+        "text": "={{ ':warning: *Lead Escalated for Manual Review*\\n*Lead:* ' + $('Should Send Follow-Up?').item.json.name + ' (' + $('Should Send Follow-Up?').item.json.company + ')\\n*Email:* ' + $('Should Send Follow-Up?').item.json.email + '\\n*Touches Sent:* ' + $('Should Send Follow-Up?').item.json.followup_count + '\\n*Reason:* No response after Follow-Up #4' }}"
+      },
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Schedule Daily 09:00 Asia/Manila": {
+      "main": [
+        [
+          {
+            "node": "Fetch CRM Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Sequence Run": {
+      "main": [
+        [
+          {
+            "node": "Fetch CRM Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch CRM Leads": {
+      "main": [
+        [
+          {
+            "node": "Select Due Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Select Due Leads": {
+      "main": [
+        [
+          {
+            "node": "Should Send Follow-Up?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Should Send Follow-Up?": {
+      "main": [
+        [
+          {
+            "node": "AI Follow-Up Strategist",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Stalled in CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Follow-Up LLM": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Follow-Up Strategist",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Follow-Up Schema": {
+      "ai_outputParser": [
+        [
+          {
+            "node": "AI Follow-Up Strategist",
+            "type": "ai_outputParser",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Follow-Up Strategist": {
+      "main": [
+        [
+          {
+            "node": "Format Follow-Up Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Follow-Up Email": {
+      "main": [
+        [
+          {
+            "node": "Send Follow-Up Email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Follow-Up Email": {
+      "main": [
+        [
+          {
+            "node": "Resolve Send Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Resolve Send Outcome": {
+      "main": [
+        [
+          {
+            "node": "Update Lead After Follow-Up",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Lead After Follow-Up": {
+      "main": [
+        [
+          {
+            "node": "Sync Follow-Up Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Follow-Up Sheet": {
+      "main": [
+        [
+          {
+            "node": "Log Follow-Up Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Stalled in CRM": {
+      "main": [
+        [
+          {
+            "node": "Sync Stalled Lead Sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sync Stalled Lead Sheet": {
+      "main": [
+        [
+          {
+            "node": "Log Escalation Activity",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Escalation Activity": {
+      "main": [
+        [
+          {
+            "node": "Slack Stalled Lead Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Asia/Manila",
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all",
+    "saveManualExecutions": true,
+    "errorWorkflow": "CONFIGURE_ERROR_WORKFLOW_ID"
+  },
+  "active": false,
+  "tags": [
+    "crm-leads",
+    "saas-crm-suite"
+  ],
+  "description": "Automated daily SaaS lead follow-up engine supporting touches #2-#4 with AI copywriting, Purelymail SMTP delivery, CRM Data Table & Sheet sync, and Slack manual review escalation.",
+  "nodeGroups": [
+    {
+      "id": "b9e70a0d-9123-4851-b10b-3cd93cfaa4de",
+      "name": "1. Load & Evaluate Leads",
+      "description": "Loads open CRM_Leads rows and evaluates cadence timing up to follow-up touch #4.",
+      "nodeNames": [
+        "Fetch CRM Leads",
+        "Select Due Leads",
+        "Should Send Follow-Up?"
+      ]
+    },
+    {
+      "id": "e34decbb-9983-4e1d-8b15-cc6df1812fa2",
+      "name": "2. AI Follow-Up Strategy",
+      "description": "Generates context-aware follow-up copy with OpenRouter Gemini Flash-Lite and formats HTML email.",
+      "nodeNames": [
+        "AI Follow-Up Strategist",
+        "OpenRouter Follow-Up LLM",
+        "Follow-Up Schema",
+        "Format Follow-Up Email"
+      ]
+    },
+    {
+      "id": "95fedfa9-fcdc-4733-ae34-812f21c2f8d9",
+      "name": "3. Send & Sync Follow-Up",
+      "description": "Sends SMTP follow-up email and persists outcome to CRM_Leads, Google Sheet, and Activity Log.",
+      "nodeNames": [
+        "Send Follow-Up Email",
+        "Resolve Send Outcome",
+        "Update Lead After Follow-Up",
+        "Sync Follow-Up Sheet",
+        "Log Follow-Up Activity"
+      ]
+    },
+    {
+      "id": "e966c12e-0794-4883-9f5e-3f17bbe5d8bd",
+      "name": "4. Stalled Lead Escalation",
+      "description": "Flags unresponsive leads after Follow-Up #4 for human review in CRM, Sheet, Activity Log, and Slack.",
+      "nodeNames": [
+        "Mark Stalled in CRM",
+        "Sync Stalled Lead Sheet",
+        "Log Escalation Activity",
+        "Slack Stalled Lead Alert"
+      ]
+    }
+  ]
+}
