@@ -88,7 +88,23 @@ This page collects visual evidence for the portfolio's four featured systems. It
 
 [Open the SaaS CRM Suite case study](projects/saas-crm-suite)
 
-## 6. Additional visual evidence
+## 6. Zero-Leak Revenue & Executive Guardrail Suite
+
+![Zero-Leak Executive Guardrail animated architecture visual](projects/zero-leak-executive-guardrail/assets/AwtomateAI_Zero_Leak_Visual.gif)
+
+**What this proves:** Five coordinated workflows (`118` nodes) combine persist-first lead capture (`ZL_Leads_Vault`), Gemini -> OpenRouter -> 15-minute DLQ self-healing recovery (`ZL_Retry_Queue`), deterministic safety overrides, bot-safe two-phase executive approval (`GET /decision` preview + `POST /commit` execution), live pre-dispatch booking conflict checks (`ZL_Bookings`), shared error alerting (`ZL_Audit_Log`), and a daily 7:30 AM `Asia/Manila` brief. *(Note: the GIF above is an engineered architecture showcase animation, not an editor screen recording.)*
+
+**Recorded evidence (November 24, 2026):**
+- 18 end-to-end verification checks executed across all 5 active workflows using synthetic prospect payloads (`0` dropped leads across `10` vault rows).
+- Executions `#1706`, `#1735`, and `#1741`: verified OpenRouter primary-outage failover, total-outage DLQ capture, and multi-item `SplitInBatches` DLQ self-healing recovery (`2/2` rows marked `RECOVERED`).
+- Live HTTP tests against `/webhook/zero-leak/decision` and `/webhook/zero-leak/commit`: verified `Slackbot-LinkExpanding` prefetch immunity (`200`, `mutated: false`), forged token rejection (`403`), replay lock (`409`), double-booking conflict halt (`409`), and confirmed booking dispatch (`200`).
+- Execution `#1754`: delivered full Gemini Pro+ Morning Brief via SMTP (`250 2.6.0 Message received`) and Slack (`"ok": true`).
+
+**Boundary:** Self-hosted developer-instance implementation tested with synthetic prospect records; not a paid-client production deployment. Shared error handler `00` was verified via manual test execution `#1686`.
+
+[Open the Zero-Leak Executive Guardrail case study](projects/zero-leak-executive-guardrail)
+
+## 7. Additional visual evidence
 
 ### Historical Business Opportunity Finder output
 

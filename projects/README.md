@@ -8,6 +8,7 @@ Open a project by the business problem it addresses. Each project README explain
 
 | Project | Engineering focus | Current stage and evidence |
 |---|---|---|
+| **[Zero-Leak Revenue & Executive Guardrail Suite](zero-leak-executive-guardrail)** | 5 coordinated workflows (118 nodes), 4 isolated Data Tables, persist-first vault, Gemini -> OpenRouter -> DLQ 15m retry worker, bot-safe GET/POST approval gate, pre-dispatch booking guard, 7:30 AM executive brief | Active on developer instance; 18 verified Nov 24 E2E scenarios (`0` dropped leads, `2/2` DLQ recoveries); 5 sanitized exports + animated GIF |
 | **[SaaS CRM Suite — Revenue, Churn & Support Ops](saas-crm-suite)** | 8 coordinated workflows (158 nodes), 4 shared Data Tables, Google Sheets mirror, Admin SPA & API, deterministic fallbacks, shared error handler | Active on developer instance; 17 passing Nov 23 runs with synthetic test records; 8 sanitized exports |
 | **[CommercePilot — Shopify AI Shopping Assistant](commercepilot)** | Shopify app + n8n orchestration, catalog-grounded AI, App Proxy HMAC, Redis controls, variant availability, monitoring | Preview / development store; 44 successful assistant execution records; 42-node draft vs 37-node published version |
 | **[AI Lead Management](lead-management)** | Website-connected lead intake, OpenRouter qualification, JavaScript parsing, conditional Gmail routing, Google Sheets | Active 18-node workflow; 18 successful execution records; current workflow differs from historical exports |

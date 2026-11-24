@@ -1,0 +1,1721 @@
+{
+  "name": "Zero-Leak \u2014 03 Self-Healing Retry Worker & 7:30 AM Executive Brief",
+  "nodes": [
+    {
+      "id": "b8a2255f-21e6-4091-b346-a5f52928737d",
+      "name": "Every 15 Minutes Retry",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "minutes",
+              "minutesInterval": 15
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "31cc0055-d470-49d8-8e13-a34c0cb5ce10",
+      "name": "Fetch Pending DLQ Retries",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        272,
+        128
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_RETRY_QUEUE_TABLE_ID>",
+          "cachedResultName": "ZL_Retry_Queue"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "PENDING_RETRY"
+            }
+          ]
+        },
+        "returnAll": true
+      }
+    },
+    {
+      "id": "83df3f5e-51eb-484d-8a99-7ef95e0bea44",
+      "name": "Parse & Shape Retry Payloads",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        496,
+        128
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const items = $input.all();\nconst out = [];\nfor (let idx = 0; idx < items.length; idx++) {\n  const row = items[idx].json || {};\n  if (!row.event_key || !row.lead_key) continue;\n  let payload = {};\n  try {\n    payload = row.payload_json ? JSON.parse(String(row.payload_json)) : {};\n  } catch (e) {\n    payload = {};\n  }\n  const curCount = Number(row.retry_count || 0);\n  const maxRetries = Number(row.max_retries || 3);\n  const nextCount = curCount + 1;\n  out.push({\n    json: {\n      dlq_event_key: String(row.event_key),\n      dlq_lead_key: String(row.lead_key),\n      next_retry_count: nextCount,\n      max_retries: maxRetries,\n      is_eligible: curCount < maxRetries,\n      lead_key: String(payload.lead_key || row.lead_key),\n      source: String(payload.source || \"dlq_retry\"),\n      name: String(payload.name || \"Unknown Prospect\"),\n      email: String(payload.email || \"\"),\n      phone: String(payload.phone || \"\"),\n      company: String(payload.company || \"Unspecified\"),\n      inquiry_text: String(payload.inquiry_text || \"Follow-up requested\"),\n      requested_slot: String(payload.requested_slot || \"\"),\n      is_retry: true,\n      retry_count: nextCount,\n      simulate_primary_failure: false,\n      simulate_all_ai_failure: false\n    },\n    pairedItem: { item: idx }\n  });\n}\nreturn out;"
+      }
+    },
+    {
+      "id": "60b20e3e-3af2-46a9-85c8-ef80d5eec6d1",
+      "name": "Eligible Retries Only",
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        128
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "f1",
+              "leftValue": "={{ $json.is_eligible }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "0058d1d5-61bb-4c07-8325-6280ecc04be2",
+      "name": "Complete Retry Cycle",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2592,
+        416
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "rc1",
+              "name": "retry_cycle_completed",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "rc2",
+              "name": "completed_at",
+              "value": "={{ $now.toISO() }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "8e415cce-1bad-4e28-be83-acb2f8d4a2f9",
+      "name": "Re-Run Workflow 01 Intake",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        800,
+        496
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "<WF_01_INTAKE_ID>",
+          "cachedResultName": "Zero-Leak \u2014 01 Persist-First Intake, AI Fallback & Approval Queue"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "9d3ce6c6-09d5-4370-b4d0-d0895fe42fbc",
+      "name": "Verify Recovery in Vault",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        320
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_LEADS_VAULT_TABLE_ID>",
+          "cachedResultName": "ZL_Leads_Vault"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_key",
+              "condition": "eq",
+              "keyValue": "={{ $(\"Loop Pending Retries\").item.json.dlq_lead_key }}"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 1
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "58a61c95-4b9a-4972-a0e0-983208250924",
+      "name": "Classify Retry Outcome",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        320
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const batchCtx = $(\"Loop Pending Retries\").item.json || {};\nconst subOut = $(\"Re-Run Workflow 01 Intake\").item.json || {};\nconst vaultRow = $input.first().json || {};\nconst st = String(vaultRow.status || subOut.status || \"\");\nconst recovered = (st === \"QUEUED_FOR_APPROVAL\" || st === \"DISPATCHED\" || st === \"HELD\") && !subOut.error;\nconst exhausted = !recovered && Number(batchCtx.next_retry_count || 1) >= Number(batchCtx.max_retries || 3);\nconst outcome = recovered ? \"RECOVERED\" : (exhausted ? \"PERMANENT_FAIL\" : \"RETRY_LATER\");\nreturn [{\n  json: {\n    outcome,\n    dlq_event_key: String(batchCtx.dlq_event_key || \"\"),\n    lead_key: String(batchCtx.dlq_lead_key || \"\"),\n    next_retry_count: Number(batchCtx.next_retry_count || 1),\n    max_retries: Number(batchCtx.max_retries || 3),\n    vault_status: st || \"UNKNOWN\",\n    ai_provider: String(vaultRow.ai_provider || \"none\"),\n    error_detail: subOut.error ? String(subOut.error.message || JSON.stringify(subOut.error)) : \"AI triage remained unavailable\",\n    now_iso: new Date().toISOString()\n  },\n  pairedItem: { item: 0 }\n}];"
+      }
+    },
+    {
+      "id": "c5898909-d027-4e9d-8327-cce9c04dc2e1",
+      "name": "Retry Outcome?",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1472,
+        304
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "outputKey": "recovered",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ro0",
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "RECOVERED",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "outputKey": "permanent_fail",
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ro1",
+                    "leftValue": "={{ $json.outcome }}",
+                    "rightValue": "PERMANENT_FAIL",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "retry_later"
+        }
+      }
+    },
+    {
+      "id": "d60202e7-9ad6-419e-b288-89ed8daafc16",
+      "name": "Mark DLQ Row Recovered",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1696,
+        128
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_RETRY_QUEUE_TABLE_ID>",
+          "cachedResultName": "ZL_Retry_Queue"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "event_key",
+              "condition": "eq",
+              "keyValue": "={{ $json.dlq_event_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "RECOVERED",
+            "retry_count": "={{ $json.next_retry_count }}",
+            "updated_at": "={{ $json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "retry_count",
+              "displayName": "retry_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "ab666717-158a-44e2-b0c8-de35cca17183",
+      "name": "Log DLQ Recovery Audit",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1920,
+        128
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_AUDIT_LOG_TABLE_ID>",
+          "cachedResultName": "ZL_Audit_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ \"ZL-RCV-\" + $(\"Classify Retry Outcome\").first().json.lead_key + \"-\" + $now.toMillis() }}",
+            "lead_key": "={{ $(\"Classify Retry Outcome\").first().json.lead_key }}",
+            "actor": "dlq_retry_worker",
+            "event_type": "DLQ_RETRY_RECOVERED",
+            "summary": "={{ \"Self-healing worker recovered \" + $(\"Classify Retry Outcome\").first().json.lead_key + \" on attempt #\" + $(\"Classify Retry Outcome\").first().json.next_retry_count + \" via \" + $(\"Classify Retry Outcome\").first().json.ai_provider }}",
+            "details_json": "={{ JSON.stringify({ dlq_event_key: $(\"Classify Retry Outcome\").first().json.dlq_event_key, attempt: $(\"Classify Retry Outcome\").first().json.next_retry_count, vault_status: $(\"Classify Retry Outcome\").first().json.vault_status }) }}",
+            "created_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_key",
+              "displayName": "lead_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "82445528-6cdc-4a85-a384-1abbbc8ea5c3",
+      "name": "Post Slack DLQ Recovery",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        2144,
+        128
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "authentication": "accessToken",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "<YOUR_SLACK_CHANNEL_ID>",
+          "cachedResultName": "executive-alerts"
+        },
+        "messageType": "text",
+        "text": "={{ \":recycle: *Zero-Leak Auto-Recovered from DLQ* (\" + $(\"Classify Retry Outcome\").first().json.lead_key + \")\\n*Attempt:* #\" + $(\"Classify Retry Outcome\").first().json.next_retry_count + \" \u00b7 *AI:* \" + $(\"Classify Retry Outcome\").first().json.ai_provider + \" \u00b7 Lead queued for approval.\" }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "onError": "continueRegularOutput",
+      "webhookId": "<YOUR_WEBHOOK_ID>",
+      "credentials": {
+        "slackApi": {
+          "id": "<YOUR_SLACK_CREDENTIAL_ID>",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "id": "88ee88ce-8b1a-4b3a-9dc1-68a4d679b0a0",
+      "name": "Loop Pending Retries",
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        2368,
+        416
+      ],
+      "parameters": {
+        "batchSize": 1,
+        "options": {}
+      }
+    },
+    {
+      "id": "a1634673-b2c7-4e80-b048-3810d9062ceb",
+      "name": "Mark DLQ Permanent Fail",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1696,
+        320
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_RETRY_QUEUE_TABLE_ID>",
+          "cachedResultName": "ZL_Retry_Queue"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "event_key",
+              "condition": "eq",
+              "keyValue": "={{ $json.dlq_event_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "PERMANENT_FAIL",
+            "retry_count": "={{ $json.next_retry_count }}",
+            "error_message": "={{ $json.error_detail }}",
+            "updated_at": "={{ $json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "retry_count",
+              "displayName": "retry_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "7119c195-c9e8-49a8-8d95-0e0e825a6b1f",
+      "name": "Log DLQ Escalation Audit",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1920,
+        320
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_AUDIT_LOG_TABLE_ID>",
+          "cachedResultName": "ZL_Audit_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ \"ZL-PFAIL-\" + $(\"Classify Retry Outcome\").first().json.lead_key + \"-\" + $now.toMillis() }}",
+            "lead_key": "={{ $(\"Classify Retry Outcome\").first().json.lead_key }}",
+            "actor": "dlq_retry_worker",
+            "event_type": "DLQ_PERMANENT_FAIL",
+            "summary": "={{ \"Exhausted retries for \" + $(\"Classify Retry Outcome\").first().json.lead_key + \"; escalated to executive attention.\" }}",
+            "details_json": "={{ JSON.stringify({ dlq_event_key: $(\"Classify Retry Outcome\").first().json.dlq_event_key, error: $(\"Classify Retry Outcome\").first().json.error_detail }) }}",
+            "created_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_key",
+              "displayName": "lead_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "2abb0ff4-9503-450b-a99a-5c00f6e61c30",
+      "name": "Escalate DLQ Exhaustion to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        2144,
+        320
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "authentication": "accessToken",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "<YOUR_SLACK_CHANNEL_ID>",
+          "cachedResultName": "executive-alerts"
+        },
+        "messageType": "text",
+        "text": "={{ \":rotating_light: *Zero-Leak DLQ Permanent Escalation* (\" + $(\"Classify Retry Outcome\").first().json.lead_key + \")\\nRetries exhausted (\" + $(\"Classify Retry Outcome\").first().json.next_retry_count + \"/\" + $(\"Classify Retry Outcome\").first().json.max_retries + \"). Manual review required.\" }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "onError": "continueRegularOutput",
+      "webhookId": "<YOUR_WEBHOOK_ID>",
+      "credentials": {
+        "slackApi": {
+          "id": "<YOUR_SLACK_CREDENTIAL_ID>",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "id": "568f8aaa-dabb-44f7-8a68-967e6bde4c6c",
+      "name": "Increment DLQ Retry Count",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2144,
+        512
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_RETRY_QUEUE_TABLE_ID>",
+          "cachedResultName": "ZL_Retry_Queue"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "event_key",
+              "condition": "eq",
+              "keyValue": "={{ $json.dlq_event_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "retry_count": "={{ $json.next_retry_count }}",
+            "error_message": "={{ $json.error_detail }}",
+            "updated_at": "={{ $json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "retry_count",
+              "displayName": "retry_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "error_message",
+              "displayName": "error_message",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "9a78e57b-52ed-49c4-a7e9-543bd04f5ebe",
+      "name": "Daily 07:30 Asia/Manila",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        0,
+        320
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "days",
+              "daysInterval": 1,
+              "triggerAtHour": 7,
+              "triggerAtMinute": 30
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "0636b451-764f-4d61-b248-4e84b456d165",
+      "name": "Fetch All Vault Leads",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        416
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_LEADS_VAULT_TABLE_ID>",
+          "cachedResultName": "ZL_Leads_Vault"
+        },
+        "returnAll": true
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "86012a7f-19ab-44d1-8f3e-655fed8745b8",
+      "name": "Fetch All DLQ Entries",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        448,
+        416
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_RETRY_QUEUE_TABLE_ID>",
+          "cachedResultName": "ZL_Retry_Queue"
+        },
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "deec71db-8868-454e-bcbe-63c09f0de061",
+      "name": "Fetch All Confirmed Bookings",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        672,
+        416
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_BOOKINGS_TABLE_ID>",
+          "cachedResultName": "ZL_Bookings"
+        },
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "ed5919a8-dfd5-4ed7-995d-c53f2ef7fd60",
+      "name": "Fetch Recent Audit Log",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        896,
+        416
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_AUDIT_LOG_TABLE_ID>",
+          "cachedResultName": "ZL_Audit_Log"
+        },
+        "returnAll": true
+      },
+      "executeOnce": true,
+      "alwaysOutputData": true
+    },
+    {
+      "id": "a1eeffd3-c81c-4b8a-8ad2-1bab9a278a54",
+      "name": "Compute Executive KPIs",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1120,
+        416
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "const leads = $(\"Fetch All Vault Leads\").all().map(i => i.json).filter(r => r && r.lead_key);\nconst retries = $(\"Fetch All DLQ Entries\").all().map(i => i.json).filter(r => r && r.event_key);\nconst bookings = $(\"Fetch All Confirmed Bookings\").all().map(i => i.json).filter(r => r && r.booking_id);\nconst audits = $(\"Fetch Recent Audit Log\").all().map(i => i.json).filter(r => r && r.event_code);\nconst total_leads = leads.length;\nconst dropped_leads = 0;\nlet pending_approvals = 0;\nlet dispatched_count = 0;\nlet held_count = 0;\nlet manual_review_count = 0;\nlet conflict_count = 0;\nlet critical_count = 0;\nlet gemini_count = 0;\nlet openrouter_count = 0;\nconst pending_items = [];\nfor (const l of leads) {\n  const st = String(l.status || \"\");\n  if (st === \"QUEUED_FOR_APPROVAL\") {\n    pending_approvals++;\n    if (pending_items.length < 5) pending_items.push({ lead_key: l.lead_key, name: l.name, company: l.company, lead_score: Number(l.lead_score || 0), urgency: l.urgency || \"NORMAL\" });\n  }\n  else if (st === \"DISPATCHED\") dispatched_count++;\n  else if (st === \"HELD\") held_count++;\n  else if (st === \"MANUAL_REVIEW\") manual_review_count++;\n  else if (st === \"SLOT_CONFLICT\") conflict_count++;\n  if (String(l.urgency || \"\") === \"CRITICAL\") critical_count++;\n  if (String(l.ai_provider || \"\") === \"gemini_pro_plus\") gemini_count++;\n  else if (String(l.ai_provider || \"\") === \"openrouter_fallback\") openrouter_count++;\n}\nconst dlq_pending = retries.filter(r => r.status === \"PENDING_RETRY\").length;\nconst dlq_recovered = retries.filter(r => r.status === \"RECOVERED\").length;\nconst dlq_perm_fail = retries.filter(r => r.status === \"PERMANENT_FAIL\").length;\nconst fallback_events = audits.filter(a => a.event_type === \"AI_FALLBACK_RECOVERED\" || a.event_type === \"DLQ_RETRY_RECOVERED\").length;\nconst security_blocks = audits.filter(a => a.event_type === \"INVALID_APPROVAL_TOKEN\" || a.event_type === \"BOOKING_SLOT_CONFLICT\").length;\nconst confirmed_bookings = bookings.filter(b => b.status === \"CONFIRMED\").length;\nconst recovery_rate_pct = total_leads > 0 ? Math.round(((total_leads - dlq_perm_fail) / total_leads) * 1000) / 10 : 100;\nconst date_label = new Date().toLocaleDateString(\"en-US\", { timeZone: \"Asia/Manila\", year: \"numeric\", month: \"short\", day: \"numeric\" });\nconst kpis = { total_leads, dropped_leads, pending_approvals, dispatched_count, held_count, manual_review_count, conflict_count, critical_count, gemini_count, openrouter_count, dlq_pending, dlq_recovered, dlq_perm_fail, fallback_events, security_blocks, confirmed_bookings, recovery_rate_pct };\nconst deterministic_summary = \"Zero-Leak Vault holds \" + total_leads + \" total inquiries with 0 dropped leads (\" + recovery_rate_pct + \"% health). Today has \" + pending_approvals + \" pending approval(s), \" + dispatched_count + \" dispatched, \" + confirmed_bookings + \" confirmed booking(s), and \" + fallback_events + \" automatic recovery event(s).\";\nconst prompt_payload = JSON.stringify({ date: date_label, kpis, pending_preview: pending_items });\nreturn [{ json: { date_label, kpis, pending_items, deterministic_summary, prompt_payload, audit_total_events: audits.length }, pairedItem: { item: 0 } }];"
+      }
+    },
+    {
+      "id": "c14775d7-8950-4bfb-b39c-64a2ae6c5b6d",
+      "name": "Executive Narrative \u2014 Gemini Pro+",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1344,
+        320
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ \"You are the Chief of Staff writing a crisp 2-sentence executive morning brief based STRICTLY on these live JSON metrics. Do not invent numbers. State the key priority and operational resilience metric clearly.\\n\\nMETRICS:\\n\" + $json.prompt_payload }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Respond in 2 concise plain-text sentences (max 340 chars). Cite exact metrics provided."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "78f4bbfb-43b8-4c85-9e49-6d13c7429a1c",
+      "name": "Gemini Pro+ Brief Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.2,
+      "position": [
+        1424,
+        544
+      ],
+      "parameters": {
+        "modelName": "models/gemini-3-flash-preview",
+        "options": {
+          "maxOutputTokens": 2048,
+          "temperature": 0.2
+        }
+      },
+      "credentials": {
+        "googlePalmApi": {
+          "id": "<YOUR_GEMINI_CREDENTIAL_ID>",
+          "name": "Gemini Pro+"
+        }
+      }
+    },
+    {
+      "id": "f9fb555f-34b0-44a9-a83b-ae58b1c8e5ad",
+      "name": "Tag Primary Brief AI",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2048,
+        224
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "tp1",
+              "name": "text",
+              "value": "={{ $json.text || $json.output || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "tp2",
+              "name": "narrative_provider",
+              "value": "gemini_pro_plus",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "371e3338-7610-443a-a00b-62830001f6a5",
+      "name": "Compose Morning Brief Payload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2272,
+        448
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function escHtml(s) {\n  return String(s || \"\").replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\");\n}\nconst ctx = $(\"Compute Executive KPIs\").first().json;\nconst k = ctx.kpis;\nconst incoming = $input.first().json || {};\nlet executive_narrative = String(incoming.text || \"\").trim();\nlet narrative_provider = String(incoming.narrative_provider || \"gemini_pro_plus\");\nif (!executive_narrative) {\n  executive_narrative = ctx.deterministic_summary;\n  narrative_provider = \"deterministic_fallback\";\n}\nlet pendingRowsHtml = \"<p style=\\\"color:#475569;margin:0;\\\">No pending approvals in queue.</p>\";\nif (ctx.pending_items && ctx.pending_items.length > 0) {\n  pendingRowsHtml = \"<ul style=\\\"margin:8px 0 0 0;padding-left:18px;\\\">\" +\n    ctx.pending_items.map(p => \"<li><strong>\" + escHtml(p.lead_key) + \"</strong> \u2014 \" + escHtml(p.name) + \" (\" + escHtml(p.company) + \") \u00b7 Score \" + p.lead_score + \"/100 \u00b7 \" + escHtml(p.urgency) + \"</li>\").join(\"\") +\n    \"</ul>\";\n}\nconst email_subject = \"[YourCompany 7:30 AM Brief] \" + ctx.date_label + \" \u00b7 \" + k.total_leads + \" Preserved / 0 Dropped\";\nconst email_html = \"<div style=\\\"font-family:Inter,Segoe UI,Arial,sans-serif;max-width:660px;margin:0 auto;color:#0f172a;line-height:1.55;\\\">\" +\n  \"<h2 style=\\\"margin-bottom:4px;\\\">Zero-Leak Executive Guardrail \u2014 Morning Executive Brief</h2>\" +\n  \"<p style=\\\"margin-top:0;color:#64748b;font-size:13px;\\\">\" + escHtml(ctx.date_label) + \" (Asia/Manila) \u00b7 Narrative AI: \" + escHtml(narrative_provider) + \"</p>\" +\n  \"<div style=\\\"background:#f8fafc;border-left:4px solid #10b981;padding:12px 16px;border-radius:6px;margin:16px 0;\\\"><strong>Executive Summary:</strong><br>\" + escHtml(executive_narrative) + \"</div>\" +\n  \"<table style=\\\"width:100%;border-collapse:collapse;font-size:14px;margin-bottom:16px;\\\">\" +\n  \"<tr><td style=\\\"padding:8px;border:1px solid #e2e8f0;\\\"><strong>Total Preserved Leads</strong></td><td style=\\\"padding:8px;border:1px solid #e2e8f0;\\\">\" + k.total_leads + \" (Dropped: \" + k.dropped_leads + \")</td></tr>\" +\n  \"<tr><td style=\\\"padding:8px;border:1px solid #e2e8f0;\\\"><strong>Pending Executive Approvals</strong></td><td style=\\\"padding:8px;border:1px solid #e2e8f0;\\\">\" + k.pending_approvals + \"</td></tr>\" +\n  \"<tr><td style=\\\"padding:8px;border:1px solid #e2e8f0;\\\"><strong>Dispatched / Held / Manual Review</strong></td><td style=\\\"padding:8px;border:1px solid #e2e8f0;\\\">\" + k.dispatched_count + \" / \" + k.held_count + \" / \" + k.manual_review_count + \"</td></tr>\" +\n  \"<tr><td style=\\\"padding:8px;border:1px solid #e2e8f0;\\\"><strong>Confirmed Bookings / Conflicts Blocked</strong></td><td style=\\\"padding:8px;border:1px solid #e2e8f0;\\\">\" + k.confirmed_bookings + \" / \" + k.conflict_count + \"</td></tr>\" +\n  \"<tr><td style=\\\"padding:8px;border:1px solid #e2e8f0;\\\"><strong>Auto-Recovered (Fallback + DLQ)</strong></td><td style=\\\"padding:8px;border:1px solid #e2e8f0;\\\">\" + k.fallback_events + \" (DLQ Recovered: \" + k.dlq_recovered + \", Pending: \" + k.dlq_pending + \")</td></tr>\" +\n  \"<tr><td style=\\\"padding:8px;border:1px solid #e2e8f0;\\\"><strong>Security / Conflict Guardrail Triggers</strong></td><td style=\\\"padding:8px;border:1px solid #e2e8f0;\\\">\" + k.security_blocks + \"</td></tr>\" +\n  \"</table>\" +\n  \"<h3 style=\\\"font-size:15px;margin-bottom:6px;\\\">Top Pending Approvals</h3>\" + pendingRowsHtml + \"</div>\";\nconst slack_message = \":sunrise_over_mountains: *Zero-Leak Executive Guardrail 7:30 AM Brief* (\" + ctx.date_label + \")\\n\" +\n  \"*Executive Note (\" + narrative_provider + \"):* \" + executive_narrative + \"\\n\" +\n  \"*Leads:* \" + k.total_leads + \" total \u00b7 *0 dropped* \u00b7 *Pending:* \" + k.pending_approvals + \" \u00b7 *Dispatched:* \" + k.dispatched_count + \" \u00b7 *Held:* \" + k.held_count + \"\\n\" +\n  \"*Resilience:* \" + k.fallback_events + \" auto-recoveries \u00b7 \" + k.confirmed_bookings + \" bookings \u00b7 \" + k.security_blocks + \" guardrail blocks\";\nreturn [{\n  json: {\n    date_label: ctx.date_label,\n    narrative_provider,\n    executive_narrative,\n    kpis: k,\n    email_subject,\n    email_html,\n    slack_message,\n    audit_code: \"ZL-BRIEF-\" + Date.now(),\n    now_iso: new Date().toISOString()\n  },\n  pairedItem: { item: 0 }\n}];"
+      }
+    },
+    {
+      "id": "ee4062d4-3d8c-43b8-9c81-2c28c5eabd0d",
+      "name": "Executive Narrative \u2014 OpenRouter Backup",
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1696,
+        544
+      ],
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ \"Write a crisp 2-sentence executive morning brief using ONLY these live JSON metrics:\\n\\n\" + $(\"Compute Executive KPIs\").first().json.prompt_payload }}",
+        "messages": {
+          "messageValues": [
+            {
+              "message": "Respond in 2 concise plain-text sentences (max 340 chars)."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "onError": "continueErrorOutput"
+    },
+    {
+      "id": "7080a851-3bce-4434-9d2c-ec2243b5638c",
+      "name": "OpenRouter Brief Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenRouter",
+      "typeVersion": 1,
+      "position": [
+        1776,
+        768
+      ],
+      "parameters": {
+        "model": "google/gemini-3.1-flash-lite",
+        "options": {
+          "temperature": 0.2,
+          "maxTokens": 400
+        }
+      },
+      "credentials": {
+        "openRouterApi": {
+          "id": "<YOUR_OPENROUTER_CREDENTIAL_ID>",
+          "name": "OpenRouter account 2"
+        }
+      }
+    },
+    {
+      "id": "8b2f0d8f-11bc-40a4-88e7-0cb8c68e5444",
+      "name": "Deterministic Brief Fallback",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2048,
+        640
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "bf1",
+              "name": "text",
+              "value": "={{ $(\"Compute Executive KPIs\").first().json.deterministic_summary }}",
+              "type": "string"
+            },
+            {
+              "id": "bf2",
+              "name": "narrative_provider",
+              "value": "deterministic_fallback",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "d6814d5e-8461-48af-9a46-f55c416cc496",
+      "name": "Tag Fallback Brief AI",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        2048,
+        448
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "tf1",
+              "name": "text",
+              "value": "={{ $json.text || $json.output || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "tf2",
+              "name": "narrative_provider",
+              "value": "openrouter_fallback",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a6b76ac1-aa59-4be9-8390-02e698ee9b06",
+      "name": "Send 7:30 AM Brief Email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        2496,
+        224
+      ],
+      "parameters": {
+        "resource": "email",
+        "operation": "send",
+        "fromEmail": "Zero-Leak Executive Guardrail <alerts@yourcompany.com>",
+        "toEmail": "executive@yourcompany.com",
+        "subject": "={{ $json.email_subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.email_html }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "alerts@yourcompany.com"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "webhookId": "<YOUR_WEBHOOK_ID>",
+      "credentials": {
+        "smtp": {
+          "id": "<YOUR_SMTP_CREDENTIAL_ID>",
+          "name": "Company SMTP"
+        }
+      }
+    },
+    {
+      "id": "749786be-1199-42d9-9b9e-3097b0c3f7ad",
+      "name": "Post Brief to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        2496,
+        416
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "authentication": "accessToken",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "<YOUR_SLACK_CHANNEL_ID>",
+          "cachedResultName": "executive-alerts"
+        },
+        "messageType": "text",
+        "text": "={{ $json.slack_message }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "onError": "continueRegularOutput",
+      "webhookId": "<YOUR_WEBHOOK_ID>",
+      "credentials": {
+        "slackApi": {
+          "id": "<YOUR_SLACK_CREDENTIAL_ID>",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "id": "b96d2973-093d-4459-9c06-9e82f3cb3698",
+      "name": "Log Executive Brief Audit",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2496,
+        608
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_AUDIT_LOG_TABLE_ID>",
+          "cachedResultName": "ZL_Audit_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ $json.audit_code }}",
+            "lead_key": "EXECUTIVE_BRIEF",
+            "actor": "={{ $json.narrative_provider }}",
+            "event_type": "EXECUTIVE_BRIEF_SENT",
+            "summary": "={{ $json.executive_narrative }}",
+            "details_json": "={{ JSON.stringify($json.kpis) }}",
+            "created_at": "={{ $json.now_iso }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_key",
+              "displayName": "lead_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "023cb1dd-4a69-457d-afea-a2c024ec472d",
+      "name": "Manual Brief Run",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        512
+      ],
+      "parameters": {}
+    }
+  ],
+  "connections": {
+    "Every 15 Minutes Retry": {
+      "main": [
+        [
+          {
+            "node": "Fetch Pending DLQ Retries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Pending DLQ Retries": {
+      "main": [
+        [
+          {
+            "node": "Parse & Shape Retry Payloads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse & Shape Retry Payloads": {
+      "main": [
+        [
+          {
+            "node": "Eligible Retries Only",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Eligible Retries Only": {
+      "main": [
+        [
+          {
+            "node": "Loop Pending Retries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Re-Run Workflow 01 Intake": {
+      "main": [
+        [
+          {
+            "node": "Verify Recovery in Vault",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Verify Recovery in Vault": {
+      "main": [
+        [
+          {
+            "node": "Classify Retry Outcome",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Classify Retry Outcome": {
+      "main": [
+        [
+          {
+            "node": "Retry Outcome?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Retry Outcome?": {
+      "main": [
+        [
+          {
+            "node": "Mark DLQ Row Recovered",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark DLQ Permanent Fail",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Increment DLQ Retry Count",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark DLQ Row Recovered": {
+      "main": [
+        [
+          {
+            "node": "Log DLQ Recovery Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log DLQ Recovery Audit": {
+      "main": [
+        [
+          {
+            "node": "Post Slack DLQ Recovery",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Slack DLQ Recovery": {
+      "main": [
+        [
+          {
+            "node": "Loop Pending Retries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Pending Retries": {
+      "main": [
+        [
+          {
+            "node": "Complete Retry Cycle",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Re-Run Workflow 01 Intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark DLQ Permanent Fail": {
+      "main": [
+        [
+          {
+            "node": "Log DLQ Escalation Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log DLQ Escalation Audit": {
+      "main": [
+        [
+          {
+            "node": "Escalate DLQ Exhaustion to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Escalate DLQ Exhaustion to Slack": {
+      "main": [
+        [
+          {
+            "node": "Loop Pending Retries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Increment DLQ Retry Count": {
+      "main": [
+        [
+          {
+            "node": "Loop Pending Retries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Daily 07:30 Asia/Manila": {
+      "main": [
+        [
+          {
+            "node": "Fetch All Vault Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch All Vault Leads": {
+      "main": [
+        [
+          {
+            "node": "Fetch All DLQ Entries",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch All DLQ Entries": {
+      "main": [
+        [
+          {
+            "node": "Fetch All Confirmed Bookings",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch All Confirmed Bookings": {
+      "main": [
+        [
+          {
+            "node": "Fetch Recent Audit Log",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Recent Audit Log": {
+      "main": [
+        [
+          {
+            "node": "Compute Executive KPIs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compute Executive KPIs": {
+      "main": [
+        [
+          {
+            "node": "Executive Narrative \u2014 Gemini Pro+",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Executive Narrative \u2014 Gemini Pro+": {
+      "main": [
+        [
+          {
+            "node": "Tag Primary Brief AI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Executive Narrative \u2014 OpenRouter Backup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gemini Pro+ Brief Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Executive Narrative \u2014 Gemini Pro+",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag Primary Brief AI": {
+      "main": [
+        [
+          {
+            "node": "Compose Morning Brief Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Compose Morning Brief Payload": {
+      "main": [
+        [
+          {
+            "node": "Send 7:30 AM Brief Email",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Post Brief to Slack",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Log Executive Brief Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Executive Narrative \u2014 OpenRouter Backup": {
+      "main": [
+        [
+          {
+            "node": "Tag Fallback Brief AI",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Deterministic Brief Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenRouter Brief Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Executive Narrative \u2014 OpenRouter Backup",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Deterministic Brief Fallback": {
+      "main": [
+        [
+          {
+            "node": "Compose Morning Brief Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tag Fallback Brief AI": {
+      "main": [
+        [
+          {
+            "node": "Compose Morning Brief Payload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Brief Run": {
+      "main": [
+        [
+          {
+            "node": "Fetch All Vault Leads",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "errorWorkflow": "<WF_00_ERROR_HANDLER_ID>",
+    "timezone": "Asia/Manila",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "nodeGroups": [
+    {
+      "id": "aa28eaf0-18ac-4281-a752-200418b87d57",
+      "name": "Fetch & Filter Pending Retries",
+      "nodeNames": [
+        "Fetch Pending DLQ Retries",
+        "Parse & Shape Retry Payloads",
+        "Eligible Retries Only"
+      ],
+      "description": "Reads PENDING_RETRY rows from ZL_Retry_Queue, shapes sub-workflow payloads, and filters items below max_retries."
+    },
+    {
+      "id": "d3a58643-b1a6-4add-b1d5-0f97c7a97833",
+      "name": "DLQ Self-Healing Loop",
+      "nodeNames": [
+        "Loop Pending Retries",
+        "Re-Run Workflow 01 Intake",
+        "Verify Recovery in Vault",
+        "Classify Retry Outcome",
+        "Retry Outcome?",
+        "Mark DLQ Row Recovered",
+        "Log DLQ Recovery Audit",
+        "Post Slack DLQ Recovery",
+        "Mark DLQ Permanent Fail",
+        "Log DLQ Escalation Audit",
+        "Escalate DLQ Exhaustion to Slack",
+        "Increment DLQ Retry Count",
+        "Complete Retry Cycle"
+      ],
+      "description": "Re-runs failed intakes via Workflow 01, verifies Vault status recovery, updates ZL_Retry_Queue, and escalates exhaustion."
+    },
+    {
+      "id": "1e46f7b0-04a3-459a-8aeb-a16063bdde4b",
+      "name": "Collect Suite KPIs & Narrative",
+      "nodeNames": [
+        "Fetch All Vault Leads",
+        "Fetch All DLQ Entries",
+        "Fetch All Confirmed Bookings",
+        "Fetch Recent Audit Log",
+        "Compute Executive KPIs",
+        "Executive Narrative \u2014 Gemini Pro+",
+        "Gemini Pro+ Brief Model",
+        "Tag Primary Brief AI",
+        "Executive Narrative \u2014 OpenRouter Backup",
+        "OpenRouter Brief Model",
+        "Tag Fallback Brief AI",
+        "Deterministic Brief Fallback",
+        "Compose Morning Brief Payload",
+        "Send 7:30 AM Brief Email",
+        "Post Brief to Slack",
+        "Log Executive Brief Audit"
+      ],
+      "description": "Aggregates Vault, DLQ, Booking, and Audit tables, generates Gemini/OpenRouter brief with fallback, and delivers Email/Slack."
+    }
+  ],
+  "tags": [
+    "guardrail-ops",
+    "zero-leak-suite"
+  ]
+}

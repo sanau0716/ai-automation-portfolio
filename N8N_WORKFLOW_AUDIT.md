@@ -160,4 +160,20 @@ On November 23, 2026, the older standalone Phase 1–3 prototypes (`sAH9DsPno4Cn
 
 The historical Phase 1–3 JSON files under `projects/customer-engagement/` and `projects/lead-management/n8n/` remain preserved for reference; the current suite exports live under [projects/saas-crm-suite/workflows](projects/saas-crm-suite/workflows).
 
+---
+
+## Focused addition — November 24, 2026 (Zero-Leak Revenue & Executive Guardrail Suite)
+
+On November 24, 2026, five new isolated workflows (`118` total nodes, all `active=true` and `sameAsDraft=true`) were built and tested end-to-end around four isolated Data Tables (`ZL_Leads_Vault`, `ZL_Retry_Queue`, `ZL_Bookings`, `ZL_Audit_Log`):
+
+| Workflow | Nodes | Nov 24 verification evidence | Key boundary |
+|---|---:|---|---|
+| Zero-Leak — 00 Shared Error & DLQ Handler | 7 | `#1686` manual run verified audit log + SMTP + Slack | Linked as `errorWorkflow` on workflows `01`, `01B`, `02`, `03`; manual test verified |
+| Zero-Leak — 01 Persist-First Intake, AI Fallback & Approval Queue | 34 | `#1692`, `#1703`–`#1707`, `#1720`, `#1735`, `#1736` (`400` validation, `200` duplicate skip, Gemini primary, OpenRouter fallback, total-outage DLQ) | Header-auth protected; tested with synthetic prospect records |
+| Zero-Leak — 01B Public Demo Intake Form | 3 | Live `GET /form/zero-leak-intake` (`200`) + `#1718` submission with `CRITICAL` safety flags | Separated from `RespondToWebhook` nodes to satisfy n8n `FormTriggerV2` constraints |
+| Zero-Leak — 02 1-Click Approval Gate & Safe Dispatch | 39 | Live HTTP tests covering bot prefetch guard (`200`, `mutated: false`), `GET` preview, `POST` hold/approve (`200`), invalid token (`403`), replay (`409`), and slot conflict (`409`) | Synthetic leads and developer-controlled SMTP/Slack sinks |
+| Zero-Leak — 03 Self-Healing Retry Worker & 7:30 AM Executive Brief | 35 | `#1741` recovered `2/2` queued DLQ items via Workflow `01`; `#1754` delivered full Gemini Pro+ Morning Brief via SMTP & Slack | `07:30 Asia/Manila` schedule verified via manual trigger run |
+
+Sanitized exports and the full E2E verification ledger live under [projects/zero-leak-executive-guardrail](projects/zero-leak-executive-guardrail).
+
 [← Portfolio home](README.md) · [Visual proof gallery](VISUAL_PROOFS.md)

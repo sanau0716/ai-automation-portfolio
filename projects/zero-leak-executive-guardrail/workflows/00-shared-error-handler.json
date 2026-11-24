@@ -1,0 +1,427 @@
+{
+  "name": "Zero-Leak \u2014 00 Shared Error & DLQ Handler",
+  "nodes": [
+    {
+      "id": "c411d5bb-c500-4e11-a004-9ea397de2020",
+      "name": "On Suite Error",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        160,
+        200
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "6ff1391e-dccd-485e-9e71-04e2bc604818",
+      "name": "Format Failure Context",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        420,
+        200
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ec",
+              "name": "event_code",
+              "type": "string",
+              "value": "={{ \"ERR-\" + ($json.execution?.id || $execution.id || \"RUN\") }}"
+            },
+            {
+              "id": "lk",
+              "name": "lead_key",
+              "type": "string",
+              "value": "={{ $json.workflow?.id || $workflow.id }}"
+            },
+            {
+              "id": "ac",
+              "name": "actor",
+              "type": "string",
+              "value": "error_handler"
+            },
+            {
+              "id": "ev",
+              "name": "event_type",
+              "type": "string",
+              "value": "PRODUCTION_ERROR"
+            },
+            {
+              "id": "sm",
+              "name": "summary",
+              "type": "string",
+              "value": "={{ ($json.workflow?.name || \"Zero-Leak Workflow\") + \" failed at \" + ($json.execution?.lastNodeExecuted || \"Unknown Node\") + \": \" + ($json.execution?.error?.message || $json.error?.message || \"Runtime failure\") }}"
+            },
+            {
+              "id": "dj",
+              "name": "details_json",
+              "type": "string",
+              "value": "={{ JSON.stringify({ workflowId: $json.workflow?.id || null, workflowName: $json.workflow?.name || null, executionId: $json.execution?.id || null, lastNode: $json.execution?.lastNodeExecuted || null, error: $json.execution?.error?.message || $json.error?.message || null }) }}"
+            },
+            {
+              "id": "es",
+              "name": "email_subject",
+              "type": "string",
+              "value": "={{ \"[Zero-Leak Alert] Failure in \" + ($json.workflow?.name || \"Workflow\") }}"
+            },
+            {
+              "id": "eh",
+              "name": "email_html",
+              "type": "string",
+              "value": "={{ \"<h2>Zero-Leak Executive Guardrail \u2014 Runtime Failure Alert</h2><p><strong>Workflow:</strong> \" + ($json.workflow?.name || \"Unknown\") + \" (\" + ($json.workflow?.id || \"N/A\") + \")</p><p><strong>Execution ID:</strong> \" + ($json.execution?.id || \"N/A\") + \"</p><p><strong>Failing Node:</strong> \" + ($json.execution?.lastNodeExecuted || \"N/A\") + \"</p><p><strong>Error:</strong> \" + ($json.execution?.error?.message || $json.error?.message || \"No message\") + \"</p><p><a href=\"\" + ($json.execution?.url || \"https://your-n8n-instance.example.com\") + \"\">Inspect Execution in n8n</a></p>\" }}"
+            },
+            {
+              "id": "sl",
+              "name": "slack_message",
+              "type": "string",
+              "value": "={{ \":rotating_light: *Zero-Leak Suite Error*\\n*Workflow:* \" + ($json.workflow?.name || \"Unknown\") + \"\\n*Node:* \" + ($json.execution?.lastNodeExecuted || \"Unknown\") + \"\\n*Error:* \" + ($json.execution?.error?.message || $json.error?.message || \"No message\") + \"\\n<\" + ($json.execution?.url || \"https://your-n8n-instance.example.com\") + \"|Inspect Execution>\" }}"
+            },
+            {
+              "id": "ca",
+              "name": "created_at",
+              "type": "string",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "07d8f553-ffd6-4877-a219-2a11ae48a9fa",
+      "name": "Log Failure to Audit Table",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        140
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_AUDIT_LOG_TABLE_ID>",
+          "cachedResultName": "ZL_Audit_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ $json.event_code }}",
+            "lead_key": "={{ $json.lead_key }}",
+            "actor": "={{ $json.actor }}",
+            "event_type": "={{ $json.event_type }}",
+            "summary": "={{ $json.summary }}",
+            "details_json": "={{ $json.details_json }}",
+            "created_at": "={{ $json.created_at }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_key",
+              "displayName": "lead_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "80f2f2b3-2e24-4f63-824d-2f2257db1d65",
+      "name": "Send Failure Email Alert",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        720,
+        320
+      ],
+      "parameters": {
+        "resource": "email",
+        "operation": "send",
+        "fromEmail": "Zero-Leak Executive Guardrail <alerts@yourcompany.com>",
+        "toEmail": "executive@yourcompany.com",
+        "subject": "={{ $json.email_subject }}",
+        "emailFormat": "html",
+        "html": "={{ $json.email_html }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "alerts@yourcompany.com"
+        }
+      },
+      "onError": "continueRegularOutput",
+      "webhookId": "<YOUR_WEBHOOK_ID>",
+      "credentials": {
+        "smtp": {
+          "id": "<YOUR_SMTP_CREDENTIAL_ID>",
+          "name": "Company SMTP"
+        }
+      }
+    },
+    {
+      "id": "a11901c9-6378-4867-8cb1-457610b8018b",
+      "name": "Post Failure Alert to Slack",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        720,
+        500
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "authentication": "accessToken",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "<YOUR_SLACK_CHANNEL_ID>",
+          "cachedResultName": "executive-alerts"
+        },
+        "messageType": "text",
+        "text": "={{ $json.slack_message }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "onError": "continueRegularOutput",
+      "webhookId": "<YOUR_WEBHOOK_ID>",
+      "credentials": {
+        "slackApi": {
+          "id": "<YOUR_SLACK_CREDENTIAL_ID>",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "id": "4f4b31a4-1cf8-4f96-99b0-477f4ff2113e",
+      "name": "Manual Error Handler Test",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        160,
+        440
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "bc5726bd-9188-4065-90fc-2c1da0408772",
+      "name": "Format Test Alert",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        420,
+        440
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "ec",
+              "name": "event_code",
+              "type": "string",
+              "value": "={{ \"ERR-TEST-\" + $execution.id }}"
+            },
+            {
+              "id": "lk",
+              "name": "lead_key",
+              "type": "string",
+              "value": "={{ $workflow.id }}"
+            },
+            {
+              "id": "ac",
+              "name": "actor",
+              "type": "string",
+              "value": "error_handler"
+            },
+            {
+              "id": "ev",
+              "name": "event_type",
+              "type": "string",
+              "value": "ERROR_HANDLER_TEST"
+            },
+            {
+              "id": "sm",
+              "name": "summary",
+              "type": "string",
+              "value": "Zero-Leak Shared Error Handler verification test succeeded."
+            },
+            {
+              "id": "dj",
+              "name": "details_json",
+              "type": "string",
+              "value": "={{ JSON.stringify({ test: true, executionId: $execution.id }) }}"
+            },
+            {
+              "id": "es",
+              "name": "email_subject",
+              "type": "string",
+              "value": "[Zero-Leak Test] Error Handler Verification"
+            },
+            {
+              "id": "eh",
+              "name": "email_html",
+              "type": "string",
+              "value": "<h2>Zero-Leak Executive Guardrail \u2014 Error Handler Test</h2><p>SMTP, Slack, and ZL_Audit_Log persistence are operational.</p>"
+            },
+            {
+              "id": "sl",
+              "name": "slack_message",
+              "type": "string",
+              "value": ":white_check_mark: *Zero-Leak Error Handler Test* \u2014 Audit log, SMTP, and Slack alerting verified."
+            },
+            {
+              "id": "ca",
+              "name": "created_at",
+              "type": "string",
+              "value": "={{ $now.toISO() }}"
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "connections": {
+    "On Suite Error": {
+      "main": [
+        [
+          {
+            "node": "Format Failure Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Failure Context": {
+      "main": [
+        [
+          {
+            "node": "Log Failure to Audit Table",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Failure Email Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Post Failure Alert to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Manual Error Handler Test": {
+      "main": [
+        [
+          {
+            "node": "Format Test Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Format Test Alert": {
+      "main": [
+        [
+          {
+            "node": "Log Failure to Audit Table",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Send Failure Email Alert",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Post Failure Alert to Slack",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "timezone": "Asia/Manila",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "nodeGroups": [],
+  "tags": [
+    "guardrail-ops",
+    "zero-leak-suite"
+  ]
+}

@@ -1,0 +1,2240 @@
+{
+  "name": "Zero-Leak \u2014 02 1-Click Approval Gate & Safe Dispatch",
+  "nodes": [
+    {
+      "id": "98a663fb-58d0-4a95-9522-36ce0e3750f1",
+      "name": "Webhook Decision Gate",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        384
+      ],
+      "parameters": {
+        "multipleMethods": false,
+        "httpMethod": "GET",
+        "path": "zero-leak/decision",
+        "authentication": "none",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "webhookId": "<YOUR_WEBHOOK_ID>"
+    },
+    {
+      "id": "5aa69704-1ac7-4a4c-a2d0-75f718a215c0",
+      "name": "Parse Decision Query",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        272,
+        656
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function escHtml(s) {\n  return String(s || \"\").replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\").replace(/\"/g, \"&quot;\");\n}\nfunction renderPage(title, badgeBg, badgeText, heading, detailsHtml) {\n  return \"<!DOCTYPE html><html><head><meta charset=\\\"utf-8\\\"><title>\" + escHtml(title) + \"</title></head>\" +\n    \"<body style=\\\"margin:0;padding:40px 20px;background:#0b1120;font-family:Inter,Segoe UI,Arial,sans-serif;color:#e2e8f0;\\\">\" +\n    \"<div style=\\\"max-width:620px;margin:0 auto;background:#111827;border:1px solid #1e293b;border-radius:14px;padding:32px;\\\">\" +\n    \"<div style=\\\"display:inline-block;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:0.06em;background:\" + badgeBg + \";color:#ffffff;margin-bottom:16px;\\\">\" + escHtml(badgeText) + \"</div>\" +\n    \"<h1 style=\\\"margin:0 0 12px 0;font-size:22px;color:#ffffff;\\\">\" + escHtml(heading) + \"</h1>\" +\n    \"<div style=\\\"font-size:14px;line-height:1.65;color:#cbd5e1;\\\">\" + detailsHtml + \"</div>\" +\n    \"<hr style=\\\"border:none;border-top:1px solid #1e293b;margin:24px 0;\\\">\" +\n    \"<div style=\\\"font-size:12px;color:#64748b;\\\">Zero-Leak Executive Guardrail Executive Guardrail Suite</div>\" +\n    \"</div></body></html>\";\n}\nconst raw = $input.first().json || {};\nconst headers = (raw.headers && typeof raw.headers === \"object\") ? raw.headers : {};\nconst ua = String(headers[\"user-agent\"] || headers[\"User-Agent\"] || \"\").toLowerCase();\nconst queryObj = (raw.query && typeof raw.query === \"object\") ? raw.query : {};\nconst bodyObj = (raw.body && typeof raw.body === \"object\") ? raw.body : {};\nconst q = (bodyObj.lead_key || bodyObj.token || bodyObj.action) ? Object.assign({}, queryObj, bodyObj) : (Object.keys(queryObj).length ? queryObj : raw);\nconst webhookUrl = String(raw.webhookUrl || \"\");\nconst is_commit = Boolean(webhookUrl.indexOf(\"/commit\") !== -1 || (bodyObj && (bodyObj.lead_key || bodyObj.token || bodyObj.action)));\nconst is_bot_prefetch = !is_commit && /slackbot|googleimageproxy|discordbot|whatsapp|twitterbot|linkedinbot|facebookexternalhit|applebot|bingpreview/.test(ua);\nconst lead_key = String(q.lead_key || \"\").trim();\nconst token = String(q.token || \"\").trim();\nconst action = String(q.action || \"\").trim().toLowerCase();\nconst format = String(q.format || \"html\").trim().toLowerCase() === \"json\" ? \"json\" : \"html\";\nconst is_valid_params = Boolean(lead_key && token && (action === \"approve\" || action === \"hold\"));\nlet error_message = \"\";\nif (!lead_key) error_message = \"Missing required parameter: lead_key.\";\nelse if (!token) error_message = \"Missing required parameter: token.\";\nelse if (action !== \"approve\" && action !== \"hold\") error_message = \"Invalid action parameter. Expected approve or hold.\";\nconst errPayload = { ok: false, status: \"BAD_REQUEST\", error: error_message || \"Invalid approval link parameters.\", lead_key, action };\nconst bad_request_body = format === \"json\"\n  ? JSON.stringify(errPayload)\n  : renderPage(\"Invalid Approval Link\", \"#ef4444\", \"INVALID LINK\", \"Approval Link Parameters Invalid\", \"<p>\" + escHtml(errPayload.error) + \"</p>\");\nconst bot_prefetch_body = format === \"json\"\n  ? JSON.stringify({ ok: true, mode: \"BOT_PREFETCH_GUARD\", lead_key, mutated: false, message: \"Link unfurler blocked from triggering approval dispatch.\" })\n  : renderPage(\"Safe Executive Review Link\", \"#3b82f6\", \"SAFE PREVIEW\", \"Zero-Leak Executive Guardrail Decision Gate\", \"<p>Bot preview prefetch detected safely. No lead state changed and no client email was dispatched.</p>\");\nconst content_type = format === \"json\" ? \"application/json\" : \"text/html; charset=utf-8\";\nreturn [{ json: { is_commit, is_bot_prefetch, is_valid_params, lead_key, token, action, format, error_message, bad_request_body, bot_prefetch_body, bad_request_content_type: content_type }, pairedItem: { item: 0 } }];"
+      }
+    },
+    {
+      "id": "4880fd49-fa23-41fb-ab10-b7d0a803f07f",
+      "name": "Valid Decision Params?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        496,
+        656
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "vp1",
+              "leftValue": "={{ $json.is_valid_params }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "8cab7b4d-e765-4c85-a58c-a293ccf8ab6e",
+      "name": "Lookup Lead in Vault",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        720,
+        560
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_LEADS_VAULT_TABLE_ID>",
+          "cachedResultName": "ZL_Leads_Vault"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_key",
+              "condition": "eq",
+              "keyValue": "={{ $json.lead_key }}"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 1
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "fb001c60-3845-42e1-acfc-f2bd508f7cce",
+      "name": "Evaluate Lead & Token",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        944,
+        560
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function escHtml(s) {\n  return String(s || \"\").replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\").replace(/\"/g, \"&quot;\");\n}\nfunction renderPage(title, badgeBg, badgeText, heading, detailsHtml) {\n  return \"<!DOCTYPE html><html><head><meta charset=\\\"utf-8\\\"><title>\" + escHtml(title) + \"</title></head>\" +\n    \"<body style=\\\"margin:0;padding:40px 20px;background:#0b1120;font-family:Inter,Segoe UI,Arial,sans-serif;color:#e2e8f0;\\\">\" +\n    \"<div style=\\\"max-width:640px;margin:0 auto;background:#111827;border:1px solid #1e293b;border-radius:14px;padding:32px;\\\">\" +\n    \"<div style=\\\"display:inline-block;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:0.06em;background:\" + badgeBg + \";color:#ffffff;margin-bottom:16px;\\\">\" + escHtml(badgeText) + \"</div>\" +\n    \"<h1 style=\\\"margin:0 0 12px 0;font-size:22px;color:#ffffff;\\\">\" + escHtml(heading) + \"</h1>\" +\n    \"<div style=\\\"font-size:14px;line-height:1.65;color:#cbd5e1;\\\">\" + detailsHtml + \"</div>\" +\n    \"<hr style=\\\"border:none;border-top:1px solid #1e293b;margin:24px 0;\\\">\" +\n    \"<div style=\\\"font-size:12px;color:#64748b;\\\">Zero-Leak Executive Guardrail Executive Guardrail Suite</div>\" +\n    \"</div></body></html>\";\n}\nconst params = $(\"Parse Decision Query\").first().json;\nconst row = $input.first().json || {};\nconst found = Boolean(row && row.lead_key);\nconst now_iso = new Date().toISOString();\nlet decision_state = \"NOT_FOUND\";\nlet http_status = 404;\nlet message = \"No lead record was found for \" + params.lead_key + \".\";\nif (found) {\n  if (String(row.approval_token || \"\") !== params.token) {\n    decision_state = \"INVALID_TOKEN\";\n    http_status = 403;\n    message = \"Approval token mismatch for lead \" + row.lead_key + \". Action denied and logged.\";\n  } else if (String(row.status || \"\") !== \"QUEUED_FOR_APPROVAL\") {\n    decision_state = \"ALREADY_PROCESSED\";\n    http_status = 409;\n    message = \"Lead \" + row.lead_key + \" was already processed with status: \" + String(row.status || \"UNKNOWN\") + \". Duplicate dispatch blocked.\";\n  } else if (!params.is_commit) {\n    decision_state = \"PREVIEW_CONFIRM\";\n    http_status = 200;\n    message = \"Read-only executive confirmation ready. Submit via POST /webhook/zero-leak/commit to execute.\";\n  } else if (params.action === \"hold\") {\n    decision_state = \"HOLD\";\n    http_status = 200;\n    message = \"Lead \" + row.lead_key + \" placed on executive hold. No client email dispatched.\";\n  } else {\n    decision_state = \"APPROVE\";\n    http_status = 200;\n    message = \"Lead \" + row.lead_key + \" authorized for safe dispatch check.\";\n  }\n}\nconst errJson = JSON.stringify({ ok: false, decision_state, status: row.status || null, lead_key: params.lead_key, booking_id: row.booking_id || null, message });\nlet badgeBg = \"#ef4444\";\nlet badgeText = decision_state;\nlet heading = \"Decision Gate Blocked\";\nif (decision_state === \"ALREADY_PROCESSED\") {\n  badgeBg = \"#f59e0b\";\n  badgeText = \"IDEMPOTENCY GUARDRAIL\";\n  heading = \"Already Processed \u2014 No Duplicate Sent\";\n} else if (decision_state === \"INVALID_TOKEN\") {\n  badgeBg = \"#ef4444\";\n  badgeText = \"403 FORBIDDEN\";\n  heading = \"Invalid Approval Token\";\n} else if (decision_state === \"NOT_FOUND\") {\n  badgeBg = \"#64748b\";\n  badgeText = \"404 NOT FOUND\";\n  heading = \"Lead Record Not Found\";\n}\nconst error_body = params.format === \"json\"\n  ? errJson\n  : renderPage(heading, badgeBg, badgeText, heading, \"<p><strong>Lead Key:</strong> \" + escHtml(params.lead_key) + \"</p><p>\" + escHtml(message) + \"</p>\");\nconst commitUrl = \"https://your-n8n-instance.example.com/webhook/zero-leak/commit\";\nconst previewJson = JSON.stringify({ ok: true, decision_state: \"PREVIEW_CONFIRM\", preview: true, commit_url: commitUrl, lead_key: params.lead_key, action: params.action, status: row.status || null, lead_score: row.lead_score || 0, urgency: row.urgency || \"NORMAL\", requested_slot: row.requested_slot || null, calendar_status: row.calendar_status || null, mutated: false });\nconst previewHtmlDetails =\n  \"<p><strong>Lead Key:</strong> \" + escHtml(row.lead_key) + \" \u00b7 <strong>Score:</strong> \" + escHtml(row.lead_score) + \"/100 \u00b7 <strong>Urgency:</strong> \" + escHtml(row.urgency) + \"</p>\" +\n  \"<p><strong>Prospect:</strong> \" + escHtml(row.name) + \" (\" + escHtml(row.email) + \") \u2014 \" + escHtml(row.company) + \"</p>\" +\n  \"<p><strong>Slot Status:</strong> \" + escHtml(row.calendar_status || \"NONE\") + (row.requested_slot ? \" (\" + escHtml(row.requested_slot) + \")\" : \"\") + \"</p>\" +\n  \"<div style=\\\"background:#0f172a;border:1px solid #1e293b;border-radius:8px;padding:14px;margin:14px 0;\\\">\" +\n  \"<div style=\\\"font-size:12px;color:#94a3b8;margin-bottom:6px;\\\"><strong>HELD DRAFT SUBJECT:</strong> \" + escHtml(row.draft_subject) + \"</div>\" +\n  \"<div style=\\\"white-space:pre-wrap;color:#e2e8f0;\\\">\" + escHtml(row.draft_reply) + \"</div></div>\" +\n  \"<div style=\\\"display:flex;gap:12px;margin-top:18px;\\\">\" +\n  \"<form method=\\\"POST\\\" action=\\\"\" + commitUrl + \"\\\" style=\\\"display:inline;\\\">\" +\n  \"<input type=\\\"hidden\\\" name=\\\"lead_key\\\" value=\\\"\" + escHtml(row.lead_key) + \"\\\">\" +\n  \"<input type=\\\"hidden\\\" name=\\\"token\\\" value=\\\"\" + escHtml(params.token) + \"\\\">\" +\n  \"<input type=\\\"hidden\\\" name=\\\"action\\\" value=\\\"approve\\\">\" +\n  \"<button type=\\\"submit\\\" style=\\\"padding:11px 20px;background:#10b981;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;\\\">Confirm &amp; Dispatch Reply</button></form>\" +\n  \"<form method=\\\"POST\\\" action=\\\"\" + commitUrl + \"\\\" style=\\\"display:inline;\\\">\" +\n  \"<input type=\\\"hidden\\\" name=\\\"lead_key\\\" value=\\\"\" + escHtml(row.lead_key) + \"\\\">\" +\n  \"<input type=\\\"hidden\\\" name=\\\"token\\\" value=\\\"\" + escHtml(params.token) + \"\\\">\" +\n  \"<input type=\\\"hidden\\\" name=\\\"action\\\" value=\\\"hold\\\">\" +\n  \"<button type=\\\"submit\\\" style=\\\"padding:11px 20px;background:#334155;color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-size:14px;\\\">Hold Lead Instead</button></form>\" +\n  \"</div>\";\nconst preview_body = params.format === \"json\"\n  ? previewJson\n  : renderPage(\"Confirm Executive Action\", \"#0ea5e9\", \"BOT-SAFE CONFIRMATION\", \"Confirm Before Dispatching Client Email\", previewHtmlDetails);\nconst content_type = params.format === \"json\" ? \"application/json\" : \"text/html; charset=utf-8\";\nreturn [{\n  json: {\n    decision_state,\n    http_status,\n    message,\n    format: params.format,\n    content_type,\n    error_body,\n    preview_body,\n    lead_key: found ? String(row.lead_key) : params.lead_key,\n    name: found ? String(row.name || \"Client\") : \"\",\n    email: found ? String(row.email || \"\") : \"\",\n    phone: found ? String(row.phone || \"\") : \"\",\n    company: found ? String(row.company || \"\") : \"\",\n    requested_slot: found ? String(row.requested_slot || \"\") : \"\",\n    current_status: found ? String(row.status || \"\") : \"\",\n    lead_score: found ? Number(row.lead_score || 0) : 0,\n    urgency: found ? String(row.urgency || \"NORMAL\") : \"NORMAL\",\n    ai_provider: found ? String(row.ai_provider || \"\") : \"\",\n    draft_subject: found ? String(row.draft_subject || \"Follow-up on your inquiry\") : \"\",\n    draft_reply: found ? String(row.draft_reply || \"\") : \"\",\n    now_iso,\n    audit_code: \"ZL-GATE-\" + params.lead_key + \"-\" + Date.now()\n  },\n  pairedItem: { item: 0 }\n}];"
+      }
+    },
+    {
+      "id": "b16eb7e9-1843-4488-8c2f-ffef655dae1b",
+      "name": "Route Decision State",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1168,
+        512
+      ],
+      "parameters": {
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "rejected"
+        },
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r0",
+                    "leftValue": "={{ $json.decision_state }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "APPROVE"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "approve"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "r1",
+                    "leftValue": "={{ $json.decision_state }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "HOLD"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "hold"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "b16298f7-9e70-4878-a57f-a58a710b4305",
+      "name": "Check Booking Slot Conflict",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        896
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "get",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_BOOKINGS_TABLE_ID>",
+          "cachedResultName": "ZL_Bookings"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "slot_start",
+              "condition": "eq",
+              "keyValue": "={{ $json.requested_slot || \"__NO_SLOT__\" }}"
+            },
+            {
+              "keyName": "status",
+              "condition": "eq",
+              "keyValue": "CONFIRMED"
+            }
+          ]
+        },
+        "returnAll": false,
+        "limit": 1
+      },
+      "alwaysOutputData": true
+    },
+    {
+      "id": "8954559d-1471-465a-80b2-292595f51f52",
+      "name": "Evaluate Slot & Prepare Dispatch",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        896
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function escHtml(s) {\n  return String(s || \"\").replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\").replace(/\"/g, \"&quot;\");\n}\nfunction renderPage(title, badgeBg, badgeText, heading, detailsHtml) {\n  return \"<!DOCTYPE html><html><head><meta charset=\\\"utf-8\\\"><title>\" + escHtml(title) + \"</title></head>\" +\n    \"<body style=\\\"margin:0;padding:40px 20px;background:#0b1120;font-family:Inter,Segoe UI,Arial,sans-serif;color:#e2e8f0;\\\">\" +\n    \"<div style=\\\"max-width:620px;margin:0 auto;background:#111827;border:1px solid #1e293b;border-radius:14px;padding:32px;\\\">\" +\n    \"<div style=\\\"display:inline-block;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;letter-spacing:0.06em;background:\" + badgeBg + \";color:#ffffff;margin-bottom:16px;\\\">\" + escHtml(badgeText) + \"</div>\" +\n    \"<h1 style=\\\"margin:0 0 12px 0;font-size:22px;color:#ffffff;\\\">\" + escHtml(heading) + \"</h1>\" +\n    \"<div style=\\\"font-size:14px;line-height:1.65;color:#cbd5e1;\\\">\" + detailsHtml + \"</div>\" +\n    \"<hr style=\\\"border:none;border-top:1px solid #1e293b;margin:24px 0;\\\">\" +\n    \"<div style=\\\"font-size:12px;color:#64748b;\\\">Zero-Leak Executive Guardrail Executive Guardrail Suite</div>\" +\n    \"</div></body></html>\";\n}\nconst ctx = $(\"Evaluate Lead & Token\").first().json;\nconst existing = $input.first().json || {};\nconst slotStr = String(ctx.requested_slot || \"\").trim();\nconst parsedDate = (slotStr && slotStr.indexOf(\"T\") !== -1) ? new Date(slotStr) : null;\nconst has_slot = Boolean(parsedDate && !isNaN(parsedDate.getTime()));\nconst slot_end = has_slot ? new Date(parsedDate.getTime() + 30 * 60000).toISOString() : \"\";\nconst booking_id = has_slot ? (\"BKG-\" + ctx.lead_key) : \"\";\nconst slot_conflict = Boolean(has_slot && existing && existing.booking_id && existing.status === \"CONFIRMED\" && existing.lead_key !== ctx.lead_key);\nconst conflicting_booking_id = slot_conflict ? String(existing.booking_id) : \"\";\nconst replyHtmlParagraphs = escHtml(ctx.draft_reply || \"\").replace(/\\n/g, \"<br>\");\nconst slotBlock = has_slot\n  ? \"<p style=\\\"padding:12px 14px;background:#f0fdf4;border:1px solid #bbf7d0;border-radius:8px;color:#166534;\\\"><strong>Confirmed Consultation Slot:</strong> \" + escHtml(slotStr) + \" (\" + escHtml(booking_id) + \")</p>\"\n  : \"\";\nconst client_email_html = \"<div style=\\\"font-family:Inter,Segoe UI,Arial,sans-serif;max-width:640px;margin:0 auto;color:#0f172a;line-height:1.6;\\\">\" +\n  \"<p>\" + replyHtmlParagraphs + \"</p>\" + slotBlock +\n  \"<hr style=\\\"border:none;border-top:1px solid #e2e8f0;margin:20px 0;\\\">\" +\n  \"<p style=\\\"font-size:12px;color:#64748b;\\\">Sent via Executive Guardrail Desk \u00b7 Reference: \" + escHtml(ctx.lead_key) + \"</p></div>\";\nconst conflictJson = JSON.stringify({\n  ok: false,\n  decision_state: \"SLOT_CONFLICT\",\n  status: \"SLOT_CONFLICT\",\n  lead_key: ctx.lead_key,\n  requested_slot: slotStr,\n  conflicting_booking_id,\n  client_email_sent: false,\n  message: \"Requested slot \" + slotStr + \" is already confirmed for \" + conflicting_booking_id + \". Dispatch halted to prevent double-booking.\"\n});\nconst conflict_body = ctx.format === \"json\"\n  ? conflictJson\n  : renderPage(\"Slot Conflict Detected\", \"#f59e0b\", \"409 SLOT CONFLICT\", \"Double-Booking Prevented\", \"<p><strong>Lead Key:</strong> \" + escHtml(ctx.lead_key) + \"</p><p>Requested slot <code>\" + escHtml(slotStr) + \"</code> is already booked under <strong>\" + escHtml(conflicting_booking_id) + \"</strong>. No client email was dispatched.</p>\");\nconst dispatchedJson = JSON.stringify({\n  ok: true,\n  decision_state: \"DISPATCHED\",\n  status: \"DISPATCHED\",\n  lead_key: ctx.lead_key,\n  email: ctx.email,\n  calendar_status: has_slot ? \"BOOKING_CONFIRMED\" : \"NO_SLOT_REQUESTED\",\n  booking_id: booking_id || null,\n  requested_slot: slotStr || null,\n  client_email_sent: true\n});\nconst dispatched_body = ctx.format === \"json\"\n  ? dispatchedJson\n  : renderPage(\"Approved & Dispatched\", \"#10b981\", \"DISPATCHED\", \"Reply Sent & Guardrails Logged\", \"<p><strong>Lead Key:</strong> \" + escHtml(ctx.lead_key) + \" (\" + escHtml(ctx.name) + \")</p><p><strong>Recipient:</strong> \" + escHtml(ctx.email) + \"</p><p><strong>Booking ID:</strong> \" + escHtml(booking_id || \"No slot requested\") + \"</p>\");\nconst errJson = JSON.stringify({ ok: false, decision_state: \"DISPATCH_ERROR\", status: \"QUEUED_FOR_APPROVAL\", lead_key: ctx.lead_key, client_email_sent: false, message: \"SMTP delivery failed during approved dispatch.\" });\nconst dispatch_error_body = ctx.format === \"json\"\n  ? errJson\n  : renderPage(\"SMTP Dispatch Failed\", \"#ef4444\", \"502 DISPATCH ERROR\", \"Approved Email Failed to Send\", \"<p><strong>Lead Key:</strong> \" + escHtml(ctx.lead_key) + \"</p><p>SMTP delivery encountered an error. Lead remains in QUEUED_FOR_APPROVAL and booking was not committed.</p>\");\nreturn [{\n  json: {\n    lead_key: ctx.lead_key,\n    name: ctx.name,\n    email: ctx.email,\n    company: ctx.company,\n    requested_slot: slotStr,\n    slot_end,\n    has_slot,\n    booking_id,\n    slot_conflict,\n    conflicting_booking_id,\n    draft_subject: ctx.draft_subject,\n    client_email_html,\n    format: ctx.format,\n    content_type: ctx.content_type,\n    conflict_body,\n    dispatched_body,\n    dispatch_error_body\n  },\n  pairedItem: { item: 0 }\n}];"
+      }
+    },
+    {
+      "id": "c99f0414-457d-421f-91f4-59aa5ba7f211",
+      "name": "Booking Slot Conflict?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1248,
+        896
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "sc1",
+              "leftValue": "={{ $json.slot_conflict }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "5a05ec0c-2757-402c-8e50-e451792ae991",
+      "name": "Mark Lead Slot Conflict",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1328,
+        704
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_LEADS_VAULT_TABLE_ID>",
+          "cachedResultName": "ZL_Leads_Vault"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_key",
+              "condition": "eq",
+              "keyValue": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "SLOT_CONFLICT",
+            "calendar_status": "SLOT_CONFLICT",
+            "updated_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "calendar_status",
+              "displayName": "calendar_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "88fc2b4a-beca-482e-935b-c8bda14b731d",
+      "name": "Log Slot Conflict Audit",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1552,
+        704
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_AUDIT_LOG_TABLE_ID>",
+          "cachedResultName": "ZL_Audit_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ \"ZL-CONF-\" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key + \"-\" + $now.toMillis() }}",
+            "lead_key": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key }}",
+            "actor": "zero_leak_decision_gate",
+            "event_type": "BOOKING_SLOT_CONFLICT",
+            "summary": "={{ \"Prevented double-booking for \" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key + \" at slot \" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.requested_slot + \" (held by \" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.conflicting_booking_id + \")\" }}",
+            "details_json": "={{ JSON.stringify({ requested_slot: $(\"Evaluate Slot & Prepare Dispatch\").first().json.requested_slot, conflicting_booking_id: $(\"Evaluate Slot & Prepare Dispatch\").first().json.conflicting_booking_id }) }}",
+            "created_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_key",
+              "displayName": "lead_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "88349aa3-b6dc-4831-b091-4e7c7797bb4b",
+      "name": "Post Slack Conflict Alert",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1776,
+        704
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "authentication": "accessToken",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "<YOUR_SLACK_CHANNEL_ID>",
+          "cachedResultName": "executive-alerts"
+        },
+        "messageType": "text",
+        "text": "={{ \":warning: *Double-Booking Prevented* (\" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key + \")\\n*Slot:* \" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.requested_slot + \" already confirmed for \" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.conflicting_booking_id + \". Dispatch halted.\" }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "onError": "continueRegularOutput",
+      "webhookId": "<YOUR_WEBHOOK_ID>",
+      "credentials": {
+        "slackApi": {
+          "id": "<YOUR_SLACK_CREDENTIAL_ID>",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "id": "255d3130-47a8-4342-9606-f09dae1e4159",
+      "name": "Respond 409 Slot Conflict",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2000,
+        704
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.conflict_body }}",
+        "options": {
+          "responseCode": 409,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.content_type }}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "8219cc58-96c6-4773-bc16-f9a37022b7b4",
+      "name": "Send Approved Client Reply",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 2.1,
+      "position": [
+        1328,
+        1168
+      ],
+      "parameters": {
+        "resource": "email",
+        "operation": "send",
+        "fromEmail": "Zero-Leak Executive Guardrail <alerts@yourcompany.com>",
+        "toEmail": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.email }}",
+        "subject": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.draft_subject }}",
+        "emailFormat": "html",
+        "html": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.client_email_html }}",
+        "options": {
+          "appendAttribution": false,
+          "replyTo": "alerts@yourcompany.com"
+        }
+      },
+      "onError": "continueErrorOutput",
+      "webhookId": "<YOUR_WEBHOOK_ID>",
+      "credentials": {
+        "smtp": {
+          "id": "<YOUR_SMTP_CREDENTIAL_ID>",
+          "name": "Company SMTP"
+        }
+      }
+    },
+    {
+      "id": "98d73ed7-c6ce-45b7-9df6-b923c3011ce6",
+      "name": "Has Booking Slot?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1552,
+        1072
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "hb1",
+              "leftValue": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.has_slot }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "53e1e5b9-2a05-49a3-b12b-b7f3d254555a",
+      "name": "Confirm Slot in ZL_Bookings",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1776,
+        992
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_BOOKINGS_TABLE_ID>",
+          "cachedResultName": "ZL_Bookings"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "booking_id": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.booking_id }}",
+            "lead_key": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key }}",
+            "attendee_name": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.name }}",
+            "attendee_email": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.email }}",
+            "slot_start": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.requested_slot }}",
+            "slot_end": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.slot_end }}",
+            "title": "={{ \"Consultation: \" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.name + ($(\"Evaluate Slot & Prepare Dispatch\").first().json.company ? \" (\" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.company + \")\" : \"\") }}",
+            "status": "CONFIRMED",
+            "created_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "booking_id",
+              "displayName": "booking_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_key",
+              "displayName": "lead_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "attendee_name",
+              "displayName": "attendee_name",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "attendee_email",
+              "displayName": "attendee_email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "slot_start",
+              "displayName": "slot_start",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "slot_end",
+              "displayName": "slot_end",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "title",
+              "displayName": "title",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "84d16193-1b2f-4676-8e2a-a400c01b46cd",
+      "name": "Mark Lead Dispatched in Vault",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2000,
+        1072
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_LEADS_VAULT_TABLE_ID>",
+          "cachedResultName": "ZL_Leads_Vault"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_key",
+              "condition": "eq",
+              "keyValue": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "DISPATCHED",
+            "calendar_status": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.has_slot ? \"BOOKING_CONFIRMED\" : \"NO_SLOT_REQUESTED\" }}",
+            "booking_id": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.booking_id }}",
+            "updated_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "calendar_status",
+              "displayName": "calendar_status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "booking_id",
+              "displayName": "booking_id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "0fb9e479-ab2d-468d-b6c1-0b099246887f",
+      "name": "Log Dispatched Audit",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        2224,
+        1072
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_AUDIT_LOG_TABLE_ID>",
+          "cachedResultName": "ZL_Audit_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ \"ZL-DISP-\" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key + \"-\" + $now.toMillis() }}",
+            "lead_key": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key }}",
+            "actor": "executive_decision_gate",
+            "event_type": "LEAD_APPROVED_AND_DISPATCHED",
+            "summary": "={{ \"Approved and dispatched reply for \" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key + ($(\"Evaluate Slot & Prepare Dispatch\").first().json.has_slot ? \" with confirmed booking \" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.booking_id : \"\") }}",
+            "details_json": "={{ JSON.stringify({ email: $(\"Evaluate Slot & Prepare Dispatch\").first().json.email, booking_id: $(\"Evaluate Slot & Prepare Dispatch\").first().json.booking_id || null, requested_slot: $(\"Evaluate Slot & Prepare Dispatch\").first().json.requested_slot || null }) }}",
+            "created_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_key",
+              "displayName": "lead_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b7c49697-0294-4909-8595-dc3423ae79ff",
+      "name": "Post Slack Dispatch Notice",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        2448,
+        1072
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "authentication": "accessToken",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "<YOUR_SLACK_CHANNEL_ID>",
+          "cachedResultName": "executive-alerts"
+        },
+        "messageType": "text",
+        "text": "={{ \":white_check_mark: *Zero-Leak Dispatched* (\" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key + \")\\n*Lead:* \" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.name + \" (\" + ($(\"Evaluate Slot & Prepare Dispatch\").first().json.company || \"Independent\") + \")\\n*Booking:* \" + ($(\"Evaluate Slot & Prepare Dispatch\").first().json.booking_id || \"No slot requested\") }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "onError": "continueRegularOutput",
+      "webhookId": "<YOUR_WEBHOOK_ID>",
+      "credentials": {
+        "slackApi": {
+          "id": "<YOUR_SLACK_CREDENTIAL_ID>",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "id": "dcf31b20-47e4-4665-bd9a-ff7635f4c1cc",
+      "name": "Respond 200 Dispatched",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2672,
+        1072
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.dispatched_body }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.content_type }}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "ea72d6b4-6277-4105-b605-636fb953bd2e",
+      "name": "Record Dispatch Error in Vault",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1552,
+        1312
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_LEADS_VAULT_TABLE_ID>",
+          "cachedResultName": "ZL_Leads_Vault"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_key",
+              "condition": "eq",
+              "keyValue": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "last_error": "Approved outbound SMTP delivery failed; lead kept QUEUED_FOR_APPROVAL.",
+            "updated_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "last_error",
+              "displayName": "last_error",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "f9698ab6-1604-4f8b-a3a2-65575fbbdc2e",
+      "name": "Log Dispatch Error Audit",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1776,
+        1312
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_AUDIT_LOG_TABLE_ID>",
+          "cachedResultName": "ZL_Audit_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ \"ZL-SMTPERR-\" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key + \"-\" + $now.toMillis() }}",
+            "lead_key": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key }}",
+            "actor": "zero_leak_decision_gate",
+            "event_type": "OUTBOUND_DISPATCH_ERROR",
+            "summary": "={{ \"SMTP delivery failed while dispatching \" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key }}",
+            "details_json": "={{ JSON.stringify({ email: $(\"Evaluate Slot & Prepare Dispatch\").first().json.email }) }}",
+            "created_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_key",
+              "displayName": "lead_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "b4f05191-1bfd-48fa-8979-ef7a7c4e1886",
+      "name": "Post Slack Dispatch Error",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        2000,
+        1312
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "authentication": "accessToken",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "<YOUR_SLACK_CHANNEL_ID>",
+          "cachedResultName": "executive-alerts"
+        },
+        "messageType": "text",
+        "text": "={{ \":rotating_light: *Outbound Dispatch Error* (\" + $(\"Evaluate Slot & Prepare Dispatch\").first().json.lead_key + \")\\nApproved client email failed via SMTP. Lead remains queued; booking not committed.\" }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "onError": "continueRegularOutput",
+      "webhookId": "<YOUR_WEBHOOK_ID>",
+      "credentials": {
+        "slackApi": {
+          "id": "<YOUR_SLACK_CREDENTIAL_ID>",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "id": "7f94336b-6297-4c8c-99da-b5445ca0837f",
+      "name": "Respond 502 Dispatch Error",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2224,
+        1312
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.dispatch_error_body }}",
+        "options": {
+          "responseCode": 502,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "={{ $(\"Evaluate Slot & Prepare Dispatch\").first().json.content_type }}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "d0959bfa-f1bd-4019-a625-98b015d67d3b",
+      "name": "Mark Lead Held in Vault",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        800,
+        704
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "update",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_LEADS_VAULT_TABLE_ID>",
+          "cachedResultName": "ZL_Leads_Vault"
+        },
+        "matchType": "allConditions",
+        "filters": {
+          "conditions": [
+            {
+              "keyName": "lead_key",
+              "condition": "eq",
+              "keyValue": "={{ $(\"Evaluate Lead & Token\").first().json.lead_key }}"
+            }
+          ]
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "status": "HELD",
+            "updated_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "updated_at",
+              "displayName": "updated_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "07b9ce9f-8188-417d-862e-8544bcf1fd67",
+      "name": "Log Lead Held Audit",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1024,
+        704
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_AUDIT_LOG_TABLE_ID>",
+          "cachedResultName": "ZL_Audit_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ \"ZL-HOLD-\" + $(\"Evaluate Lead & Token\").first().json.lead_key + \"-\" + $now.toMillis() }}",
+            "lead_key": "={{ $(\"Evaluate Lead & Token\").first().json.lead_key }}",
+            "actor": "executive_decision_gate",
+            "event_type": "LEAD_HELD",
+            "summary": "={{ \"Executive placed \" + $(\"Evaluate Lead & Token\").first().json.lead_key + \" (\" + $(\"Evaluate Lead & Token\").first().json.name + \") on HOLD. No client email dispatched.\" }}",
+            "details_json": "={{ JSON.stringify({ action: \"hold\", company: $(\"Evaluate Lead & Token\").first().json.company }) }}",
+            "created_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_key",
+              "displayName": "lead_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "253ef40c-fd68-4226-a9ee-8415d9ade853",
+      "name": "Post Slack Hold Notice",
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.7,
+      "position": [
+        1248,
+        704
+      ],
+      "parameters": {
+        "resource": "message",
+        "operation": "post",
+        "authentication": "accessToken",
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "<YOUR_SLACK_CHANNEL_ID>",
+          "cachedResultName": "executive-alerts"
+        },
+        "messageType": "text",
+        "text": "={{ \":pause_button: *Zero-Leak Held* (\" + $(\"Evaluate Lead & Token\").first().json.lead_key + \")\\n*Lead:* \" + $(\"Evaluate Lead & Token\").first().json.name + \" (\" + ($(\"Evaluate Lead & Token\").first().json.company || \"Independent\") + \")\\nOutbound client dispatch suppressed per executive hold.\" }}",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "onError": "continueRegularOutput",
+      "webhookId": "<YOUR_WEBHOOK_ID>",
+      "credentials": {
+        "slackApi": {
+          "id": "<YOUR_SLACK_CREDENTIAL_ID>",
+          "name": "Slack Bot"
+        }
+      }
+    },
+    {
+      "id": "09dfc065-1e27-4b34-9560-d15dea2cb832",
+      "name": "Build Hold Response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1472,
+        704
+      ],
+      "parameters": {
+        "mode": "runOnceForAllItems",
+        "language": "javaScript",
+        "jsCode": "function escHtml(s) {\n  return String(s || \"\").replace(/&/g, \"&amp;\").replace(/</g, \"&lt;\").replace(/>/g, \"&gt;\").replace(/\"/g, \"&quot;\");\n}\nconst ctx = $(\"Evaluate Lead & Token\").first().json;\nconst jsonResp = JSON.stringify({ ok: true, decision_state: \"HELD\", status: \"HELD\", lead_key: ctx.lead_key, client_email_sent: false, message: ctx.message });\nconst htmlResp = \"<!DOCTYPE html><html><head><meta charset=\\\"utf-8\\\"><title>Lead Placed on Hold</title></head>\" +\n  \"<body style=\\\"margin:0;padding:40px 20px;background:#0b1120;font-family:Inter,Segoe UI,Arial,sans-serif;color:#e2e8f0;\\\">\" +\n  \"<div style=\\\"max-width:620px;margin:0 auto;background:#111827;border:1px solid #1e293b;border-radius:14px;padding:32px;\\\">\" +\n  \"<div style=\\\"display:inline-block;padding:6px 12px;border-radius:999px;font-size:12px;font-weight:700;background:#64748b;color:#ffffff;margin-bottom:16px;\\\">EXECUTIVE HOLD</div>\" +\n  \"<h1 style=\\\"margin:0 0 12px 0;font-size:22px;color:#ffffff;\\\">Lead Held \u2014 No Client Email Sent</h1>\" +\n  \"<p><strong>Lead Key:</strong> \" + escHtml(ctx.lead_key) + \" (\" + escHtml(ctx.name) + \")</p>\" +\n  \"<p><strong>Status:</strong> HELD in ZL_Leads_Vault and recorded in ZL_Audit_Log.</p>\" +\n  \"</div></body></html>\";\nconst held_body = ctx.format === \"json\" ? jsonResp : htmlResp;\nreturn [{ json: { held_body, content_type: ctx.content_type }, pairedItem: { item: 0 } }];"
+      }
+    },
+    {
+      "id": "96d3ee6a-b149-4a0c-b663-527ac9c4b2ed",
+      "name": "Respond 200 Held",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1696,
+        704
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.held_body }}",
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "={{ $json.content_type }}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "d15b32d6-1c53-4c02-9705-cca0a4a28b88",
+      "name": "Respond 409 Already Processed",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1660,
+        0
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.error_body }}",
+        "options": {
+          "responseCode": 409,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "={{ $json.content_type }}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "4ea4da35-92e6-4f25-b639-64178589ea72",
+      "name": "Log Invalid Token Audit",
+      "type": "n8n-nodes-base.dataTable",
+      "typeVersion": 1.1,
+      "position": [
+        1660,
+        192
+      ],
+      "parameters": {
+        "resource": "row",
+        "operation": "insert",
+        "dataTableId": {
+          "__rl": true,
+          "mode": "list",
+          "value": "<ZL_AUDIT_LOG_TABLE_ID>",
+          "cachedResultName": "ZL_Audit_Log"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "event_code": "={{ \"ZL-SEC-\" + $json.lead_key + \"-\" + $now.toMillis() }}",
+            "lead_key": "={{ $json.lead_key }}",
+            "actor": "zero_leak_decision_gate",
+            "event_type": "INVALID_APPROVAL_TOKEN",
+            "summary": "={{ $json.message }}",
+            "details_json": "={{ JSON.stringify({ current_status: $json.current_status }) }}",
+            "created_at": "={{ $now.toISO() }}"
+          },
+          "schema": [
+            {
+              "id": "event_code",
+              "displayName": "event_code",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "lead_key",
+              "displayName": "lead_key",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "actor",
+              "displayName": "actor",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "event_type",
+              "displayName": "event_type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "summary",
+              "displayName": "summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "details_json",
+              "displayName": "details_json",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": false
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": false
+            }
+          ]
+        }
+      },
+      "onError": "continueRegularOutput"
+    },
+    {
+      "id": "12d60f12-5966-4089-ac1f-a603c1cc266b",
+      "name": "Respond 403 Invalid Token",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1920,
+        192
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $(\"Evaluate Lead & Token\").first().json.error_body }}",
+        "options": {
+          "responseCode": 403,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "={{ $(\"Evaluate Lead & Token\").first().json.content_type }}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "dac322f1-4516-4e34-bc56-31e3327cd043",
+      "name": "Respond 404 Not Found",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1660,
+        384
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.error_body }}",
+        "options": {
+          "responseCode": 404,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "={{ $json.content_type }}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "f0e16032-c398-4bba-9cc6-41166bb0584e",
+      "name": "Respond 400 Invalid Params",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        720,
+        752
+      ],
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.bad_request_body }}",
+        "options": {
+          "responseCode": 400,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "={{ $json.bad_request_content_type }}"
+              }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "id": "f5dca00d-e8e3-42d1-a0f7-83dac878ba57",
+      "name": "Switch Rejection Reason",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        1380,
+        200
+      ],
+      "parameters": {
+        "options": {
+          "fallbackOutput": "extra",
+          "renameFallbackOutput": "not_found"
+        },
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "rr0",
+                    "leftValue": "={{ $json.decision_state }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "ALREADY_PROCESSED"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "already_processed"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "rr1",
+                    "leftValue": "={{ $json.decision_state }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "INVALID_TOKEN"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "invalid_token"
+            },
+            {
+              "conditions": {
+                "combinator": "and",
+                "conditions": [
+                  {
+                    "id": "rr2",
+                    "leftValue": "={{ $json.decision_state }}",
+                    "operator": {
+                      "operation": "equals",
+                      "type": "string"
+                    },
+                    "rightValue": "PREVIEW_CONFIRM"
+                  }
+                ],
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                }
+              },
+              "outputKey": "preview_confirm"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "1492c572-af37-4c2c-8c63-ce7f5a589445",
+      "name": "Webhook Commit Decision",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.2,
+      "position": [
+        0,
+        656
+      ],
+      "parameters": {
+        "authentication": "none",
+        "httpMethod": "POST",
+        "multipleMethods": false,
+        "options": {},
+        "path": "zero-leak/commit",
+        "responseMode": "responseNode"
+      },
+      "webhookId": "<YOUR_WEBHOOK_ID>"
+    },
+    {
+      "id": "0edbd615-c45d-4afd-b63d-683d449c78ab",
+      "name": "Is Prefetch Bot?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        384,
+        656
+      ],
+      "parameters": {
+        "conditions": {
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "bp1",
+              "leftValue": "={{ $json.is_bot_prefetch }}",
+              "operator": {
+                "operation": "true",
+                "singleValue": true,
+                "type": "boolean"
+              },
+              "rightValue": ""
+            }
+          ],
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          }
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "b33e3fd4-69d1-464b-8e50-955e77a4ff17",
+      "name": "Respond 200 Bot Prefetch Guard",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        520,
+        820
+      ],
+      "parameters": {
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "={{ $json.bad_request_content_type }}"
+              }
+            ]
+          }
+        },
+        "respondWith": "text",
+        "responseBody": "={{ $json.bot_prefetch_body }}"
+      }
+    },
+    {
+      "id": "240ecff8-e4bb-4fa8-bdde-a9e0b39e8b29",
+      "name": "Respond 200 Preview Confirmation",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1660,
+        520
+      ],
+      "parameters": {
+        "options": {
+          "responseCode": 200,
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "={{ $json.content_type }}"
+              }
+            ]
+          }
+        },
+        "respondWith": "text",
+        "responseBody": "={{ $json.preview_body }}"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook Decision Gate": {
+      "main": [
+        [
+          {
+            "node": "Parse Decision Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valid Decision Params?": {
+      "main": [
+        [
+          {
+            "node": "Lookup Lead in Vault",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 400 Invalid Params",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup Lead in Vault": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Lead & Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Lead & Token": {
+      "main": [
+        [
+          {
+            "node": "Route Decision State",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route Decision State": {
+      "main": [
+        [
+          {
+            "node": "Check Booking Slot Conflict",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Lead Held in Vault",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Switch Rejection Reason",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [],
+        []
+      ]
+    },
+    "Check Booking Slot Conflict": {
+      "main": [
+        [
+          {
+            "node": "Evaluate Slot & Prepare Dispatch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Evaluate Slot & Prepare Dispatch": {
+      "main": [
+        [
+          {
+            "node": "Booking Slot Conflict?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Booking Slot Conflict?": {
+      "main": [
+        [
+          {
+            "node": "Mark Lead Slot Conflict",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send Approved Client Reply",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Slot Conflict": {
+      "main": [
+        [
+          {
+            "node": "Log Slot Conflict Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Slot Conflict Audit": {
+      "main": [
+        [
+          {
+            "node": "Post Slack Conflict Alert",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Slack Conflict Alert": {
+      "main": [
+        [
+          {
+            "node": "Respond 409 Slot Conflict",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send Approved Client Reply": {
+      "main": [
+        [
+          {
+            "node": "Has Booking Slot?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Record Dispatch Error in Vault",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Has Booking Slot?": {
+      "main": [
+        [
+          {
+            "node": "Confirm Slot in ZL_Bookings",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Mark Lead Dispatched in Vault",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Confirm Slot in ZL_Bookings": {
+      "main": [
+        [
+          {
+            "node": "Mark Lead Dispatched in Vault",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Dispatched in Vault": {
+      "main": [
+        [
+          {
+            "node": "Log Dispatched Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Dispatched Audit": {
+      "main": [
+        [
+          {
+            "node": "Post Slack Dispatch Notice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Slack Dispatch Notice": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 Dispatched",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Record Dispatch Error in Vault": {
+      "main": [
+        [
+          {
+            "node": "Log Dispatch Error Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Dispatch Error Audit": {
+      "main": [
+        [
+          {
+            "node": "Post Slack Dispatch Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Slack Dispatch Error": {
+      "main": [
+        [
+          {
+            "node": "Respond 502 Dispatch Error",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Lead Held in Vault": {
+      "main": [
+        [
+          {
+            "node": "Log Lead Held Audit",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Lead Held Audit": {
+      "main": [
+        [
+          {
+            "node": "Post Slack Hold Notice",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Post Slack Hold Notice": {
+      "main": [
+        [
+          {
+            "node": "Build Hold Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Hold Response": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 Held",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Log Invalid Token Audit": {
+      "main": [
+        [
+          {
+            "node": "Respond 403 Invalid Token",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch Rejection Reason": {
+      "main": [
+        [
+          {
+            "node": "Respond 409 Already Processed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Log Invalid Token Audit",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 200 Preview Confirmation",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Respond 404 Not Found",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook Commit Decision": {
+      "main": [
+        [
+          {
+            "node": "Parse Decision Query",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Decision Query": {
+      "main": [
+        [
+          {
+            "node": "Is Prefetch Bot?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Prefetch Bot?": {
+      "main": [
+        [
+          {
+            "node": "Respond 200 Bot Prefetch Guard",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Valid Decision Params?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "errorWorkflow": "<WF_00_ERROR_HANDLER_ID>",
+    "timezone": "Asia/Manila",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "nodeGroups": [
+    {
+      "id": "de39228f-8530-4980-b5a7-c4caa7d4d1ce",
+      "name": "Decision Security & State Gate",
+      "nodeNames": [
+        "Parse Decision Query",
+        "Is Prefetch Bot?",
+        "Respond 200 Bot Prefetch Guard",
+        "Valid Decision Params?",
+        "Respond 400 Invalid Params",
+        "Lookup Lead in Vault",
+        "Evaluate Lead & Token",
+        "Route Decision State"
+      ],
+      "description": "Detects link-preview bots cleanly, validates query/POST commit params, verifies token & idempotency, and routes decisions."
+    },
+    {
+      "id": "07952362-1043-426d-8024-18f0e2ea55f7",
+      "name": "Hold & Audit",
+      "nodeNames": [
+        "Mark Lead Held in Vault",
+        "Log Lead Held Audit",
+        "Post Slack Hold Notice",
+        "Build Hold Response",
+        "Respond 200 Held"
+      ],
+      "description": "Marks lead HELD without sending client email, writes ZL_Audit_Log, alerts Slack, and returns confirmation."
+    },
+    {
+      "id": "821bfc7f-98c4-4e50-877e-d139f1e65105",
+      "name": "Pre-Dispatch Slot Verification",
+      "nodeNames": [
+        "Check Booking Slot Conflict",
+        "Evaluate Slot & Prepare Dispatch",
+        "Booking Slot Conflict?"
+      ],
+      "description": "Queries ZL_Bookings to detect overlapping confirmed appointments before outbound dispatch."
+    },
+    {
+      "id": "52159752-bd10-4f55-8d85-c29ee45ee97f",
+      "name": "Slot Conflict Guardrail",
+      "nodeNames": [
+        "Mark Lead Slot Conflict",
+        "Log Slot Conflict Audit",
+        "Post Slack Conflict Alert",
+        "Respond 409 Slot Conflict"
+      ],
+      "description": "Halts dispatch on slot collision, marks lead SLOT_CONFLICT, audits, alerts Slack, and returns 409."
+    },
+    {
+      "id": "097b7de1-d0d2-4af0-8ef6-844e2e39eddc",
+      "name": "Safe Dispatch & Booking Confirmation",
+      "nodeNames": [
+        "Send Approved Client Reply",
+        "Record Dispatch Error in Vault",
+        "Log Dispatch Error Audit",
+        "Post Slack Dispatch Error",
+        "Respond 502 Dispatch Error",
+        "Has Booking Slot?",
+        "Confirm Slot in ZL_Bookings",
+        "Mark Lead Dispatched in Vault",
+        "Log Dispatched Audit",
+        "Post Slack Dispatch Notice",
+        "Respond 200 Dispatched"
+      ],
+      "description": "Sends approved client reply with SMTP error guard, commits ZL_Bookings slot, marks DISPATCHED, and logs audit trail."
+    },
+    {
+      "id": "c3502592-ca8d-4360-be5c-57945a3892de",
+      "name": "Security & Rejection Handling",
+      "nodeNames": [
+        "Switch Rejection Reason",
+        "Respond 409 Already Processed",
+        "Log Invalid Token Audit",
+        "Respond 403 Invalid Token",
+        "Respond 200 Preview Confirmation",
+        "Respond 404 Not Found"
+      ],
+      "description": "Renders safe confirmation preview on GET and handles 409 idempotency, 403 token rejection, and 404 lookups."
+    }
+  ],
+  "tags": [
+    "guardrail-ops",
+    "zero-leak-suite"
+  ]
+}
