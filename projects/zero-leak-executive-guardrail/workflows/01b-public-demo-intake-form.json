@@ -1,0 +1,237 @@
+{
+  "name": "Zero-Leak \u2014 01B Public Demo Intake Form",
+  "nodes": [
+    {
+      "id": "94ce5217-bddf-4348-ab11-362c9c300db8",
+      "name": "Public Demo Intake Form",
+      "type": "n8n-nodes-base.formTrigger",
+      "typeVersion": 2.6,
+      "position": [
+        0,
+        0
+      ],
+      "parameters": {
+        "authentication": "none",
+        "formTitle": "Zero-Leak Executive Guardrail \u2014 Inbound Inquiry",
+        "formDescription": "Submit a test prospect inquiry, missed-call summary, or booking request. Nothing sends externally without executive confirmation.",
+        "formFields": {
+          "values": [
+            {
+              "fieldLabel": "Full Name",
+              "fieldType": "text",
+              "fieldName": "name",
+              "placeholder": "Jordan Rivera",
+              "defaultValue": "",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Work Email",
+              "fieldType": "email",
+              "fieldName": "email",
+              "placeholder": "name@company.com",
+              "defaultValue": "",
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Phone (Optional)",
+              "fieldType": "text",
+              "fieldName": "phone",
+              "placeholder": "+61 400 000 000",
+              "defaultValue": "",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Company (Optional)",
+              "fieldType": "text",
+              "fieldName": "company",
+              "placeholder": "Harbor Property Group",
+              "defaultValue": "",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Channel Source",
+              "fieldType": "dropdown",
+              "fieldName": "source",
+              "defaultValue": "Web Form",
+              "fieldOptions": {
+                "values": [
+                  {
+                    "option": "Web Form"
+                  },
+                  {
+                    "option": "Missed Call"
+                  },
+                  {
+                    "option": "Email"
+                  }
+                ]
+              },
+              "requiredField": true
+            },
+            {
+              "fieldLabel": "Preferred Call Slot (ISO, optional)",
+              "fieldType": "text",
+              "fieldName": "requested_slot",
+              "placeholder": "2026-11-28T10:00:00+08:00",
+              "defaultValue": "",
+              "requiredField": false
+            },
+            {
+              "fieldLabel": "Inquiry Details",
+              "fieldType": "textarea",
+              "fieldName": "inquiry_text",
+              "placeholder": "Describe what you need help with...",
+              "defaultValue": "",
+              "requiredField": true
+            }
+          ]
+        },
+        "responseMode": "onReceived",
+        "options": {
+          "appendAttribution": false,
+          "buttonLabel": "Submit Inquiry",
+          "path": "zero-leak-intake",
+          "respondWithOptions": {
+            "values": {
+              "respondWith": "text",
+              "formSubmittedText": "Thank you. Your inquiry has been persisted safely and queued for executive review."
+            }
+          }
+        }
+      },
+      "webhookId": "<YOUR_WEBHOOK_ID>"
+    },
+    {
+      "id": "88a73470-9bae-46f6-81c1-04a91dd99052",
+      "name": "Normalize Form Submission",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        272,
+        128
+      ],
+      "parameters": {
+        "mode": "manual",
+        "includeOtherFields": false,
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1",
+              "name": "name",
+              "value": "={{ $json.name }}",
+              "type": "string"
+            },
+            {
+              "id": "f2",
+              "name": "email",
+              "value": "={{ $json.email }}",
+              "type": "string"
+            },
+            {
+              "id": "f3",
+              "name": "phone",
+              "value": "={{ $json.phone || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "f4",
+              "name": "company",
+              "value": "={{ $json.company || \"Unspecified\" }}",
+              "type": "string"
+            },
+            {
+              "id": "f5",
+              "name": "source",
+              "value": "={{ $json.source || \"Web Form\" }}",
+              "type": "string"
+            },
+            {
+              "id": "f6",
+              "name": "requested_slot",
+              "value": "={{ $json.requested_slot || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "f7",
+              "name": "inquiry_text",
+              "value": "={{ $json.inquiry_text }}",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "a82b2097-a53b-4277-affa-912d0a59c21c",
+      "name": "Forward to Zero-Leak 01 Intake",
+      "type": "n8n-nodes-base.executeWorkflow",
+      "typeVersion": 1.4,
+      "position": [
+        496,
+        128
+      ],
+      "parameters": {
+        "source": "database",
+        "workflowId": {
+          "__rl": true,
+          "mode": "id",
+          "value": "<WF_01_INTAKE_ID>",
+          "cachedResultName": "Zero-Leak \u2014 01 Persist-First Intake, AI Fallback & Approval Queue"
+        },
+        "mode": "once",
+        "options": {
+          "waitForSubWorkflow": true
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Public Demo Intake Form": {
+      "main": [
+        [
+          {
+            "node": "Normalize Form Submission",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Form Submission": {
+      "main": [
+        [
+          {
+            "node": "Forward to Zero-Leak 01 Intake",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "pinData": {},
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": true,
+    "errorWorkflow": "<WF_00_ERROR_HANDLER_ID>",
+    "timezone": "Asia/Manila",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "all"
+  },
+  "nodeGroups": [
+    {
+      "id": "c55df24e-60da-423c-8345-889a9a3dddde",
+      "name": "Public Form Adapter",
+      "nodeNames": [
+        "Normalize Form Submission",
+        "Forward to Zero-Leak 01 Intake"
+      ],
+      "description": "Adapts public n8n Form submissions and delegates cleanly to Zero-Leak 01 core intake pipeline."
+    }
+  ],
+  "tags": [
+    "guardrail-ops",
+    "zero-leak-suite"
+  ]
+}

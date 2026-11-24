@@ -11,7 +11,7 @@ I design and build AI-powered business systems that connect language models, wor
 **Open the portfolio:** [Flagship case studies](PROJECTS.md) · [Visual proofs](VISUAL_PROOFS.md) · [36-workflow n8n audit](N8N_WORKFLOW_AUDIT.md) · [Project folders](projects/README.md) · [AwtomateAI](https://awtomateai.com)
 
 > **2-minute technical review for hiring managers:**
-> Start with [SaaS CRM Suite](projects/saas-crm-suite) (8 coordinated workflows, 4 Data Tables, Admin SPA & API, deterministic fallbacks, shared error handler), [CommercePilot](projects/commercepilot) (Shopify App Proxy HMAC + Redis + n8n + Groq + Supabase), [Smart Scheduler V1](projects/smart-scheduler) (approval gate + conflict recheck + ledger idempotency), and [PropertyFix AI 2.0](projects/propertyfix-ai) (deterministic safety overrides over LLM triage). Repository integrity and Python adapter unit tests are verified on every push via [Portfolio CI](.github/workflows/portfolio-ci.yml).
+> Start with [Zero-Leak Executive Guardrail Suite](projects/zero-leak-executive-guardrail) (5 active workflows, persist-first Vault, Gemini -> OpenRouter -> DLQ self-healing recovery, bot-safe GET preview + POST commit gate, pre-dispatch slot guard), [SaaS CRM Suite](projects/saas-crm-suite) (8 coordinated workflows, 4 Data Tables, Admin SPA & API, deterministic fallbacks, shared error handler), [CommercePilot](projects/commercepilot) (Shopify App Proxy HMAC + Redis + n8n + Groq + Supabase), [Smart Scheduler V1](projects/smart-scheduler) (approval gate + conflict recheck + ledger idempotency), and [PropertyFix AI 2.0](projects/propertyfix-ai) (deterministic safety overrides over LLM triage). Repository integrity and Python adapter unit tests are verified on every push via [Portfolio CI](.github/workflows/portfolio-ci.yml).
 
 ---
 
@@ -19,10 +19,10 @@ I design and build AI-powered business systems that connect language models, wor
 
 | Evidence snapshot | Verified position |
 |---|---|
-| Featured systems | 5 documented end-to-end systems (including the 8-workflow SaaS CRM Suite added Nov 23, 2026) |
-| Execution history | **92 successful records** across 4 core workflows (Nov 1–21, 2026) + **17 passing runs** across the 8 SaaS CRM Suite workflows (Nov 23, 2026) |
-| Workflow inventory | 36 workflows audited on November 20, 2026; expanded to 49 workflows by November 23, 2026 |
-| Inventory state | 12 active · 24 inactive at the Nov 20 audit (8-workflow SaaS CRM Suite active Nov 23) |
+| Featured systems | 6 documented end-to-end systems (including the 5-workflow Zero-Leak Executive Guardrail Suite added Nov 24, 2026 and the 8-workflow SaaS CRM Suite added Nov 23, 2026) |
+| Execution history | **92 successful records** across 4 core workflows (Nov 1–21, 2026) + **17 passing runs** across SaaS CRM Suite (Nov 23) + **18 verified E2E scenarios** across Zero-Leak Executive Guardrail Suite (Nov 24) |
+| Workflow inventory | 36 workflows audited on November 20, 2026; expanded to 54 workflows by November 24, 2026 |
+| Inventory state | 12 active · 24 inactive at the Nov 20 audit (+8 SaaS CRM workflows active Nov 23, +5 Zero-Leak workflows active Nov 24) |
 | Engineering focus | AI orchestration, workflow design, API integration, business rules, persistence, and reliability |
 
 Execution records are dated n8n history snapshots—not uptime guarantees, paid-client outcomes, revenue, conversion lift, or time-saved metrics. See the [visual evidence and limitations](VISUAL_PROOFS.md).
@@ -99,6 +99,20 @@ An 8-workflow (`158`-node) operational SaaS CRM suite unifying inbound lead qual
 **Stage:** Active on the developer's self-hosted n8n instance with synthetic test data, not a paid-client deployment. Live `GET /crm/portal` embeds `crm-seed` prior to token entry and should be auth-gated before multi-tenant use.
 
 [Technical case study](projects/saas-crm-suite) · [Architecture visual](projects/saas-crm-suite/assets/workflow-overview.svg)
+
+### 6. [Zero-Leak Revenue & Executive Guardrail Suite](projects/zero-leak-executive-guardrail)
+
+**Executive operations · Resilience engineering · Human-in-the-loop AI**
+
+A 5-workflow (`118`-node) failure-resilient inquiry and approval suite engineered around 4 isolated n8n Data Tables (`ZL_Leads_Vault`, `ZL_Retry_Queue`, `ZL_Bookings`, `ZL_Audit_Log`). Inquiries are persisted before AI runs, triaged via Gemini (`models/gemini-3-flash-preview`) with automatic OpenRouter fallback and a 15-minute DLQ self-healing retry worker, screened by deterministic safety keyword overrides, gated by a bot-safe two-phase approval flow (`GET` confirmation preview + `POST` commit), protected by live pre-dispatch booking conflict re-checks, and summarized in a daily 7:30 AM `Asia/Manila` executive brief.
+
+- **18 verified end-to-end test scenarios** on November 24, 2026 (`10` synthetic vault leads, `0` dropped, `2/2` DLQ auto-recoveries, `6` confirmed bookings, `4` security/conflict blocks).
+- Caught and resolved real production issues during live tests, including `Slackbot-LinkExpanding` prefetch auto-approvals, Gemini thinking-token output truncation, `FormTriggerV2` + `RespondToWebhook` separation (`01B`), and sub-workflow terminal output indexing.
+- Includes 5 sanitized workflow JSONs, Data Table schemas, E2E verification ledger, and reusable `verify_endpoints.py` HTTP verifier (`5/5` live checks passing).
+
+**Stage:** Active on the developer's self-hosted n8n instance using synthetic prospect records and developer-controlled SMTP/Slack sinks; not a paid-client deployment.
+
+[Technical case study](projects/zero-leak-executive-guardrail) · [Animated architecture visual](projects/zero-leak-executive-guardrail/assets/AwtomateAI_Zero_Leak_Visual.gif)
 
 ---
 

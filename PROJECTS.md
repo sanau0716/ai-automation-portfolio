@@ -66,6 +66,18 @@ An 8-workflow (`158`-node) operational SaaS CRM suite unifying inbound lead inta
 
 **Stage and limits:** Active on the developer's self-hosted n8n instance with synthetic test records, not a paid-client deployment. Live `GET /crm/portal` currently embeds `crm-seed` in HTML prior to token entry and should be auth-gated before multi-tenant client use.
 
+### 6. Zero-Leak Revenue & Executive Guardrail Suite
+
+[**Technical case study**](projects/zero-leak-executive-guardrail) · [**Animated architecture visual**](projects/zero-leak-executive-guardrail/assets/AwtomateAI_Zero_Leak_Visual.gif)
+
+A 5-workflow (`118`-node) revenue protection and executive approval suite built around 4 isolated n8n Data Tables (`ZL_Leads_Vault`, `ZL_Retry_Queue`, `ZL_Bookings`, `ZL_Audit_Log`). It persists raw inquiries before calling any LLM, runs Gemini primary triage with automatic OpenRouter failover and 15-minute DLQ self-healing retries, applies deterministic emergency keyword overrides, enforces a bot-safe two-phase approval gate (`GET /decision` read-only confirmation + `POST /commit` dispatch) to defeat Slackbot and email link-scanner prefetches, re-checks booking collisions immediately prior to email dispatch, and delivers a daily 7:30 AM `Asia/Manila` KPI brief.
+
+**Stack:** n8n · n8n Data Tables · Webhooks & Forms · Google Gemini (`models/gemini-3-flash-preview`) · OpenRouter (`google/gemini-3.1-flash-lite`) · Purelymail SMTP · Slack · Python verification CLI.
+
+**Evidence snapshot (November 24, 2026):** All 5 active workflows match their current drafts and passed 18 end-to-end test scenarios using synthetic prospect records (`10` vault leads, `0` dropped, `2/2` DLQ recoveries via execution `#1741`, `6` confirmed bookings, `4` security/conflict blocks, executive morning brief `#1754` delivered cleanly via SMTP and Slack, and `5/5` live checks passing in `verify_endpoints.py`).
+
+**Stage and limits:** Active on the developer's self-hosted n8n instance with synthetic test records and developer-controlled notification sinks; not a paid-client deployment. Shared error handler `00` was verified via manual run `#1686`.
+
 ---
 
 ## Leads, sales, and business research
